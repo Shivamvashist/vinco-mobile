@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vinco: the full plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDECE8; --surface:#FFFFFF; --sunk:#E3E1DC; --line:#D3CFC7; --text:#1E1B18; --muted:#5E574E;
+  --gold:#8A6819; --gold-soft:rgba(138,104,25,.12); --porph:#7D2436; --porph-soft:rgba(125,36,54,.09);
+  --ok:#3F6B32; --ok-soft:rgba(63,107,50,.12);
+  --display:"Marcellus", "Trajan Pro", Georgia, "Times New Roman", serif;
+  --body:"Figtree", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1D1A17; --surface:#26221E; --sunk:#171512; --line:#3B352E; --text:#ECE5D8; --muted:#A99F90;
+    --gold:#D2AC55; --gold-soft:rgba(210,172,85,.13); --porph:#D0697D; --porph-soft:rgba(208,105,125,.12);
+    --ok:#93BC7E; --ok-soft:rgba(147,188,126,.13);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1D1A17; --surface:#26221E; --sunk:#171512; --line:#3B352E; --text:#ECE5D8; --muted:#A99F90;
+  --gold:#D2AC55; --gold-soft:rgba(210,172,85,.13); --porph:#D0697D; --porph-soft:rgba(208,105,125,.12);
+  --ok:#93BC7E; --ok-soft:rgba(147,188,126,.13);
+}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 64px)}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--porph);text-underline-offset:2px}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:4px}
+img,svg{max-width:100%}
+
+/* Hero */
+.hero{padding:56px 24px 40px;border-bottom:1px solid var(--line);text-align:center;position:relative;overflow:hidden}
+.hero h1{font-family:var(--display);font-weight:400;font-size:clamp(64px,13vw,132px);line-height:1;letter-spacing:.18em;margin:0 0 0 .18em}
+.hero .motto{font-family:var(--display);font-size:clamp(20px,3.2vw,28px);color:var(--gold);margin:14px auto 6px;letter-spacing:.04em}
+.hero .lede{max-width:600px;margin:14px auto 0;color:var(--muted)}
+.laurel{display:block;margin:0 auto 18px;width:120px;height:28px;color:var(--gold)}
+.triad{display:flex;justify-content:center;gap:clamp(16px,5vw,56px);margin-top:28px;flex-wrap:wrap}
+.triad div{min-width:120px}
+.triad b{display:block;font-family:var(--display);font-weight:400;font-size:22px}
+.triad span{font-size:14px;color:var(--muted)}
+
+/* Layout */
+.shell{display:grid;grid-template-columns:220px minmax(0,1fr);max-width:1180px;margin:0 auto}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);align-self:start;padding:28px 16px 28px 24px;height:max-content}
+nav.tabs button{display:block;width:100%;text-align:left;background:none;border:0;border-left:2px solid var(--line);color:var(--muted);font:500 15px/1.3 var(--body);padding:10px 14px;cursor:pointer}
+nav.tabs button:hover{color:var(--text)}
+nav.tabs button[aria-selected="true"]{color:var(--text);border-left-color:var(--porph);background:var(--porph-soft)}
+nav.tabs .navnote{font-size:13px;color:var(--muted);margin:20px 0 0 14px}
+main{padding:28px 24px 96px;min-width:0}
+section.panel{display:none;max-width:820px}
+section.panel.on{display:block}
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr}
+  nav.tabs{display:flex;overflow-x:auto;gap:4px;padding:8px 12px;background:var(--bg);border-bottom:1px solid var(--line);z-index:5;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  nav.tabs::-webkit-scrollbar{display:none}
+  nav.tabs button{flex:0 0 auto;width:auto;border-left:0;border-bottom:2px solid transparent;padding:10px 12px;white-space:nowrap}
+  nav.tabs button[aria-selected="true"]{border-bottom-color:var(--porph);background:none}
+  nav.tabs .navnote{display:none}
+  main{padding:24px 16px 80px}
+}
+
+/* Type */
+h2{font-family:var(--display);font-weight:400;font-size:clamp(30px,4.4vw,40px);line-height:1.15;margin:0 0 8px}
+.sub{color:var(--muted);font-size:17px;margin:0 0 28px;max-width:680px}
+h3{font-size:20px;font-weight:700;margin:40px 0 10px;line-height:1.3}
+h4{font-size:16px;font-weight:700;margin:22px 0 6px}
+p{margin:0 0 14px;max-width:72ch}
+ul,ol{margin:0 0 16px;padding-left:22px;max-width:72ch}
+li{margin:0 0 6px}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;background:var(--sunk);padding:1px 6px;border-radius:4px}
+pre{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow-x:auto;font-size:13.5px;line-height:1.55;margin:0 0 18px}
+pre code{background:none;padding:0}
+
+/* Blocks */
+.decision{border-left:3px solid var(--porph);background:var(--surface);padding:16px 18px;margin:0 0 14px;border-radius:0 8px 8px 0}
+.decision h4{margin:0 0 4px;font-size:17px}
+.decision p{margin:0;color:var(--muted)}
+.decision p+p{margin-top:8px}
+.note{border:1px solid var(--line);background:var(--gold-soft);border-radius:8px;padding:14px 16px;margin:0 0 18px}
+.note p:last-child{margin:0}
+.warn{border:1px solid var(--line);background:var(--porph-soft);border-radius:8px;padding:14px 16px;margin:0 0 18px}
+.warn p:last-child{margin:0}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:0 0 18px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 18px}
+@media (max-width:640px){.grid2,.grid3{grid-template-columns:1fr}}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+.tile h4{margin:0 0 4px}
+.tile .latin{font-family:var(--display);font-size:24px;line-height:1.1;margin:0 0 2px}
+.tile p{margin:0;font-size:15px;color:var(--muted)}
+.tile ul{margin:8px 0 0;font-size:15px}
+.dates{display:grid;grid-template-columns:120px 1fr;gap:0;border-top:1px solid var(--line);margin:0 0 20px}
+.dates div{padding:12px 0;border-bottom:1px solid var(--line)}
+.dates .d{font-family:var(--display);font-size:18px;color:var(--gold)}
+.dates .t b{display:block}
+.dates .t span{color:var(--muted);font-size:15px}
+.quote{font-family:var(--display);font-size:22px;line-height:1.35;margin:0 0 4px}
+.cite{color:var(--muted);font-size:14px;margin:0 0 18px}
+
+/* Tables */
+.tw{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;vertical-align:top;padding:10px 14px;border-bottom:1px solid var(--line)}
+th{font-weight:600;background:var(--sunk);white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.y{color:var(--ok);font-weight:600}
+td.n{color:var(--muted)}
+
+/* Phone mock */
+.phones{display:flex;gap:18px;overflow-x:auto;padding:4px 2px 12px;margin:0 0 18px}
+.phone{flex:0 0 220px;border:1px solid var(--line);border-radius:26px;background:var(--sunk);padding:14px 12px 16px}
+.phone .bar{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;margin:0 6px 10px}
+.phone .ttl{font-family:var(--display);font-size:20px;margin:0 6px 2px}
+.phone .mini{font-size:12px;color:var(--muted);margin:0 6px 10px}
+.task{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:0 0 6px;font-size:13px}
+.task i{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--muted);flex:0 0 auto}
+.task.done i{background:var(--gold);border-color:var(--gold)}
+.task.half i{background:linear-gradient(90deg,var(--gold) 50%,transparent 50%);border-color:var(--gold)}
+.task small{margin-left:auto;color:var(--muted);font-size:11px}
+.stamp{font-family:var(--display);color:var(--porph);border:2px solid var(--porph);border-radius:6px;display:inline-block;padding:2px 10px;transform:rotate(-6deg);margin:8px 0 0 50px;letter-spacing:.12em}
+.badge{display:inline-flex;align-items:center;gap:6px;background:var(--porph);color:#fff;border-radius:999px;padding:4px 10px;font-weight:600;font-size:13px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:6px}
+.cal span{aspect-ratio:1;border-radius:4px;background:var(--line)}
+.cal span.w{background:var(--gold)}
+.cal span.h{background:var(--gold-soft);outline:1px solid var(--gold)}
+.tabbar{display:flex;justify-content:space-around;margin-top:12px;font-size:11px;color:var(--muted);text-align:center}
+.tabbar b{display:block;font-family:var(--display);font-weight:400;font-size:13px;color:var(--text)}
+
+/* Gantt */
+.gantt{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:14px 16px;margin:0 0 20px;overflow-x:auto}
+.grow{display:grid;grid-template-columns:190px 1fr;align-items:center;min-width:600px;font-size:14px}
+.grow+.grow{border-top:1px dashed var(--line)}
+.grow .lbl{padding:7px 8px 7px 0}
+.track{position:relative;height:30px}
+.track .bar{position:absolute;top:8px;height:14px;border-radius:7px;background:var(--gold-soft);border:1px solid var(--gold)}
+.track .ms{position:absolute;top:8px;width:14px;height:14px;transform:translateX(-7px) rotate(45deg);background:var(--muted)}
+.track .ms.key{background:var(--porph)}
+.gaxis{display:grid;grid-template-columns:190px 1fr;min-width:600px;font-size:12px;color:var(--muted)}
+.gaxis .ticks{position:relative;height:20px}
+.gaxis .ticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.track,.gaxis .ticks{margin-right:24px}
+
+/* Checklist */
+.progress{position:sticky;top:env(safe-area-inset-top,0px);z-index:3;background:var(--bg);padding:10px 0 12px;margin:0 0 8px;border-bottom:1px solid var(--line)}
+@media (max-width:900px){.progress{top:calc(env(safe-area-inset-top,0px) + 50px)}}
+.progress .row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:15px}
+.meter{height:8px;border-radius:4px;background:var(--sunk);border:1px solid var(--line);margin-top:8px;overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:var(--gold);transition:width .3s}
+.reset{background:none;border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:4px 10px;font:500 13px var(--body);cursor:pointer}
+.phase{margin:28px 0 0}
+.phase header{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:6px}
+.phase header .num{font-family:var(--display);font-size:28px;color:var(--gold);line-height:1;min-width:32px}
+.phase header h3{margin:0;font-size:19px}
+.phase header .when{color:var(--muted);font-size:14px;margin-left:auto}
+.phase header .count{font-size:13px;color:var(--muted)}
+.phase .goal{color:var(--muted);margin:6px 0 8px 46px;font-size:15px}
+.step{display:grid;grid-template-columns:22px 1fr;gap:12px;padding:10px 0 10px 46px;border-bottom:1px solid var(--line)}
+@media (max-width:640px){.step{padding-left:0}.phase .goal{margin-left:0}}
+.step input{width:20px;height:20px;margin:3px 0 0;accent-color:var(--porph);cursor:pointer}
+.step label{cursor:pointer}
+.step label b{font-weight:600}
+.step label span{display:block;color:var(--muted);font-size:14.5px;margin-top:2px}
+.step.checked label b{text-decoration:line-through;text-decoration-color:var(--muted);color:var(--muted)}
+.done-msg{display:none;color:var(--ok);font-weight:600;font-size:14px}
+.phase.complete .done-msg{display:inline}
+
+footer{color:var(--muted);font-size:13px;border-top:1px solid var(--line);margin-top:48px;padding-top:16px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <svg class="laurel" viewBox="0 0 120 28" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+    <path d="M60 24 C44 22 30 16 18 6"/><path d="M60 24 C76 22 90 16 102 6"/>
+    <ellipse cx="24" cy="12" rx="5" ry="2.2" transform="rotate(-35 24 12)"/><ellipse cx="34" cy="17" rx="5" ry="2.2" transform="rotate(-25 34 17)"/><ellipse cx="45" cy="21" rx="5" ry="2.2" transform="rotate(-12 45 21)"/>
+    <ellipse cx="96" cy="12" rx="5" ry="2.2" transform="rotate(35 96 12)"/><ellipse cx="86" cy="17" rx="5" ry="2.2" transform="rotate(25 86 17)"/><ellipse cx="75" cy="21" rx="5" ry="2.2" transform="rotate(12 75 21)"/>
+  </svg>
+  <h1>VINCO</h1>
+  <p class="motto">Veni, vidi, vici.</p>
+  <p class="lede">The plan for a winter arc app that gives you a few non-negotiables a day, proof that you are changing, and a counter that shows how much of your life the feed is eating.</p>
+  <div class="triad" aria-label="The three tabs of the app">
+    <div><b>Veni</b><span>I came: show up today</span></div>
+    <div><b>Vidi</b><span>I saw: the proof</span></div>
+    <div><b>Vici</b><span>I conquered: the arc</span></div>
+  </div>
+</header>
+
+<div class="shell">
+<nav class="tabs" role="tablist" aria-label="Plan sections">
+  <button role="tab" id="t-overview" aria-controls="overview" aria-selected="true">Overview</button>
+  <button role="tab" id="t-brand" aria-controls="brand" aria-selected="false">Brand and theme</button>
+  <button role="tab" id="t-app" aria-controls="app" aria-selected="false">The app</button>
+  <button role="tab" id="t-vigil" aria-controls="vigil" aria-selected="false">The Vigil</button>
+  <button role="tab" id="t-modes" aria-controls="modes" aria-selected="false">Modes</button>
+  <button role="tab" id="t-tech" aria-controls="tech" aria-selected="false">Tech stack</button>
+  <button role="tab" id="t-data" aria-controls="data" aria-selected="false">Data and API</button>
+  <button role="tab" id="t-admin" aria-controls="admin" aria-selected="false">Admin dashboard</button>
+  <button role="tab" id="t-build" aria-controls="build" aria-selected="false">Build steps</button>
+  <button role="tab" id="t-roadmap" aria-controls="roadmap" aria-selected="false">Roadmap and risks</button>
+  <button role="tab" id="t-decisions" aria-controls="decisions" aria-selected="false">Decisions</button>
+  <p class="navnote">Plan dated 6 October 2026</p>
+</nav>
+
+<main>
+
+<!-- ============ OVERVIEW ============ -->
+<section class="panel on" id="overview" role="tabpanel" aria-labelledby="t-overview">
+  <h2>Overview</h2>
+  <p class="sub">Vinco ships in two steps: the arc tracker on 2 November 2026, and the full MVP with the reel counter on 1 January 2027.</p>
+
+  <h3>What Vinco is</h3>
+  <p>An Android app for people running a 30, 60 or 90 day arc. Every day you complete four non-negotiable tasks, take a selfie, and see your progress fill in. The Vigil counts every reel and short you watch, shows it live, and steps in with a Stoic nudge at milestones.</p>
+  <p>The theme is Roman and Stoic, the look is modern, and the voice can be calm, firm or sarcastic. The only battle that matters is against yesterday's you.</p>
+
+  <h3>Key dates</h3>
+  <div class="dates">
+    <div class="d">12 Oct</div><div class="t"><b>First build to testers</b><span>12+ testers start Google Play's required 14-day closed test.</span></div>
+    <div class="d">2 Nov</div><div class="t"><b>Vinco Early Access</b><span>The tracker, for the first cohort: the Last 60, running to 31 December.</span></div>
+    <div class="d">16 Nov</div><div class="t"><b>Vigil test build to Google</b><span>Accessibility declaration submitted early, so a rejection leaves time to adjust.</span></div>
+    <div class="d">1 Dec</div><div class="t"><b>Timelapse export live</b><span>The first cohort reaches 30 selfies.</span></div>
+    <div class="d">1 Jan</div><div class="t"><b>Vinco 1.0, the full MVP</b><span>Adds the Vigil, Aurora alarm, squads, ranks and AI step one, on the biggest habit-starting day of the year.</span></div>
+  </div>
+
+  <h3>What's in each release</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Feature</th><th>Early Access</th><th>Vinco 1.0</th></tr></thead>
+    <tbody>
+      <tr><td>Begin your arc, the four tasks, own tasks, the Armory</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+      <tr><td>Step one</td><td>Templates</td><td>AI suggestions</td></tr>
+      <tr><td>Selfie, history, campaign, Truce</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+      <tr><td>Day card, oath, Resurgo, tone picker</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+      <tr><td>Nudges, to-do list, sleep times</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+      <tr><td>Workout voice note</td><td>Recorded only</td><td>Turned into a written log</td></tr>
+      <tr><td>Aurora alarm with missions</td><td class="n">Normal reminder</td><td class="y">Yes</td></tr>
+      <tr><td>The Vigil reel counter</td><td class="n">No</td><td class="y">Yes</td></tr>
+      <tr><td>Sign-in, squads, friends ranking, ranks</td><td class="n">No</td><td class="y">Yes</td></tr>
+      <tr><td>Timelapse export</td><td>From 1 December</td><td class="y">Yes</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note"><p><b>Why the split:</b> the reel counter is the feature with the most depth, but it is native Android work, needs Google's approval for the Accessibility API, and brings sign-in and a server for the friends ranking. Shipping the tracker first keeps the winter season, gets you past the closed-test rule, and gives you real users to learn from. This assumes one full-time developer.</p></div>
+
+  <h3>Who it's for</h3>
+  <div class="grid3">
+    <div class="tile"><h4>The arc starter</h4><p>18 to 25, student or first job. Has tried a winter arc before and dropped off around week two. Wants to be told what to do today.</p></div>
+    <div class="tile"><h4>The gym beginner</h4><p>Started lifting recently and already takes mirror photos. Wants proof: the timelapse is their feature.</p></div>
+    <div class="tile"><h4>The scroller who knows it</h4><p>Checks screen time, feels bad, changes nothing. Has tapped "ignore limit" a hundred times. The Vigil is for them.</p></div>
+  </div>
+  <p class="small muted">Not for now: under-18s, people who want a full calorie tracker, and teams. Rate the app for adults.</p>
+</section>
+
+<!-- ============ BRAND ============ -->
+<section class="panel" id="brand" role="tabpanel" aria-labelledby="t-brand">
+  <h2>Brand and theme</h2>
+  <p class="sub">Roman in spirit, modern in use: a sleek fitness app that happens to be carved in marble, not a museum.</p>
+
+  <h3>The name: Vinco</h3>
+  <p>Latin for "I conquer," in the present tense. It is about today's battle, not a finish line. It shares a root with the tagline's "vici" and with the word <i>invincible</i>.</p>
+  <p class="quote">"Vincit qui patitur."</p>
+  <p class="cite">An old Latin proverb: the one who endures, conquers.</p>
+  <p>The story behind the name: Caesar conquered Gaul. Your users conquer their alarm, their phone and their excuses. Plato called conquering yourself the first and best of all victories; Seneca said ruling yourself is the greatest power.</p>
+
+  <h3>The tagline: Veni, vidi, vici</h3>
+  <div class="grid3">
+    <div class="tile"><p class="latin">Veni</p><h4>I came</h4><p>You showed up. Onboarding, step one, every new day. The Today tab.</p></div>
+    <div class="tile"><p class="latin">Vidi</p><h4>I saw</h4><p>You saw the proof. Selfies, the calendar, reel totals. The Progress tab.</p></div>
+    <div class="tile"><p class="latin">Vici</p><h4>I conquered</h4><p>You finished the arc. Rank, squad, the finish screen. The Arc tab.</p></div>
+  </div>
+  <p>Sarcastic versions for marketing: "I came. I saw. I didn't scroll." and "Caesar conquered Gaul. You can conquer three tasks."</p>
+
+  <h3>Look and feel</h3>
+  <div class="grid2">
+    <div class="tile"><h4>Colour</h4><ul>
+      <li>Dark mode by default: a warm basalt background with marble-white text.</li>
+      <li>Laurel gold for wins, streaks and the full goal.</li>
+      <li>Porphyry red (the stone Roman emperors used) for warnings and the reel counter.</li>
+    </ul></div>
+    <div class="tile"><h4>Type</h4><ul>
+      <li>An inscription-style serif (like this page's headings) only for big moments: the day number, VINCO, the finish screen.</li>
+      <li>A clean modern sans-serif for everything else.</li>
+      <li>Roman numerals as decoration only: a small "DAY XII" above a big "12".</li>
+    </ul></div>
+    <div class="tile"><h4>Motifs</h4><ul>
+      <li>Laurel leaves for wins, a wax-seal stamp for a finished day, a broken column for a lost campaign.</li>
+      <li>Flat and minimal. No marble textures or statue photos.</li>
+    </ul></div>
+    <div class="tile"><h4>Motion</h4><ul>
+      <li>One signature moment: the VINCO stamp slams onto the day when all tasks are done, with a light haptic thud.</li>
+      <li>Everything else is quick and quiet.</li>
+    </ul></div>
+  </div>
+
+  <h3>The Vinco vocabulary</h3>
+  <p>Every Roman word sits beside a plain label, so nobody has to guess what a button does.</p>
+  <div class="tw"><table>
+    <thead><tr><th>In the app</th><th>Roman name</th><th>Plain label</th></tr></thead>
+    <tbody>
+      <tr><td>Start button</td><td>Cross the Rubicon</td><td>Begin your arc</td></tr>
+      <tr><td>Streak</td><td>Campaign</td><td>Days in a row</td></tr>
+      <tr><td>Minimum version of a task</td><td>Hold the line</td><td>Minimum</td></tr>
+      <tr><td>Full version of a task</td><td>Conquer</td><td>Full goal</td></tr>
+      <tr><td>Weekly rest-day pass</td><td>Truce</td><td>Rest day</td></tr>
+      <tr><td>Restarting within 24 hours</td><td>Resurgo</td><td>Comeback</td></tr>
+      <tr><td>Earned app unlock (future)</td><td>Clementia</td><td>10-minute unlock</td></tr>
+      <tr><td>Wake-up alarm</td><td>Aurora</td><td>Alarm</td></tr>
+      <tr><td>Reel counter</td><td>The Vigil</td><td>Reel counter</td></tr>
+      <tr><td>Strict blocking (future)</td><td>Imperium</td><td>Strict mode</td></tr>
+      <tr><td>Friends group</td><td>Contubernium ("tent mates")</td><td>Squad</td></tr>
+      <tr><td>Idea library</td><td>The Armory</td><td>Task ideas</td></tr>
+      <tr><td>Weekly recap</td><td>The Senate report</td><td>Weekly review</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Ranks</h3>
+  <p>Earned by finished days, never by money. They show on the day card and in squad rankings.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Rank</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>Tiro</td><td>Recruit: your first days</td></tr>
+      <tr><td>Miles</td><td>Soldier</td></tr>
+      <tr><td>Optio</td><td>Second-in-command of a century</td></tr>
+      <tr><td>Centurion</td><td>Commander of a century</td></tr>
+      <tr><td>Tribune</td><td>Senior officer</td></tr>
+      <tr><td>Legate</td><td>Commander of a legion</td></tr>
+      <tr><td>Consul</td><td>The highest elected office</td></tr>
+      <tr><td>Caesar</td><td>Reserved for anyone who finishes a full 90-day arc</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small muted">Exact day thresholds for each rank are still to be set, ideally after seeing how long Early Access users last.</p>
+
+  <h3>The tone picker</h3>
+  <p>Chosen at onboarding, changeable any time. Every notification and empty screen is written three ways.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Tone</th><th>Feels like</th><th>A task still open at 9pm</th><th>Campaign broken</th></tr></thead>
+    <tbody>
+      <tr><td>Philosopher</td><td>Calm Stoic teacher</td><td>"The day is not over. One small act still counts."</td><td>"Fall seven times, rise eight. Day 1 begins now."</td></tr>
+      <tr><td>Centurion</td><td>Firm coach</td><td>"Two of three done. Finish the line, soldier."</td><td>"Campaign lost. Regroup. March at dawn."</td></tr>
+      <tr><td>Roast me</td><td>Sarcastic friend</td><td>"Your water bottle has filed a missing person report."</td><td>"Streak's gone. Day 1 is the easiest one to win, though."</td></tr>
+    </tbody>
+  </table></div>
+  <div class="warn"><p><b>The one rule for humour:</b> roast the habit, the phone and the excuse, never the person. Selfie, weight and slip screens stay neutral in every tone, and every sarcastic line ends with a way forward.</p></div>
+</section>
+
+<!-- ============ THE APP ============ -->
+<section class="panel" id="app" role="tabpanel" aria-labelledby="t-app">
+  <h2>The app</h2>
+  <p class="sub">Three tabs, one per word of the tagline, plus the floating Vigil counter that lives outside the app.</p>
+
+  <div class="phones" aria-label="Screen sketches">
+    <div class="phone">
+      <div class="bar"><span>7:02</span><span>Veni</span></div>
+      <p class="mini">DAY XII of LX</p>
+      <p class="ttl">Today</p>
+      <p class="mini">Campaign: 11 days</p>
+      <div class="task done"><i></i>Water <small>4 / 4 L</small></div>
+      <div class="task done"><i></i>Up with Aurora <small>6:30</small></div>
+      <div class="task half"><i></i>Protein meal <small>1 / 2</small></div>
+      <div class="task"><i></i>Workout <small>40 min</small></div>
+      <div class="task"><i></i>Step one: outline CV <small>15 min</small></div>
+      <div class="tabbar"><div><b>Veni</b>Today</div><div><b>Vidi</b>Progress</div><div><b>Vici</b>Arc</div></div>
+    </div>
+    <div class="phone">
+      <div class="bar"><span>21:40</span><span>Vidi</span></div>
+      <p class="ttl">Progress</p>
+      <p class="mini">October</p>
+      <div class="cal" aria-hidden="true">
+        <span class="w"></span><span class="w"></span><span class="h"></span><span class="w"></span><span class="w"></span><span class="w"></span><span class="w"></span>
+        <span class="w"></span><span></span><span class="w"></span><span class="w"></span><span class="h"></span><span class="w"></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <p class="mini">Gold: full goal. Outline: minimum held.</p>
+      <div class="task"><i></i>Reels today <small>63</small></div>
+      <div class="task"><i></i>Sleep last night <small>6h 50m</small></div>
+      <div class="tabbar"><div><b>Veni</b>Today</div><div><b>Vidi</b>Progress</div><div><b>Vici</b>Arc</div></div>
+    </div>
+    <div class="phone">
+      <div class="bar"><span>22:15</span><span>Day sealed</span></div>
+      <p class="ttl">Day 12</p>
+      <p class="mini">All four tasks done</p>
+      <div class="task done"><i></i>Water</div>
+      <div class="task done"><i></i>Up with Aurora</div>
+      <div class="task done"><i></i>Protein meal</div>
+      <div class="task done"><i></i>Workout</div>
+      <span class="stamp">VINCO</span>
+      <p class="mini" style="margin-top:14px">Share your day card</p>
+    </div>
+  </div>
+
+  <div class="tw"><table>
+    <thead><tr><th>Tab</th><th>Plain label</th><th>What's on it</th></tr></thead>
+    <tbody>
+      <tr><td>Veni</td><td>Today</td><td>The four non-negotiables, step one, your own tasks, today's selfie, the to-do list</td></tr>
+      <tr><td>Vidi</td><td>Progress</td><td>Calendar, campaign and best campaign, sleep, reel totals, selfie history, weight trend</td></tr>
+      <tr><td>Vici</td><td>Arc</td><td>Day 23 of 60, rank, squad ranking, tone and mode settings, the finish screen</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>A day in Vinco</h3>
+  <ol>
+    <li><b>Aurora rings.</b> It only stops when you get up and complete a mission, like photographing the sky from your balcony.</li>
+    <li><b>First water.</b> The alarm screen hands you straight to task one: 1 litre. One tap.</li>
+    <li><b>Morning brief.</b> Today's tasks, your campaign and one Stoic line, in your tone.</li>
+    <li><b>Through the day.</b> Tick tasks as you go. The Vigil counts reels quietly in a corner of Instagram and YouTube.</li>
+    <li><b>Workout logged.</b> Tap done, then speak for 15 seconds about what you trained.</li>
+    <li><b>Selfie.</b> Ten seconds, lined up against yesterday's photo.</li>
+    <li><b>Evening check.</b> One nudge, only if something is still open, plus today's reel total.</li>
+    <li><b>Day sealed.</b> The VINCO stamp lands, the calendar fills, the day card is ready, and your bedtime starts the sleep log.</li>
+  </ol>
+
+  <h3>Begin your arc</h3>
+  <p>The first screen is one button, <b>Cross the Rubicon</b>, with "Begin your arc" under it, below a rotating Stoic line:</p>
+  <p class="quote">"Begin at once to live."</p><p class="cite">Seneca</p>
+  <p class="quote">"Waste no more time arguing what a good man should be. Be one."</p><p class="cite">Marcus Aurelius</p>
+  <p class="quote">"No man is free who is not master of himself."</p><p class="cite">Epictetus</p>
+
+  <h4>Onboarding, under two minutes</h4>
+  <ol>
+    <li><b>Arc length:</b> 30, 60 or 90 days, starting today.</li>
+    <li><b>Your orders:</b> the four non-negotiables appear one by one with their minimum and full goal. Numbers can be adjusted; tasks can't be removed.</li>
+    <li><b>Wake and sleep times:</b> sets Aurora and the sleep log.</li>
+    <li><b>Your step one</b> (optional): name a goal and get a first tiny step.</li>
+    <li><b>Your tone:</b> Philosopher, Centurion or Roast me.</li>
+    <li><b>The oath:</b> a 20-second voice note on why you're doing this. It plays back on Day 10, when most people quit.</li>
+    <li><b>Turn on the Vigil</b> (optional, 1.0): a clear screen on what it reads and never reads, then the permission. Offered again on Day 2 if skipped.</li>
+    <li><b>First selfie,</b> then the VINCO stamp on Day 1.</li>
+  </ol>
+
+  <h3>The four non-negotiables</h3>
+  <p>Each task has a minimum that keeps the day alive and a full goal that earns the laurel. A bad day stays a bad day instead of a broken campaign, which is when most people quit.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Task</th><th>Hold the line</th><th>Conquer</th><th>How it's checked</th></tr></thead>
+    <tbody>
+      <tr><td>Water</td><td>1 litre within 30 min of waking</td><td>4 litres across the day, adjustable to body size</td><td>One tap per litre</td></tr>
+      <tr><td>Wake-up</td><td>Up within 15 min of the alarm</td><td>Up at the set time, mission done first try</td><td>Aurora mission</td></tr>
+      <tr><td>Protein meal</td><td>1 high-protein meal</td><td>2, then 3 meals as you level up</td><td>Tap, optional photo</td></tr>
+      <tr><td>Workout</td><td>15-minute walk or short home set</td><td>40 minutes, gym or home</td><td>Tap, then a 15-second voice note</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><b>Meal levels:</b> after 5 days in a row at full goal, Vinco offers a promotion to two meals, then three. The user accepts or declines; it's never forced.</li>
+    <li><b>Voice note:</b> stored on the phone. In 1.0 it is transcribed into a short workout log. A typed note is the fallback for quiet places.</li>
+  </ul>
+
+  <h3>The fifth task: step one</h3>
+  <p>The user names a bigger goal ("crack my placement interview," "start a YouTube channel") and gets one step that takes under 15 minutes and can be done today. They can accept it, edit it or ask for another. When it's done, Vinco asks for the next step. Early Access uses templates; 1.0 uses AI.</p>
+
+  <h3>Your own tasks and the Armory</h3>
+  <p>Users can add any task. Custom tasks count toward the daily stamp only if marked as orders; otherwise they're just a list. The Armory offers ready-made tasks with sensible minimums:</p>
+  <div class="grid2">
+    <div class="tile"><h4>Body</h4><p>Skincare routine, haircare, 10,000 steps, stretching, cold shower, no sugar</p></div>
+    <div class="tile"><h4>Mind</h4><p>Read 10 pages, journal 3 lines, 10 minutes of meditation, learn one new word</p></div>
+    <div class="tile"><h4>Work</h4><p>1 hour of deep study, inbox to zero, practise a skill</p></div>
+    <div class="tile"><h4>Discipline</h4><p>Phone out of the bedroom, morning sunlight, no screens after 11pm</p></div>
+  </div>
+  <p>Once a week, Vinco suggests one new Armory habit based on what the user already does well: "You've hit water 10 days straight. Ready to add morning sunlight?"</p>
+
+  <h3>Aurora, the wake-up alarm</h3>
+  <p>The alarm keeps ringing until the user completes a mission that gets them out of bed:</p>
+  <div class="grid3">
+    <div class="tile"><h4>See the sky</h4><p>Photograph the sky from a window or balcony, checked on the phone by an image check.</p></div>
+    <div class="tile"><h4>Reach the post</h4><p>Scan a QR code printed and stuck in the bathroom or kitchen.</p></div>
+    <div class="tile"><h4>March</h4><p>Walk 30 steps, counted by the phone's step sensor.</p></div>
+  </div>
+  <p>An "I'm sick" option stops the alarm but uses the week's Truce, so it can't become a lazy snooze. The mission's finish time is the real wake-up time for the sleep log.</p>
+
+  <h3>Nudges and tracking</h3>
+  <p>At most three nudges a day, plus the alarm. More than that and people mute the app.</p>
+  <div class="tw"><table>
+    <thead><tr><th>Nudge</th><th>When</th><th>Content</th></tr></thead>
+    <tbody>
+      <tr><td>Morning brief</td><td>Right after Aurora</td><td>Today's tasks, campaign, one line in your tone</td></tr>
+      <tr><td>Evening check</td><td>8 to 9pm, only if something is open</td><td>What's left, plus today's reel total</td></tr>
+      <tr><td>Wind-down</td><td>30 minutes before bedtime</td><td>"Phone down soon. Tomorrow's Aurora is at 6:30."</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><b>Sleep:</b> wake time from Aurora; bedtime from a tap on the wind-down nudge or the last phone use. Shown weekly on Vidi, with short nights flagged.</li>
+    <li><b>To-do list:</b> a daily list separate from the arc. Unfinished items ask the next morning: carry over or drop? Every list is kept, so users can scroll back by month.</li>
+    <li><b>Selfie:</b> one a day, yesterday's photo shown faintly so faces line up. Photos never leave the phone. Weight is optional and shown only as a weekly trend.</li>
+  </ul>
+
+  <h3>Extra features that drive retention and growth</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Feature</th><th>What it is</th><th>When</th></tr></thead>
+    <tbody>
+      <tr><td>Day card</td><td>Shareable image: "DAY XII of LX", ticks, rank, reel count. Your free marketing.</td><td>Early Access</td></tr>
+      <tr><td>The oath</td><td>Your own voice on why you started, played on Day 10</td><td>Early Access</td></tr>
+      <tr><td>Resurgo</td><td>A comeback badge for restarting within 24 hours of a broken campaign</td><td>Early Access</td></tr>
+      <tr><td>Days-left counter</td><td>"86 days left in 2026" on the Today tab</td><td>Early Access</td></tr>
+      <tr><td>Squads</td><td>Up to 8 friends by invite code; see ticks and reel totals, never photos</td><td>1.0</td></tr>
+      <tr><td>Senate report</td><td>Sunday recap: days won, reels, time lost, sleep, one suggestion</td><td>1.0</td></tr>
+      <tr><td>Slip log</td><td>Private "slipped / resisted" taps for porn or scrolling urges, on the phone only</td><td>1.1</td></tr>
+      <tr><td>Home-screen widget</td><td>Today's tasks and reel count</td><td>1.1</td></tr>
+      <tr><td>Finish screen and timelapse</td><td>The second laurel, "Vici," and a 10-second video of every selfie</td><td>Timelapse by 1 Dec</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ VIGIL ============ -->
+<section class="panel" id="vigil" role="tabpanel" aria-labelledby="t-vigil">
+  <h2>The Vigil</h2>
+  <p class="sub">Counts every reel and short as you watch it, shows the count live, and steps in at milestones. Ships in Vinco 1.0 for Instagram Reels and YouTube Shorts on Android.</p>
+
+  <p>The idea is proven: apps on the Play Store already block reels and count scrolls through Android's Accessibility API, like <a href="https://appblock.app/block-reels-shorts-stories-and-spotlight-on-android-with-appblock/" target="_blank" rel="noopener">AppBlock</a> and <a href="https://redlib.hackliberty.org/r/fossdroid/comments/1ht42m7/i_made_an_appblocker/m5de84c/?context=3" target="_blank" rel="noopener">digipaws</a>. Vinco's edge is the counter tied to your arc, your tasks and your squad.</p>
+
+  <div class="grid2">
+    <div class="tile">
+      <h4>The floating badge</h4>
+      <p style="margin:8px 0"><span class="badge">⚔ 23</span></p>
+      <p>Draggable and semi-transparent. Marble white, then gold, then porphyry red past your budget.</p>
+    </div>
+    <div class="tile">
+      <h4>Tap the badge</h4>
+      <ul>
+        <li>Today: 63 reels, 47 min (+12 vs yesterday)</li>
+        <li>Squad top 3 today, plus your position</li>
+        <li><b>Leave the arena</b> or <b>Keep watching</b></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>1. Counting</h3>
+  <ul>
+    <li>Detects when a Reels or Shorts screen is open and counts each new video swiped to.</li>
+    <li>Tracks time spent on those screens.</li>
+    <li>Detection rules are downloaded as a small config file, so when Instagram changes its layout, Vinco is fixed without a new release.</li>
+    <li>Counts stay on the phone. Only daily totals go to the server, and only for users in a squad.</li>
+  </ul>
+
+  <h3>2. Friends ranking</h3>
+  <p><b>Fewest reels wins.</b> The top 3 are the most disciplined, so the ranking never rewards scrolling. Squads using Roast mode can opt into a playful "most reels" board too.</p>
+
+  <h3>3. Milestones</h3>
+  <p>The user picks the step (every 25 reels by default). At each milestone the feed pauses with a full-screen card that can be closed after 5 seconds. It escalates:</p>
+  <div class="tw"><table>
+    <thead><tr><th>Milestone</th><th>What appears</th></tr></thead>
+    <tbody>
+      <tr><td>25 reels</td><td>A Stoic quote, like Seneca's idea that life isn't short, we just waste much of it</td></tr>
+      <tr><td>50 reels</td><td>A 10 to 15 second nudge video, plus your open tasks: "Water: 1 of 4 litres"</td></tr>
+      <tr><td>75 reels</td><td>Time lost so far, turned into something real</td></tr>
+      <tr><td>100 reels</td><td>A firmer card in your tone, and the offer to set a limit for tomorrow</td></tr>
+    </tbody>
+  </table></div>
+  <p>Showing open tasks at a milestone is the bridge between the counter and the tracker: the moment you notice you're scrolling is the best moment to remind you of something better.</p>
+
+  <h3>4. Time lost</h3>
+  <p>Shown in minutes and as something you could have done instead: "47 minutes: that's your full workout," "two chapters of a book," "a 5 km walk." The Senate report adds up the week: "6 hours, almost a full working day."</p>
+
+  <h3>5. More Vigil features</h3>
+  <div class="grid2">
+    <div class="tile"><h4>Daily budget</h4><p>Set a number, like 50, and the badge counts down instead of up.</p></div>
+    <div class="tile"><h4>First-reel timer</h4><p>How long after waking the first reel was watched. A great morning goal tied to Aurora.</p></div>
+    <div class="tile"><h4>Night watch</h4><p>Reels after your bedtime are counted separately in red, because they cost sleep too.</p></div>
+    <div class="tile"><h4>Doomscroll detection</h4><p>Many reels in a few minutes, and the Vigil steps in before the next milestone.</p></div>
+    <div class="tile"><h4>Clean days</h4><p>A second campaign for days under budget, shown on Vidi.</p></div>
+    <div class="tile"><h4>Squad pact</h4><p>A squad agrees on a shared daily budget, and everyone sees who kept it.</p></div>
+  </div>
+
+  <h3>The privacy promise</h3>
+  <div class="note"><p>The Vigil reads only whether a reels or shorts screen is open and when a new video starts. It never reads messages, captions, usernames, passwords or what the video is about, and nothing on screen is saved or sent. This goes on the permission screen, the store listing and the privacy policy, word for word.</p></div>
+</section>
+
+<!-- ============ MODES ============ -->
+<section class="panel" id="modes" role="tabpanel" aria-labelledby="t-modes">
+  <h2>Modes</h2>
+  <p class="sub">Three modes control how hard Vinco guards your time. 1.0 ships Pax and Vigil; Imperium and the guard dialogues come after launch.</p>
+
+  <div class="grid3">
+    <div class="tile"><p class="latin">Pax</p><h4>Peace: tracker only</h4><p>Tasks, alarm and selfie. Vinco doesn't watch other apps.</p><p class="small" style="margin-top:8px">Ships in 1.0</p></div>
+    <div class="tile"><p class="latin">Vigil</p><h4>Watch: count and remind</h4><p>Reel counter and milestones, then guard dialogues.</p><p class="small" style="margin-top:8px">1.0, dialogues in 1.1</p></div>
+    <div class="tile"><p class="latin">Imperium</p><h4>Command: strict mode</h4><p>Blocks chosen apps once a limit is hit.</p><p class="small" style="margin-top:8px">1.2</p></div>
+  </div>
+
+  <h3>Guard dialogues (1.1)</h3>
+  <p>When the user opens an app they marked as a time sink (Instagram, a game, Chrome), a small Roman guard floats in with a line in their tone:</p>
+  <ul>
+    <li>"Instagram, again? That's the 14th time today."</li>
+    <li>"The arena is open. Your workout is not done."</li>
+    <li>"Halt. State your business."</li>
+  </ul>
+  <p>Then a three-tap intent check: <b>Reply to someone</b>, <b>Look something up</b>, <b>Just bored</b>. "Just bored" offers one open task instead. Asking why is often enough to stop the unconscious open, which is the real goal.</p>
+
+  <h3>Imperium, strict mode (1.2)</h3>
+  <ul>
+    <li>Pick which apps to guard and set a limit by time or by reels.</li>
+    <li>At the limit, the app freezes until midnight.</li>
+    <li><b>Clementia:</b> finishing all daily tasks earns one 10-minute unlock. Unlocks are always earned, never sold, so Vinco never profits from a user failing.</li>
+    <li><b>No self-sabotage:</b> turning Imperium off takes effect after 24 hours.</li>
+    <li><b>Never blocked:</b> calls, messages from contacts, payment apps, maps and anything marked essential. Blocking a payment or a family call is the fastest way to get uninstalled.</li>
+  </ul>
+</section>
+
+<!-- ============ TECH ============ -->
+<section class="panel" id="tech" role="tabpanel" aria-labelledby="t-tech">
+  <h2>Tech stack</h2>
+  <p class="sub">React Native with Expo, a Hono API, Postgres in Mumbai, Better Auth, and a Next.js admin, all in one TypeScript monorepo.</p>
+
+  <h3>The decisions and why</h3>
+  <div class="decision"><h4>App: React Native with Expo</h4><p>You already know React, so you move fastest here. The Vigil, the floating badge and Aurora need native Android code, written as small Kotlin modules through Expo's module system. Use Expo development builds, not Expo Go, because Expo Go can't load custom native code.</p></div>
+  <div class="decision"><h4>Backend: Hono on Node, not Express</h4><p>Hono is TypeScript-first, fast, has built-in validation with Zod, and runs on any host. Its typed client lets the app and admin call the API with autocomplete and type checking. Express works, but TypeScript support is bolted on rather than built in.</p></div>
+  <div class="decision"><h4>API style: REST, not GraphQL</h4><p>GraphQL shines when many teams and clients need very different data. You're one developer with two clients you control. REST with Hono's typed client gives most of GraphQL's benefits with much less complexity.</p></div>
+  <div class="decision"><h4>Database: Postgres, hosted on Supabase in Mumbai</h4><p>Supabase is used only as hosted Postgres, connected through Drizzle like any database. Neon is excellent, but its regions are in the US, Frankfurt, Singapore and Sydney (<a href="https://neon.tech/docs/introduction/regions" target="_blank" rel="noopener">Neon docs</a>), with no India region. Supabase has had a Mumbai region since late 2025 (<a href="https://rohitraj.tech/notes/supabase-vs-firebase-india-mvp-2026" target="_blank" rel="noopener">source</a>), which means faster responses and Indian user data staying in India.</p><p>Because it's plain Postgres and all logic lives in Hono, moving to Neon, AWS or any host later is a standard migration.</p></div>
+  <div class="decision"><h4>Auth: Better Auth, inside the Hono API</h4><p>Users live in your own database, with no vendor lock-in. It supports everything Vinco needs (details below).</p></div>
+  <div class="decision"><h4>Selfies stay on the phone</h4><p>They are the most sensitive data in the app and costly to host. Optional backup in 1.1 goes to the user's own Google Drive, in a hidden app folder.</p></div>
+
+  <h3>Does Better Auth support Google and other logins?</h3>
+  <p>Yes. From Better Auth's docs:</p>
+  <ul>
+    <li><b>Expo support:</b> an official Expo plugin, with sessions stored in the phone's secure storage (<a href="https://better-auth.com/docs/beta/integrations/expo" target="_blank" rel="noopener">Expo integration docs</a>).</li>
+    <li><b>Google sign-in:</b> through a browser flow, or natively by passing Google's ID token from the phone's own sign-in sheet. Use the native one: it's one tap.</li>
+    <li><b>Phone number OTP:</b> through its phone number plugin.</li>
+    <li><b>Also available:</b> email OTP, magic links, passkeys, two-factor sign-in, other social providers, and an admin plugin for roles and banning users, which the admin dashboard uses.</li>
+  </ul>
+  <div class="warn"><p><b>Two things to plan for.</b> Phone OTP needs an SMS provider, and sending SMS in India requires registering your sender ID and message templates on the DLT system, which can take days. Launch 1.0 with Google sign-in first and add phone OTP when DLT is approved. When iOS comes, Apple requires Sign in with Apple alongside other social logins; Better Auth supports it.</p></div>
+
+  <h3>Mobile and web talk to the API the same way, with five differences</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Difference</th><th>What to do</th></tr></thead>
+    <tbody>
+      <tr><td>Old app versions live for months</td><td>Version the API (<code>/v1/...</code>) and never break an existing version</td></tr>
+      <tr><td>Login tokens</td><td>Web uses cookies; the app uses secure storage. Better Auth handles both</td></tr>
+      <tr><td>Offline use</td><td>Save locally, sync in batches: "upload today's totals," not one request per tap</td></tr>
+      <tr><td>Push notifications</td><td>Firebase Cloud Messaging, through Expo Notifications</td></tr>
+      <tr><td>Faked requests</td><td>Google's Play Integrity API proves requests come from your genuine app; the server also rejects impossible numbers</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>The full stack</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Layer</th><th>Choice</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Repo</td><td>Turborepo with pnpm</td><td>Shared types and validation across app, API and admin</td></tr>
+      <tr><td>App</td><td>React Native, Expo, TypeScript, Expo Router</td><td>Fastest for a React developer</td></tr>
+      <tr><td>Native parts</td><td>Kotlin via the Expo Modules API</td><td>Vigil, badge, Aurora, timelapse export</td></tr>
+      <tr><td>Phone database</td><td>expo-sqlite with Drizzle ORM</td><td>Offline-first; same ORM as the server</td></tr>
+      <tr><td>App state</td><td>Zustand, TanStack Query</td><td>Simple local state; cached server data</td></tr>
+      <tr><td>Camera</td><td>react-native-vision-camera</td><td>Ghost overlay and the on-device sky check</td></tr>
+      <tr><td>Builds and updates</td><td>EAS Build, EAS Update</td><td>Ship JavaScript fixes without a Play review</td></tr>
+      <tr><td>API</td><td>Hono on Node, REST, Zod</td><td>TypeScript-first, typed client</td></tr>
+      <tr><td>API hosting</td><td>Google Cloud Run, Mumbai (asia-south1)</td><td>Runs a container, scales to zero, next to the database</td></tr>
+      <tr><td>Database</td><td>Postgres via Drizzle, hosted on Supabase Mumbai</td><td>Data in India; portable</td></tr>
+      <tr><td>Auth</td><td>Better Auth: Google, later phone OTP</td><td>Users in your own database</td></tr>
+      <tr><td>Media files</td><td>Cloudflare R2</td><td>No download fees; ready for public posts</td></tr>
+      <tr><td>Push</td><td>Firebase Cloud Messaging</td><td>Squad updates and broadcasts</td></tr>
+      <tr><td>AI and speech</td><td>Called from the Hono API</td><td>API keys never sit in the app</td></tr>
+      <tr><td>Payments (later)</td><td>RevenueCat on Play billing</td><td>Season pass and subscriptions</td></tr>
+      <tr><td>Analytics</td><td>PostHog</td><td>Actives, retention, funnels</td></tr>
+      <tr><td>Errors</td><td>Sentry</td><td>App and API crashes in one place</td></tr>
+      <tr><td>Admin</td><td>Next.js</td><td>Same React skills, same typed API client</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Monorepo layout</h3>
+<pre><code>vinco/
+  apps/
+    mobile/        Expo app (React Native)
+      modules/
+        vigil/     Kotlin: accessibility service, badge overlay
+        aurora/    Kotlin: exact alarm, full-screen alarm screen
+        timelapse/ Kotlin: selfies to video
+    api/           Hono API (Node), Better Auth, jobs
+    admin/         Next.js admin dashboard
+  packages/
+    db/            Drizzle schema and migrations (server)
+    shared/        Zod schemas, types, copy for the three tones
+    config/        ESLint, TypeScript and Tailwind presets</code></pre>
+
+  <h3>Permissions the app asks for</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Permission</th><th>Used for</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>Accessibility service</td><td>Counting reels</td><td>Needs a Play Console declaration, explanation and video</td></tr>
+      <tr><td>Display over other apps</td><td>Floating badge, milestone cards</td><td>Asked when the Vigil is turned on</td></tr>
+      <tr><td>Exact alarms, full-screen alarm</td><td>Aurora</td><td>Allowed for alarm apps; confirm current Play rules</td></tr>
+      <tr><td>Camera</td><td>Selfie, sky mission</td><td>Standard</td></tr>
+      <tr><td>Microphone</td><td>Voice notes, the oath</td><td>Standard</td></tr>
+      <tr><td>Physical activity</td><td>Step mission</td><td>Standard</td></tr>
+      <tr><td>Notifications</td><td>The three daily nudges</td><td>Standard</td></tr>
+    </tbody>
+  </table></div>
+  <p>Ask one permission at a time, at the moment it's needed, with a one-line reason. Never all at once on the first screen.</p>
+
+  <h3>How it grows into global leaderboards and posts</h3>
+  <ul>
+    <li><b>Global leaderboard:</b> the same daily totals table, with a job that rebuilds the top 100 every few minutes. Users read the cached board plus their own rank. If it slows down, add a Redis cache; the data model doesn't change.</li>
+    <li><b>Global posts:</b> a posts table in Postgres, media in R2 behind a CDN, and moderation (automated image check plus user reports) before anything goes public.</li>
+    <li><b>Live features:</b> start without websockets. Add them to Hono when live squad updates are worth it.</li>
+    <li><b>Heavier jobs:</b> moderation queues and big push fan-outs run in a background worker using the same code and database.</li>
+    <li><b>Privacy law:</b> India's DPDP Act needs clear consent and a delete-my-data option. Build the "delete my account" button from day one.</li>
+  </ul>
+
+  <h3>Cost</h3>
+  <p>Early Access can run on free tiers. At 1.0, expect a small monthly bill: Supabase Pro at $25 a month, including up to 100,000 monthly active users (<a href="https://www.jetadmin.io/blog/supabase-pricing-2026-guide-to-plans-limits-and-real-world-costs/" target="_blank" rel="noopener">pricing guide</a>), plus low usage-based costs for Cloud Run, R2 and PostHog.</p>
+</section>
+
+<!-- ============ DATA & API ============ -->
+<section class="panel" id="data" role="tabpanel" aria-labelledby="t-data">
+  <h2>Data and API</h2>
+  <p class="sub">Most data lives on the phone. The server only holds what squads, rankings and the admin dashboard need.</p>
+
+  <h3>Where each kind of data lives</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Data</th><th>Stored</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Tasks, logs, sleep, to-dos, voice notes</td><td>Phone (SQLite)</td><td>Fast, private, offline</td></tr>
+      <tr><td>Selfies</td><td>Phone, app's private storage</td><td>Sensitive; never on Vinco's servers by default</td></tr>
+      <tr><td>Selfie backup (1.1, optional)</td><td>User's own Google Drive, hidden app folder</td><td>Survives a phone change, costs nothing</td></tr>
+      <tr><td>Per-reel events</td><td>Phone</td><td>Only daily totals ever leave the phone</td></tr>
+      <tr><td>Users, profile, arc, campaign, rank</td><td>Postgres</td><td>Sign-in, squads, rankings</td></tr>
+      <tr><td>Daily totals</td><td>Postgres</td><td>One row per user per day; powers rankings and admin stats</td></tr>
+      <tr><td>Squads and members</td><td>Postgres</td><td>Rankings, refreshed on open plus a push</td></tr>
+      <tr><td>Public media (future)</td><td>Cloudflare R2</td><td>Cheap, no download fees</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>On the phone (SQLite)</h3>
+<pre><code>arcs           id, length_days, start_date, tone, status
+tasks          id, arc_id, kind, title, min_target, full_target, unit, is_order, level
+task_logs      id, task_id, date, amount, result (none | min | full), note, voice_path
+day_logs       date, arc_id, sealed, truce_used, selfie_path, weight
+reel_events    id, app, started_at, seconds          (summed nightly, then pruned)
+sleep_logs     date, bedtime, wake_time, mission
+todos          id, date, text, done, carried_from
+step_one       id, goal, step, status, created_at
+sync_queue     id, payload, created_at              (sent when online)</code></pre>
+
+  <h3>On the server (Postgres)</h3>
+<pre><code>user, session, account     created by Better Auth
+profile        user_id, name, tone, rank, timezone, created_at
+arc_summary    user_id, arc_id, length_days, start_date, current_day, campaign, best_campaign, status
+daily_totals   user_id, date, tasks_done, tasks_full, reels, reel_minutes, sleep_minutes, sealed
+squad          id, name, invite_code, owner_id, pact_budget
+squad_member   squad_id, user_id, joined_at
+device         user_id, push_token, app_version, platform
+goal_category  user_id, category                    (no free text needed for stats)
+config         key, value                           (quotes, Vigil detection rules, flags)
+admin_audit    admin_id, action, target_user, at</code></pre>
+
+  <h3>API endpoints for 1.0</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Endpoint</th><th>Does</th></tr></thead>
+    <tbody>
+      <tr><td><code>/v1/auth/*</code></td><td>Better Auth: Google sign-in, sessions, sign-out</td></tr>
+      <tr><td><code>GET /v1/me</code></td><td>Profile, rank, squads</td></tr>
+      <tr><td><code>POST /v1/sync</code></td><td>Upload a batch of daily totals and arc state</td></tr>
+      <tr><td><code>POST /v1/squads</code></td><td>Create a squad, get an invite code</td></tr>
+      <tr><td><code>POST /v1/squads/join</code></td><td>Join with a code</td></tr>
+      <tr><td><code>GET /v1/squads/:id/ranking</code></td><td>Today's ranking, fewest reels first</td></tr>
+      <tr><td><code>POST /v1/step-one</code></td><td>Goal in, one 15-minute step out (AI)</td></tr>
+      <tr><td><code>POST /v1/voice</code></td><td>Workout voice note to text; audio deleted right after</td></tr>
+      <tr><td><code>GET /v1/config</code></td><td>Quotes, Vigil detection rules, feature flags</td></tr>
+      <tr><td><code>POST /v1/devices</code></td><td>Register a push token</td></tr>
+      <tr><td><code>DELETE /v1/me</code></td><td>Delete account and all server data</td></tr>
+      <tr><td><code>/v1/admin/*</code></td><td>Admin-only stats, users, broadcasts, config</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ ADMIN ============ -->
+<section class="panel" id="admin" role="tabpanel" aria-labelledby="t-admin">
+  <h2>Admin dashboard</h2>
+  <p class="sub">A Next.js app in the same monorepo, calling admin-only routes on the Hono API. Admins get an admin role in Better Auth and sign in with two-factor.</p>
+
+  <div class="note"><p><b>Split the work:</b> PostHog draws the product analytics charts (daily actives, retention, funnels). The custom dashboard handles what PostHog can't: live users, arcs, user lookup, squads, broadcasts and config.</p></div>
+
+  <h3>What it shows</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Area</th><th>What you see</th></tr></thead>
+    <tbody>
+      <tr><td>Live now</td><td>Users active in the last 5 minutes, from an app heartbeat</td></tr>
+      <tr><td>Growth</td><td>Total users, sign-ups per day, daily, weekly and monthly actives</td></tr>
+      <tr><td>Retention</td><td>Day 1, 7 and 30 retention by sign-up week</td></tr>
+      <tr><td>Arcs</td><td>Started, active, completed and abandoned, by length, and the day people drop off</td></tr>
+      <tr><td>Tasks</td><td>Completion per task, minimum versus full, average campaign</td></tr>
+      <tr><td>The Vigil</td><td>Share of users with it on, average reels and minutes per day, milestone cards shown</td></tr>
+      <tr><td>Aurora</td><td>Alarms set, missions done first try, average wake-up time</td></tr>
+      <tr><td>Goals</td><td>Most common step-one goal categories across all users</td></tr>
+      <tr><td>Users</td><td>Search by name or email: sign-up, arc, campaign, rank, squad, last active, app version; ban or delete</td></tr>
+      <tr><td>Squads</td><td>Count, sizes, most active, reports</td></tr>
+      <tr><td>Tools</td><td>Push a broadcast; edit quotes and Vigil detection rules; feature flags</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Privacy rules for admins</h3>
+  <ul>
+    <li>Selfies, voice notes and slip logs never reach the server, so admins can't see them.</li>
+    <li>Goals are stored as categories for stats; personal goal text stays on the phone.</li>
+    <li>Every time an admin opens a single user's details, it's written to the audit log.</li>
+  </ul>
+</section>
+
+<!-- ============ BUILD STEPS ============ -->
+<section class="panel" id="build" role="tabpanel" aria-labelledby="t-build">
+  <h2>Build steps</h2>
+  <p class="sub">Everything from today to Vinco 1.0, in order. Tick steps as you go; progress is saved in this browser.</p>
+
+  <div class="progress">
+    <div class="row"><span id="prog-text">0 of 0 steps done</span><button class="reset" id="reset" type="button">Clear ticks</button></div>
+    <div class="meter" aria-hidden="true"><i id="prog-bar"></i></div>
+  </div>
+
+  <div class="gantt" aria-label="Build timeline, 6 October 2026 to 1 January 2027">
+    <div class="gaxis"><div></div><div class="ticks" id="gticks"></div></div>
+    <div id="grows"></div>
+  </div>
+
+  <div id="phases"></div>
+</section>
+
+<!-- ============ ROADMAP ============ -->
+<section class="panel" id="roadmap" role="tabpanel" aria-labelledby="t-roadmap">
+  <h2>Roadmap and risks</h2>
+  <p class="sub">Each release has a gate. If the gate isn't met, fix the current release instead of starting the next one.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Release</th><th>When</th><th>What ships</th><th>Gate to the next</th></tr></thead>
+    <tbody>
+      <tr><td>Early Access</td><td>2 Nov 2026</td><td>Tracker, selfie, history, day card, oath, the Last 60 cohort</td><td>14-day closed test passed; 25% still active on day 7</td></tr>
+      <tr><td>Vinco 1.0</td><td>1 Jan 2027</td><td>The Vigil, Aurora, sign-in, squads, ranks, AI step one, Senate report</td><td>Google approves the Accessibility declaration</td></tr>
+      <tr><td>1.1</td><td>Feb to Mar 2027</td><td>Guard dialogues, slip log, home widget, selfie backup, phone OTP</td><td>Users keep the Vigil turned on</td></tr>
+      <tr><td>1.2</td><td>Spring 2027</td><td>Imperium strict mode, Clementia, season pass</td><td>Users ask for real limits</td></tr>
+      <tr><td>Global</td><td>When squads are active</td><td>Global leaderboard, public timelapse posts with moderation</td><td>Anti-cheat proven in squads</td></tr>
+      <tr><td>iPhone</td><td>When Android pays off</td><td>Tracker, squads, time-based limits only</td><td>Android retention and revenue</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small muted">On iPhone, Apple doesn't let apps count reels or float over Instagram, so the iPhone app can't have the Vigil.</p>
+
+  <h3>How it makes money (from 1.0)</h3>
+  <div class="grid3">
+    <div class="tile"><h4>Free forever</h4><p>The tracker and the Vigil. They are the top of your funnel.</p></div>
+    <div class="tile"><h4>Season pass</h4><p>One payment per arc for AI step one, the Senate report and later Imperium.</p></div>
+    <div class="tile"><h4>Never sold</h4><p>Clementia unlocks. Selling a way past the block means earning money when users fail.</p></div>
+  </div>
+  <p>Keep everything free during Early Access. Retention data is worth more than early revenue.</p>
+
+  <h3>Risks and fallbacks</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Risk</th><th>Fallback</th></tr></thead>
+    <tbody>
+      <tr><td>Google rejects the Accessibility declaration</td><td>Submit a small test build by 16 November. Fallback: time per app through usage access, without per-reel counts</td></tr>
+      <tr><td>Instagram or YouTube changes its layout</td><td>Detection rules live in remote config, fixable within hours</td></tr>
+      <tr><td>Xiaomi, Oppo, Vivo, Realme phones kill background services</td><td>An onboarding step for turning off battery optimisation, with brand-specific screenshots</td></tr>
+      <tr><td>Scope too big for 1 January</td><td>Move squads and AI step one to 1.1</td></tr>
+      <tr><td>SMS DLT registration slow</td><td>Launch with Google sign-in only</td></tr>
+      <tr><td>Leaderboard cheating</td><td>Play Integrity checks and server-side limits on impossible numbers</td></tr>
+      <tr><td>Under-18 users</td><td>Rate the app for adults</td></tr>
+    </tbody>
+  </table></div>
+  <p>Google's rule: apps using the Accessibility API that aren't accessibility tools must complete a declaration in Play Console, explain why they need it, and submit a video of the feature (<a href="https://support.google.com/googleplay/android-developer/answer/10964491" target="_blank" rel="noopener">Google Play help</a>).</p>
+</section>
+
+<!-- ============ DECISIONS ============ -->
+<section class="panel" id="decisions" role="tabpanel" aria-labelledby="t-decisions">
+  <h2>Decisions</h2>
+  <p class="sub">What's settled, and what still needs an answer this week.</p>
+
+  <h3>Decided</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Topic</th><th>Decision</th></tr></thead>
+    <tbody>
+      <tr><td>Name and tagline</td><td>Vinco: "Veni, vidi, vici."</td></tr>
+      <tr><td>Theme</td><td>Roman and Stoic, modern in use; Latin words always with plain labels</td></tr>
+      <tr><td>Platform</td><td>Android first</td></tr>
+      <tr><td>Launch</td><td>Early Access tracker 2 Nov 2026; full MVP with the Vigil 1 Jan 2027</td></tr>
+      <tr><td>Mandatory tasks</td><td>Water, wake-up, protein meal, workout, each with a minimum and full goal</td></tr>
+      <tr><td>App</td><td>React Native with Expo, Kotlin modules for native parts</td></tr>
+      <tr><td>Backend</td><td>Hono on Node, REST, hosted on Cloud Run Mumbai</td></tr>
+      <tr><td>Database</td><td>Postgres on Supabase Mumbai, used as plain Postgres via Drizzle</td></tr>
+      <tr><td>Auth</td><td>Better Auth: Google first, phone OTP after DLT approval</td></tr>
+      <tr><td>Selfies</td><td>On the phone; optional backup to the user's Google Drive</td></tr>
+      <tr><td>Admin</td><td>Next.js dashboard plus PostHog</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Still open</h3>
+  <div class="decision"><h4>Which Play account?</h4><p>A new personal account needs 12+ testers opted in from 12 October to launch on 2 November. An older account that can already publish skips this.</p></div>
+  <div class="decision"><h4>Is the name clear?</h4><p>Check Play Store search, Instagram and X handles, a domain like vinco.app, and the Indian trademark register (class 9).</p></div>
+  <div class="decision"><h4>Squads in 1.0 or 1.1?</h4><p>Squads bring sign-in and a server into 1.0. Moving them is the easiest way to protect the January date.</p></div>
+  <div class="decision"><h4>Rank thresholds</h4><p>How many finished days for each rank. Set after a few weeks of Early Access data.</p></div>
+  <div class="decision"><h4>Season pass price</h4><p>Decide in December, based on Early Access feedback and Indian price expectations.</p></div>
+
+  <footer>Plan dated 6 October 2026. Store policies and service regions change; recheck the Accessibility and alarm rules before submitting.</footer>
+</section>
+
+</main>
+</div>
+
+<script>
+(function(){
+  // Tabs
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('nav.tabs [role=tab]'));
+  function show(id, push){
+    var found = false;
+    tabs.forEach(function(t){
+      var on = t.getAttribute('aria-controls') === id;
+      if (on) found = true;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).classList.toggle('on', on);
+    });
+    if (!found) return show('overview', false);
+    if (push) { try { history.replaceState(null, '', '#' + id); } catch(e){} }
+    try { localStorage.setItem('vinco-tab', id); } catch(e){}
+  }
+  tabs.forEach(function(t, i){
+    t.addEventListener('click', function(){
+      show(t.getAttribute('aria-controls'), true);
+      try { t.scrollIntoView({block:'nearest', inline:'nearest'}); } catch(e){}
+      var top = document.querySelector('.shell').offsetTop;
+      if (window.scrollY > top) window.scrollTo({top: top, behavior: 'auto'});
+    });
+    t.addEventListener('keydown', function(e){
+      var k = e.key, n = null;
+      if (k === 'ArrowDown' || k === 'ArrowRight') n = tabs[(i + 1) % tabs.length];
+      if (k === 'ArrowUp' || k === 'ArrowLeft') n = tabs[(i - 1 + tabs.length) % tabs.length];
+      if (n) { e.preventDefault(); n.focus(); n.click(); }
+    });
+  });
+  var start = (location.hash || '').slice(1);
+  if (!start) { try { start = localStorage.getItem('vinco-tab') || ''; } catch(e){ start = ''; } }
+  show(start || 'overview', false);
+
+  // Timeline
+  var t0 = Date.parse('2026-10-06'), t1 = Date.parse('2027-01-01');
+  function pct(d){ return ((Date.parse(d) - t0) / (t1 - t0) * 100).toFixed(2) + '%'; }
+  var spans = [
+    ['Setup and tracker core', '2026-10-06', '2026-10-12'],
+    ['Play closed test', '2026-10-12', '2026-10-26'],
+    ['Proof and polish', '2026-10-12', '2026-10-31'],
+    ['Early Access launch', '2026-11-02'],
+    ['Build the Vigil', '2026-11-02', '2026-12-06'],
+    ['Aurora alarm', '2026-11-09', '2026-11-29'],
+    ['Accessibility review', '2026-11-16', '2026-12-07'],
+    ['Timelapse export live', '2026-12-01'],
+    ['Backend, sign-in, squads, AI', '2026-11-16', '2026-12-20'],
+    ['Admin dashboard', '2026-12-01', '2026-12-20'],
+    ['1.0 testing and launch prep', '2026-12-14', '2026-12-28'],
+    ['Vinco 1.0 launch', '2027-01-01', null, true]
+  ];
+  var rows = document.getElementById('grows');
+  spans.forEach(function(s){
+    var r = document.createElement('div'); r.className = 'grow';
+    var l = document.createElement('div'); l.className = 'lbl'; l.textContent = s[0];
+    var tr = document.createElement('div'); tr.className = 'track';
+    var m = document.createElement('span');
+    if (s[2]) { m.className = 'bar'; m.style.left = pct(s[1]); m.style.width = 'calc(' + pct(s[2]) + ' - ' + pct(s[1]) + ')'; }
+    else { m.className = 'ms' + (s[3] || s[0].indexOf('launch') > -1 ? ' key' : ''); m.style.left = pct(s[1]); }
+    m.title = s[0] + ': ' + s[1] + (s[2] ? ' to ' + s[2] : '');
+    tr.appendChild(m); r.appendChild(l); r.appendChild(tr); rows.appendChild(r);
+  });
+  var ticks = document.getElementById('gticks');
+  [['2026-10-06','Oct 6'],['2026-10-20','Oct 20'],['2026-11-03','Nov 3'],['2026-11-17','Nov 17'],['2026-12-01','Dec 1'],['2026-12-15','Dec 15'],['2026-12-29','Dec 29']].forEach(function(t){
+    var s = document.createElement('span'); s.style.left = pct(t[0]); s.textContent = t[1]; ticks.appendChild(s);
+  });
+
+  // Build steps
+  var phases = [
+    { n:'I', title:'Before you write code', when:'6 to 8 Oct', goal:'Accounts, testers and a working skeleton of every piece.', steps:[
+      ['Confirm your Play developer account can publish', 'If it is a new personal account, you need 12+ testers opted in for 14 days in a row before production.'],
+      ['Line up 15 to 20 testers', 'College groups, friends, Discord. Extra people protect you if some drop out and the 14-day clock restarts.'],
+      ['Check the name Vinco', 'Play Store search, Instagram and X handles, a domain like vinco.app, Indian trademark class 9.'],
+      ['Create the monorepo', 'Turborepo with pnpm: apps/mobile, apps/api, apps/admin, packages/db, packages/shared, packages/config.'],
+      ['Start the Expo app', 'TypeScript, Expo Router, a development build installed on your own Android phone.'],
+      ['Start the Hono API', 'Health route, Zod validation, Hono typed client exported to packages/shared.'],
+      ['Create the Postgres database', 'Supabase project in the Mumbai region; connect with Drizzle and run a first migration.'],
+      ['Set up Sentry and PostHog', 'In the app and API, so crashes and retention are tracked from the first tester.'],
+      ['Set up CI', 'GitHub Actions: type check, lint and tests on every push; EAS Build for Android.']
+    ]},
+    { n:'II', title:'The core loop', when:'6 to 12 Oct', goal:'Someone can start an arc and complete a day.', steps:[
+      ['Phone database schema', 'arcs, tasks, task_logs, day_logs, todos, step_one with expo-sqlite and Drizzle.'],
+      ['Design tokens and fonts', 'Basalt, marble, laurel gold, porphyry; inscription serif for big moments, sans for UI; dark mode default.'],
+      ['Opening screen and Cross the Rubicon', 'Rotating Stoic quote, one button, then onboarding.'],
+      ['Onboarding', 'Arc length, the four tasks with minimum and full goal, wake and sleep times, tone.'],
+      ['Veni (Today) screen', 'The four tasks with one-tap ticks, long-press to choose minimum or full, own tasks list.'],
+      ['Day rollover and campaign logic', 'Day seals at midnight local time; minimum counts; one Truce per week; Resurgo within 24 hours.'],
+      ['Local notifications', 'Morning brief, evening check only if open, wind-down. Max three a day.'],
+      ['First build to closed testing by 12 October', 'Upload to Play Console closed testing and get 12+ testers opted in.']
+    ]},
+    { n:'III', title:'Proof and polish', when:'12 to 31 Oct', goal:'The app feels finished and gives people a reason to come back.', steps:[
+      ['Selfie with ghost overlay', 'vision-camera, yesterday\'s photo at low opacity, saved in the app\'s private storage.'],
+      ['Vidi (Progress) screen', 'Calendar (gold full, outline minimum), campaign, best campaign, sleep, weight trend.'],
+      ['VINCO stamp moment', 'The one signature animation plus haptic when all four tasks are done.'],
+      ['Tone picker copy', 'Philosopher, Centurion and Roast me for every notification and empty screen, in packages/shared.'],
+      ['To-do list with carry-over', 'Morning prompt: carry over or drop. Monthly history.'],
+      ['Step one with templates', 'Goal categories and a template library of 15-minute first steps.'],
+      ['The Armory', 'Ready-made tasks for body, mind, work and discipline, plus the weekly suggestion.'],
+      ['Workout voice note and the oath', 'Record and store audio on the phone; play the oath back on Day 10.'],
+      ['Day card', 'Shareable image: DAY XII of LX, ticks, campaign. One tap to share to a story.'],
+      ['Edge cases', 'Missed days, time zone changes, reinstall, empty states, phone date changes.'],
+      ['Talk to five testers', 'Where did they get stuck? Fix the top three issues.'],
+      ['Store listing', 'Screenshots, description, privacy policy, data safety form, adults rating.'],
+      ['Apply for production access', 'As soon as the 14-day closed test is complete (around 26 October).']
+    ]},
+    { n:'IV', title:'Early Access launch', when:'2 Nov', goal:'The Last 60 cohort starts.', steps:[
+      ['Announce the Last 60', 'Clips, Reddit, college groups, small creators running their own arc.'],
+      ['Launch on 2 November', 'Repost every day card users share.'],
+      ['Watch the numbers weekly', 'Day 1 completion, day 7 retention, selfie rate. Fix before adding.']
+    ]},
+    { n:'V', title:'The Vigil', when:'2 Nov to 7 Dec', goal:'Reels counted, shown live and interrupted at milestones.', steps:[
+      ['Expo native module: vigil', 'Kotlin AccessibilityService that detects Reels and Shorts screens and new videos.'],
+      ['Remote detection rules', 'A config file of screen identifiers per app, fetched from /v1/config.'],
+      ['Store counts', 'reel_events on the phone, summed into daily totals each night.'],
+      ['Floating badge', 'Overlay permission, draggable pill, colour by budget.'],
+      ['Tap panel', 'Today, time, vs yesterday, squad top 3 (filled in once squads exist), leave or keep watching.'],
+      ['Milestone cards', 'Quote at 25, nudge video and open tasks at 50, time lost at 75, firm card at 100.'],
+      ['Budget, night watch, doomscroll detection', 'Settings and logic for each.'],
+      ['Permission screen and privacy promise', 'Exact wording on what it reads and never reads.'],
+      ['Battery optimisation guide', 'Brand-specific steps for Xiaomi, Oppo, Vivo, Realme, Samsung.'],
+      ['Submit a Vigil test build by 16 November', 'Accessibility declaration in Play Console with explanation and video.']
+    ]},
+    { n:'VI', title:'Aurora and timelapse', when:'9 Nov to 1 Dec', goal:'An alarm that gets people out of bed, and the first proof videos.', steps:[
+      ['Expo native module: aurora', 'Exact alarm, full-screen alarm screen, survives reboot.'],
+      ['Missions', 'Sky photo with on-device image labelling, QR scan, 30 steps.'],
+      ['Sleep log from Aurora', 'Mission finish time as wake time; Truce for the sick option.'],
+      ['Timelapse export by 1 December', 'Native module turning selfies into a short vertical video with day numbers.']
+    ]},
+    { n:'VII', title:'Backend, sign-in and squads', when:'16 Nov to 20 Dec', goal:'Users have accounts, squads and rankings.', steps:[
+      ['Server schema', 'profile, arc_summary, daily_totals, squad, squad_member, device, goal_category, config, admin_audit.'],
+      ['Better Auth with Google', 'Expo plugin, native Google ID-token sign-in, sessions in secure storage.'],
+      ['Start SMS DLT registration', 'Needed before phone OTP in India; takes days, so start early.'],
+      ['Sync endpoint', 'POST /v1/sync with batched daily totals from the sync queue.'],
+      ['Play Integrity checks', 'Verify sync requests come from the genuine app; reject impossible numbers.'],
+      ['Squads', 'Create, invite code, join, ranking fewest reels first, squad pact.'],
+      ['Push notifications', 'FCM via Expo Notifications: a squad mate sealed their day.'],
+      ['Ranks', 'Tiro to Caesar, computed on the server from finished days.'],
+      ['AI step one and voice notes', 'Server routes calling the LLM and speech-to-text APIs; delete audio after.'],
+      ['Senate report', 'Sunday job building each user\'s weekly recap.'],
+      ['Delete my account', 'DELETE /v1/me removes all server data.'],
+      ['Deploy to Cloud Run Mumbai', 'Container build, secrets, health checks, staging and production.']
+    ]},
+    { n:'VIII', title:'Admin dashboard', when:'1 to 20 Dec', goal:'You can see who uses Vinco and how.', steps:[
+      ['Next.js app with admin sign-in', 'Better Auth admin role and two-factor.'],
+      ['Stats pages', 'Live now, growth, arcs, tasks, Vigil, Aurora, goal categories.'],
+      ['Users and squads', 'Search, details with audit log, ban, delete.'],
+      ['Tools', 'Broadcast push, edit quotes and detection rules, feature flags.'],
+      ['Link PostHog', 'Retention and funnels embedded or linked.']
+    ]},
+    { n:'IX', title:'Vinco 1.0 launch', when:'14 Dec to 1 Jan', goal:'The full MVP, on the biggest habit-starting day of the year.', steps:[
+      ['Test 1.0 with Early Access users', 'A closed track with the Vigil, Aurora and squads.'],
+      ['Update store listing', 'Accessibility disclosure, new screenshots, data safety form for sign-in and squads.'],
+      ['Prepare launch content', 'The first 60-day timelapses land on 31 December.'],
+      ['Launch Vinco 1.0 on 1 January', 'Squads invite their friends; push the new arc start.']
+    ]}
+  ];
+
+  var KEY = 'vinco-build-steps';
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch(e){ saved = {}; }
+  var wrap = document.getElementById('phases');
+  var all = [];
+
+  phases.forEach(function(p, pi){
+    var sec = document.createElement('div'); sec.className = 'phase';
+    var h = document.createElement('header');
+    h.innerHTML = '<span class="num"></span><h3></h3><span class="count"></span><span class="done-msg">Complete</span><span class="when"></span>';
+    h.querySelector('.num').textContent = p.n;
+    h.querySelector('h3').textContent = p.title;
+    h.querySelector('.when').textContent = p.when;
+    var g = document.createElement('p'); g.className = 'goal'; g.textContent = p.goal;
+    sec.appendChild(h); sec.appendChild(g);
+    var boxes = [];
+    p.steps.forEach(function(s, si){
+      var id = 'p' + pi + 's' + si;
+      var row = document.createElement('div'); row.className = 'step';
+      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = id; cb.checked = !!saved[id];
+      var lb = document.createElement('label'); lb.htmlFor = id;
+      var b = document.createElement('b'); b.textContent = s[0];
+      var sp = document.createElement('span'); sp.textContent = s[1];
+      lb.appendChild(b); lb.appendChild(sp);
+      row.appendChild(cb); row.appendChild(lb); sec.appendChild(row);
+      if (cb.checked) row.classList.add('checked');
+      cb.addEventListener('change', function(){
+        row.classList.toggle('checked', cb.checked);
+        if (cb.checked) saved[id] = 1; else delete saved[id];
+        try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch(e){}
+        update();
+      });
+      boxes.push(cb); all.push(cb);
+    });
+    sec._boxes = boxes; sec._count = h.querySelector('.count');
+    wrap.appendChild(sec);
+  });
+
+  function update(){
+    var done = all.filter(function(c){ return c.checked; }).length;
+    document.getElementById('prog-text').textContent = done + ' of ' + all.length + ' steps done';
+    document.getElementById('prog-bar').style.width = (all.length ? done / all.length * 100 : 0) + '%';
+    Array.prototype.forEach.call(wrap.children, function(sec){
+      var d = sec._boxes.filter(function(c){ return c.checked; }).length;
+      sec._count.textContent = d + ' / ' + sec._boxes.length;
+      sec.classList.toggle('complete', d === sec._boxes.length);
+    });
+  }
+  document.getElementById('reset').addEventListener('click', function(){
+    if (!confirm('Clear all ticks?')) return;
+    saved = {};
+    try { localStorage.removeItem(KEY); } catch(e){}
+    all.forEach(function(c){ c.checked = false; c.parentNode.classList.remove('checked'); });
+    update();
+  });
+  update();
+})();
+</script>
+</body>
+</html>

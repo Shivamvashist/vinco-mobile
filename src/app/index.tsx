@@ -1,17 +1,9 @@
-import { Text, View, StyleSheet } from "react-native";
+import { Redirect } from 'expo-router';
 
+/**
+ * Temporary entry point while only the foundation exists.
+ * Step 3 replaces this with: onboarding if not finished, otherwise the Veni tab.
+ */
 export default function Index() {
-  return (
-    <View style={styles.container}>
-      <Text>Edit src/app/index.tsx to edit this screen.</Text>
-    </View>
-  );
+  return <Redirect href="/dev/theme-lab" />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
