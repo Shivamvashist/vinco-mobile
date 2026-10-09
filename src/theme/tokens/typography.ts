@@ -47,6 +47,14 @@ export function createTypeScale(fonts: FontFamilies): TypeScale {
       defaultColor: 'text',
       maxFontSizeMultiplier: 1.4,
     },
+    /** Latin tab names, small display labels. */
+    headingSmall: {
+      fontFamily: fonts.display,
+      fontSize: 17,
+      lineHeight: 22,
+      defaultColor: 'text',
+      maxFontSizeMultiplier: 1.3,
+    },
     /** Stoic and Latin quotes. */
     quote: {
       fontFamily: fonts.display,

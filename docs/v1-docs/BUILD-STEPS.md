@@ -2,7 +2,7 @@
 
 From an empty folder to Early Access on **2 November 2026**. Each step lists its goal, the work, how it's checked, and what to learn along the way. Tick boxes as you finish.
 
-**Status:** Steps 1 and 2 done. Next: Step 3 (app shell and navigation).
+**Status:** Steps 1 to 3 done. Next: Step 4 (core UI kit).
 
 **Every step ends with a checkpoint:**
 
@@ -58,42 +58,44 @@ From an empty folder to Early Access on **2 November 2026**. Each step lists its
 
 ---
 
-## Step 3: App shell and navigation
+## Step 3: App shell and navigation ✅
 
 **Goal:** the app opens to the Veni, Vidi and Vici tabs, in theme, with the shared pieces every screen needs.
 
-### 3.1 Copy system: `src/copy/`
+### 3.1 Tone, copy and state
 
-- [ ] `Tone` type: `'philosopher' | 'centurion' | 'roast'`
-- [ ] One file per area (`common.ts`, `tabs.ts`, `today.ts` ...), exported through `src/copy/index.ts`
-- [ ] Lines that vary by tone are `Record<Tone, string>`; a helper `pickTone(lines, tone)` returns one
-- [ ] Humour rule check: every Roast line ends with a way forward; selfie, weight and slip lines are neutral in all tones
+- [x] `Tone` in `src/features/tone/`: `TONES`, `isTone`, `DEFAULT_TONE` (Centurion until onboarding sets it)
+- [x] `src/copy/`: one file per area (`common`, `tabs`, `today`, `progress`, `arc`), `ToneLines` + `pickTone`, weekday names and "days left" wording (0, 1, many)
+- [x] `src/stores/`: Zustand `usePreferencesStore` (tone, theme, colour mode, sound, haptics), persisted with expo-sqlite kv-store, restored synchronously (no flash), validated on restore, versioned
+- [x] `ThemeProvider` made controlled and fed from the store in the root layout
 
-### 3.2 Helpers: `src/lib/`
+### 3.2 Helpers
 
-- [ ] `toRoman(n)`: 1 to 3999, throws on 0, negatives and non-integers (tests for I, IV, IX, XII, XL, LX, XC, CD, MMMCMXCIX)
-- [ ] Dates: `toDayKey(date)` ('YYYY-MM-DD' in local time), `daysLeftInYear(date)`, `dayNumberInArc(start, today)` (tests across month ends, leap years, daylight saving)
+- [x] `src/lib/toRoman.ts`: 1 to 3999, throws `RangeError` otherwise
+- [x] `src/lib/dates.ts`: `toDayKey`, `parseDayKey` (rejects impossible dates), `daysBetween`, `addDays`, `daysLeftInYear`, `dayOfArc`, `weekdayIndex`, `msUntilNextLocalMidnight`; tested across month and year ends, leap days and daylight saving
+- [x] `src/hooks/useToday.ts`: today's day key, updated at midnight and on returning to the app
 
-### 3.3 Tabs: `src/app/(tabs)/_layout.tsx`
+### 3.3 Tabs
 
-- [ ] Expo Router JS `Tabs`, no icons, custom `TabLabel`: Latin word in Marcellus over the plain label; active label in accent
-- [ ] Tab bar height `layout.tabBarHeight` plus the bottom safe area; `border` top line; `background` fill
-- [ ] `toggle` cue on tab change
-- [ ] Accessibility label reads "Veni, Today" etc.
+- [x] `src/app/(tabs)/_layout.tsx` with a custom `TabBar` (`src/components/navigation/TabBar.tsx`): Latin (`headingSmall`) over plain label (`micro`), accent on the active tab, 76 + bottom inset, hairline top border
+- [x] `toggle` cue only when switching; re-tapping the active tab scrolls to the top (`useScrollToTop` in `Screen`)
+- [x] Accessibility: `tablist` / `tab` roles, selected state, "Veni, Today" labels; font scale capped so labels fit
+- [x] Only known tab routes render, so a stray file can't break the bar
 
-### 3.4 Tab screens: `veni.tsx`, `vidi.tsx`, `vici.tsx`
+### 3.4 Tab screens
 
-- [ ] Each uses `Screen` and the real header pattern (eyebrow + title + caption) from the prototype, with copy from `src/copy/`
-- [ ] Empty-state copy in three tones
+- [x] `ScreenHeader` (eyebrow, title as accessibility header, caption, optional right accessory), `Card` (surface, sunk, raised, optional border), `ToneLine` (message in the user's tone with the tone named)
+- [x] Veni: real weekday and days left in the year, empty-state tone line
+- [x] Vidi and Vici: prototype headers and empty-state tone lines
 
 ### 3.5 Entry
 
-- [ ] `src/app/index.tsx` redirects to `/veni` (onboarding check comes in Step 8)
-- [ ] Theme lab stays reachable in development at `/dev/theme-lab`
+- [x] `src/app/index.tsx` redirects to `/veni` (onboarding check in Step 8)
+- [x] Theme lab in development: long-press the Vici tab. It also switches tone
 
-**Done when:** three tabs on the phone, Marcellus over Figtree labels, accent on the active tab, light mode in the theme lab also re-themes the tabs.
+**Done when:** three tabs on the phone, Marcellus over Figtree labels, accent on the active tab, and light mode or a tone change in the theme lab re-themes the tabs and survives an app restart.
 
-> **Learn:** route groups like `(tabs)` organise files without adding to the URL. Expo Router turns each file in `src/app/` into a screen.
+> **Learn:** route groups like `(tabs)` organise files without adding to the URL. A custom `tabBar` replaces React Navigation's default bar but keeps its events, so behaviour like scroll-to-top still works.
 
 ---
 
@@ -181,7 +183,8 @@ From an empty folder to Early Access on **2 November 2026**. Each step lists its
 - [ ] Migrations: a version number in the database, each migration runs once, in a transaction
 - [ ] Repository functions per table; features call them, screens never touch SQL
 - [ ] Today screen reads and writes through `src/features/` and `src/db/`
-- [ ] Theme preferences saved in `settings`, passed to `ThemeProvider` (`initialPreferences`, `onPreferencesChange`)
+- [ ] Drizzle ORM (`drizzle-orm`, `drizzle-kit` for migrations), opened with `enableChangeListener: true` so screens use `useLiveQuery`
+- [ ] Records are read with live queries in screens and hooks; never copied into Zustand
 - [ ] Splash stays up until the database is open and migrated
 - [ ] Edge cases: first launch, failed migration (keep data, show a recovery message), corrupted values (fall back to defaults)
 

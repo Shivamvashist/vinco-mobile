@@ -47,18 +47,18 @@ Tagline: **Veni, vidi, vici.** The three words are the app's three tabs: Veni (T
 
 ## Stack
 
-| Area            | Choice                                                                                                 |
-| --------------- | ------------------------------------------------------------------------------------------------------ |
-| Framework       | React Native with **Expo SDK 57**, TypeScript strict (+ `noUncheckedIndexedAccess`), React Compiler on |
-| Navigation      | **Expo Router**, routes in **`src/app/`**                                                              |
-| Package manager | **npm** (not pnpm). Expo and RN packages via `npx expo install`                                        |
-| Local database  | `expo-sqlite` (from Step 7)                                                                            |
-| State           | React state and hooks first; Zustand if shared state gets messy                                        |
-| Sound, haptics  | `expo-audio`, `expo-haptics`, through `useFeedback()` only                                             |
-| Notifications   | `expo-notifications`, local only                                                                       |
-| Fonts           | Marcellus (display), Figtree (body), loaded per weight from `@expo-google-fonts/*` subpaths            |
-| Quality         | ESLint (Expo + Prettier + project rules), Prettier, Jest (`jest-expo`)                                 |
-| Runtime         | Expo Go for now. Development builds only when custom native code is needed (Vigil, Nov)                |
+| Area            | Choice                                                                                                                                                                                                                              |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework       | React Native with **Expo SDK 57**, TypeScript strict (+ `noUncheckedIndexedAccess`), React Compiler on                                                                                                                              |
+| Navigation      | **Expo Router**, routes in **`src/app/`**                                                                                                                                                                                           |
+| Package manager | **npm** (not pnpm). Expo and RN packages via `npx expo install`                                                                                                                                                                     |
+| Local database  | `expo-sqlite` with **Drizzle ORM** (from Step 7). Screens read records with Drizzle live queries                                                                                                                                    |
+| State           | **Zustand** for app/UI state (tone, onboarding, overlays), persisted to the phone (expo-sqlite kv-store). Saved data lives in SQLite (Drizzle live queries), **never copied into Zustand**. TanStack Query from 1.0 for server data |
+| Sound, haptics  | `expo-audio`, `expo-haptics`, through `useFeedback()` only                                                                                                                                                                          |
+| Notifications   | `expo-notifications`, local only                                                                                                                                                                                                    |
+| Fonts           | Marcellus (display), Figtree (body), loaded per weight from `@expo-google-fonts/*` subpaths                                                                                                                                         |
+| Quality         | ESLint (Expo + Prettier + project rules), Prettier, Jest (`jest-expo`)                                                                                                                                                              |
+| Runtime         | Expo Go for now. Development builds only when custom native code is needed (Vigil, Nov)                                                                                                                                             |
 
 Two repos: `vinco-mobile` (this one) and `vinco-api` (later: Hono, OpenAPI spec as the contract, all endpoints under `/v1/`).
 
@@ -70,7 +70,8 @@ Two repos: `vinco-mobile` (this one) and `vinco-api` (later: Hono, OpenAPI spec 
 - **Fonts:** pick weight by family (`theme.fonts.bodySemiBold`), never `fontWeight`.
 - **Feedback:** `useFeedback()` then `play('tap')`. Never play audio files directly.
 - **Copy:** all user-facing text in `src/copy/`, keyed by tone where it varies.
-- **Logic:** pure functions in `src/features/`; screens call them. Storage in `src/db/`.
+- **Logic:** pure functions in `src/features/`; screens call them. Records in SQLite via `src/db/`.
+- **State:** app/UI state in `src/stores/` (Zustand, persisted). Never mirror database records into a store.
 - **Exports:** named only; default exports only in `src/app/` routes.
 - Touch targets at least 44 by 44. No secrets in the repo or the app.
 

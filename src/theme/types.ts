@@ -101,6 +101,7 @@ export type TextVariant =
   | 'display'
   | 'title'
   | 'heading'
+  | 'headingSmall'
   | 'quote'
   | 'eyebrow'
   | 'bodyLarge'

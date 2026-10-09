@@ -83,21 +83,25 @@ Lint enforces naming for functions, variables, parameters and types (`@typescrip
 ```
 src/
   app/                 routes only (Expo Router). Thin: read state, call features, render components.
-    _layout.tsx        fonts, splash, ThemeProvider, status bar
+    _layout.tsx        fonts, splash, store-fed ThemeProvider, status bar
     index.tsx          entry redirect
-    (tabs)/            Veni, Vidi, Vici            (Step 3)
+    (tabs)/            Veni, Vidi, Vici and their custom tab bar layout
     onboarding/        Rubicon to Day I            (Step 8)
-    dev/               dev-only screens (theme lab)
-  components/          shared UI. Txt and Screen first; more in Step 4
+    dev/               dev-only screens (theme lab: long-press the Vici tab)
+  components/          shared UI, one component per file, no barrel
+    navigation/        TabBar
   theme/               design system: tokens, palettes, themes, feedback (see DESIGN-SYSTEM.md)
-  copy/                ALL user-facing text, by screen, in three tones where it varies   (Step 3)
-  features/            product logic as pure functions: campaign, orders, truce, ranks, denarii
-  db/                  SQLite schema, migrations, queries   (Step 7)
-  lib/                 small generic helpers: dates, roman numerals
+  copy/                ALL user-facing text, one file per area, three tones where it varies
+  features/<name>/     product logic as pure functions, each folder with an index.ts (tone; later orders, campaign...)
+  stores/              Zustand app/UI state, persisted to the phone (preferences; later onboarding, overlays)
+  db/                  SQLite + Drizzle schema, migrations, queries   (Step 7)
+  hooks/               shared React hooks (useToday)
+  lib/                 small generic pure helpers (dates, toRoman), no barrel: import each file
 assets/
   fonts/ images/ sounds/<theme-id>/
 scripts/               dev tools (sound generation, checks)
 docs/                  plan, conventions, design system, references
+jest.setup.ts          fakes for native modules, so any module can be imported in tests
 ```
 
 **Where code goes**
@@ -106,6 +110,20 @@ docs/                  plan, conventions, design system, references
 - **`src/features/` is pure TypeScript**: inputs in, outputs out. No React, no SQLite, no `Date.now()` inside (pass `now` in). This makes rules testable and easy to move to the server later.
 - **`src/db/` does storage only.** Features never write SQL.
 - **No hard-coded user-facing sentences in components.** They come from `src/copy/`. Dev-only screens are the only exception.
+- **Components are presentational.** They take data through props; screens read stores and queries and pass values down.
+
+**Where state lives**
+
+| Kind of state                                | Where                                                  | Example                                 |
+| -------------------------------------------- | ------------------------------------------------------ | --------------------------------------- |
+| Records the user creates                     | SQLite through Drizzle, read with live queries         | tasks, day logs, selfies, ledger        |
+| App and UI state that must survive a restart | Zustand store in `src/stores/`, persisted to the phone | tone, theme, sound, onboarding progress |
+| Short-lived UI state                         | `useState` in the component                            | an open sheet, a text field             |
+| Server data (from 1.0)                       | TanStack Query                                         | squads, rankings                        |
+
+- **Never copy database records into Zustand.** Two copies drift apart. Live queries re-render screens when the data changes.
+- **Every persisted store validates what it restores** (see `sanitizePreferences`), has a `version`, and handles old versions in `migrate`. A corrupted save must fall back to defaults, never crash.
+- Read stores with a selector (`usePreferencesStore((s) => s.tone)`), and `useShallow` when selecting several fields, so components re-render only when what they use changes.
 
 ---
 

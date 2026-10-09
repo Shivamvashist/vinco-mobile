@@ -1,9 +1,8 @@
 import { Redirect } from 'expo-router';
 
 /**
- * Temporary entry point while only the foundation exists.
- * Step 3 replaces this with: onboarding if not finished, otherwise the Veni tab.
+ * Entry point. Step 8 adds the check: onboarding until it's finished, then Veni.
  */
 export default function Index() {
-  return <Redirect href="/dev/theme-lab" />;
+  return <Redirect href="/veni" />;
 }

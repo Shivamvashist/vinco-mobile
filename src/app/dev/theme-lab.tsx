@@ -1,6 +1,6 @@
 /**
  * DEV ONLY: a bench for checking the design system on a real phone.
- * Shows every text style, every colour role, and plays every feedback cue.
+ * Shows every text style, every colour role, plays every feedback cue, and switches tone.
  * Not user-facing, so its labels are not in src/copy. Redirects away in production builds.
  */
 import { Redirect } from 'expo-router';
@@ -9,6 +9,9 @@ import { Pressable, View } from 'react-native';
 
 import { Screen } from '@/components/Screen';
 import { Txt } from '@/components/Txt';
+import { commonCopy } from '@/copy';
+import { TONES } from '@/features/tone';
+import { usePreferencesStore } from '@/stores';
 import {
   createStyles,
   useFeedback,
@@ -26,6 +29,7 @@ const TEXT_VARIANTS: TextVariant[] = [
   'display',
   'title',
   'heading',
+  'headingSmall',
   'quote',
   'eyebrow',
   'bodyLarge',
@@ -70,6 +74,8 @@ function ThemeLabContent() {
   const styles = useStyles();
   const play = useFeedback();
   const { preferences, setColorMode, setSoundEnabled, setHapticsEnabled } = useThemeControls();
+  const tone = usePreferencesStore((state) => state.tone);
+  const setTone = usePreferencesStore((state) => state.setTone);
   const colorRoles = Object.keys(theme.colors) as ColorRole[];
 
   return (
@@ -90,6 +96,19 @@ function ThemeLabContent() {
               onPress={() => {
                 play('toggle');
                 setColorMode(mode);
+              }}
+            />
+          ))}
+        </View>
+        <View style={styles.row}>
+          {TONES.map((option) => (
+            <Chip
+              key={option}
+              label={commonCopy.toneNames[option]}
+              selected={tone === option}
+              onPress={() => {
+                play('select');
+                setTone(option);
               }}
             />
           ))}

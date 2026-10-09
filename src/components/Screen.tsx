@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { useScrollToTop } from 'expo-router';
+import { useRef, type ReactNode } from 'react';
 import { ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
@@ -19,6 +20,7 @@ export type ScreenProps = {
 /**
  * Wrapper for every screen: themed background plus safe-area padding,
  * so content never hides behind the status bar or the gesture bar.
+ * Inside tabs, re-tapping the active tab scrolls a scrolling screen back to the top.
  */
 export function Screen({
   children,
@@ -32,11 +34,14 @@ export function Screen({
   const styles = useStyles();
   const gutterStyle = styles[gutter];
   const backgroundStyle = { backgroundColor: theme.colors[background] };
+  const scrollRef = useRef<ScrollView>(null);
+  useScrollToTop(scrollRef);
 
   return (
     <SafeAreaView style={[styles.safeArea, backgroundStyle]} edges={edges}>
       {scroll ? (
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={[gutterStyle, contentStyle]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}

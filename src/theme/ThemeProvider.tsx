@@ -1,11 +1,11 @@
 import * as SystemUI from 'expo-system-ui';
-import { createContext, use, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createContext, use, useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { playHaptic } from './feedback/playHaptic';
 import { configureUiAudio, createSoundBank, type SoundBank } from './feedback/soundBank';
 import { buildTheme, resolveSchemeName } from './resolveTheme';
-import { DEFAULT_THEME_PREFERENCES, getThemeDefinition, THEMES } from './themes/registry';
+import { getThemeDefinition, THEMES } from './themes/registry';
 import type { ColorMode, FeedbackCue, SchemeName, Theme, ThemeDefinition, ThemePreferences } from './types';
 
 type ThemeControls = {
@@ -25,20 +25,18 @@ const FeedbackContext = createContext<PlayFeedback | null>(null);
 
 type ThemeProviderProps = {
   children: ReactNode;
-  /** Saved preferences, once storage exists. Missing fields use the defaults. */
-  initialPreferences?: Partial<ThemePreferences>;
-  /** Called after any preference changes, so it can be saved. */
-  onPreferencesChange?: (preferences: ThemePreferences) => void;
+  /** The user's current choices. The caller owns and saves them (see src/stores). */
+  preferences: ThemePreferences;
+  /** Called with the fields the user changed. */
+  onPreferencesChange: (patch: Partial<ThemePreferences>) => void;
 };
 
-/** Provides the active theme, the controls to change it, and sound plus haptic feedback. */
-export function ThemeProvider({ children, initialPreferences, onPreferencesChange }: ThemeProviderProps) {
+/**
+ * Provides the active theme, the controls to change it, and sound plus haptic feedback.
+ * Controlled: it never keeps its own copy of the preferences, so there is one source of truth.
+ */
+export function ThemeProvider({ children, preferences, onPreferencesChange }: ThemeProviderProps) {
   const systemScheme = useColorScheme();
-  const [preferences, setPreferences] = useState<ThemePreferences>(() => ({
-    ...DEFAULT_THEME_PREFERENCES,
-    ...initialPreferences,
-  }));
-
   const definition = getThemeDefinition(preferences.themeId);
   const schemeName = resolveSchemeName(preferences.colorMode, systemScheme);
   const theme = useMemo(() => buildTheme(definition, schemeName), [definition, schemeName]);
@@ -48,36 +46,16 @@ export function ThemeProvider({ children, initialPreferences, onPreferencesChang
     SystemUI.setBackgroundColorAsync(theme.colors.background).catch(() => undefined);
   }, [theme.colors.background]);
 
-  // Report changes after they land, never on first render. Kept out of the state updater,
-  // because React may run updaters twice in development.
-  const onChangeRef = useRef(onPreferencesChange);
-  useEffect(() => {
-    onChangeRef.current = onPreferencesChange;
-  }, [onPreferencesChange]);
-
-  const isFirstRender = useRef(true);
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    onChangeRef.current?.(preferences);
-  }, [preferences]);
-
-  const updatePreferences = useCallback((patch: Partial<ThemePreferences>) => {
-    setPreferences((current) => ({ ...current, ...patch }));
-  }, []);
-
   const controls = useMemo<ThemeControls>(
     () => ({
       preferences,
       availableThemes: THEMES.map(({ id, name }) => ({ id, name })),
-      setThemeId: (themeId) => updatePreferences({ themeId: getThemeDefinition(themeId).id }),
-      setColorMode: (colorMode) => updatePreferences({ colorMode }),
-      setSoundEnabled: (soundEnabled) => updatePreferences({ soundEnabled }),
-      setHapticsEnabled: (hapticsEnabled) => updatePreferences({ hapticsEnabled }),
+      setThemeId: (themeId) => onPreferencesChange({ themeId: getThemeDefinition(themeId).id }),
+      setColorMode: (colorMode) => onPreferencesChange({ colorMode }),
+      setSoundEnabled: (soundEnabled) => onPreferencesChange({ soundEnabled }),
+      setHapticsEnabled: (hapticsEnabled) => onPreferencesChange({ hapticsEnabled }),
     }),
-    [preferences, updatePreferences],
+    [preferences, onPreferencesChange],
   );
 
   return (

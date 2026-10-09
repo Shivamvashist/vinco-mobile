@@ -3,7 +3,9 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 
+import { selectThemePreferences, usePreferencesStore } from '@/stores';
 import { getAllFontAssets, ThemeProvider, useTheme } from '@/theme';
 
 // Keep the splash up until fonts are ready, so text never flashes in the wrong font.
@@ -26,8 +28,16 @@ export default function RootLayout() {
 
   if (!isReady) return null;
 
+  return <ThemedApp />;
+}
+
+/** Feeds the saved preferences into the theme. The store restores synchronously, so there is no flash. */
+function ThemedApp() {
+  const preferences = usePreferencesStore(useShallow(selectThemePreferences));
+  const updateThemePreferences = usePreferencesStore((state) => state.updateThemePreferences);
+
   return (
-    <ThemeProvider>
+    <ThemeProvider preferences={preferences} onPreferencesChange={updateThemePreferences}>
       <RootNavigator />
     </ThemeProvider>
   );

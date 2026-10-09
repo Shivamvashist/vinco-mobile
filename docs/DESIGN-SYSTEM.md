@@ -120,23 +120,24 @@ Tests (`src/theme/__tests__/themes.test.ts`) check that every scheme keeps reada
 
 Display face: **Marcellus**, for big moments only. Body face: **Figtree** (400, 500, 600, 700). Use through `<Txt variant="...">`.
 
-| Variant      | Font          | Size / line            | Default colour | Use                        |
-| ------------ | ------------- | ---------------------- | -------------- | -------------------------- |
-| `hero`       | display       | 64 / 72, tracked       | text           | VINCO wordmark             |
-| `numeral`    | display       | 96 / 100               | text           | Day number on the day card |
-| `display`    | display       | 40 / 46                | text           | Big stats                  |
-| `title`      | display       | 30 / 36                | text           | Screen titles              |
-| `heading`    | display       | 22 / 28                | text           | Sheet titles, rank name    |
-| `quote`      | display       | 20 / 27                | text           | Stoic and Latin quotes     |
-| `eyebrow`    | display       | 13 / 18, caps, tracked | textMuted      | "DAY XII OF LX"            |
-| `bodyLarge`  | body          | 16 / 24                | text           | Longer reading             |
-| `body`       | body          | 15 / 22                | text           | Default                    |
-| `label`      | body semibold | 16 / 22                | text           | Task names                 |
-| `labelSmall` | body semibold | 13 / 18                | text           | Inline actions "+1 L"      |
-| `button`     | body bold     | 16 / 20                | text           | Buttons                    |
-| `caption`    | body          | 13 / 18                | textMuted      | Sub-lines                  |
-| `overline`   | body semibold | 13 / 18, caps          | textMuted      | "YOUR ORDERS"              |
-| `micro`      | body          | 11 / 14                | textMuted      | Tab labels, legends        |
+| Variant        | Font          | Size / line            | Default colour | Use                        |
+| -------------- | ------------- | ---------------------- | -------------- | -------------------------- |
+| `hero`         | display       | 64 / 72, tracked       | text           | VINCO wordmark             |
+| `numeral`      | display       | 96 / 100               | text           | Day number on the day card |
+| `display`      | display       | 40 / 46                | text           | Big stats                  |
+| `title`        | display       | 30 / 36                | text           | Screen titles              |
+| `heading`      | display       | 22 / 28                | text           | Sheet titles, rank name    |
+| `headingSmall` | display       | 17 / 22                | text           | Latin tab names            |
+| `quote`        | display       | 20 / 27                | text           | Stoic and Latin quotes     |
+| `eyebrow`      | display       | 13 / 18, caps, tracked | textMuted      | "DAY XII OF LX"            |
+| `bodyLarge`    | body          | 16 / 24                | text           | Longer reading             |
+| `body`         | body          | 15 / 22                | text           | Default                    |
+| `label`        | body semibold | 16 / 22                | text           | Task names                 |
+| `labelSmall`   | body semibold | 13 / 18                | text           | Inline actions "+1 L"      |
+| `button`       | body bold     | 16 / 20                | text           | Buttons                    |
+| `caption`      | body          | 13 / 18                | textMuted      | Sub-lines                  |
+| `overline`     | body semibold | 13 / 18, caps          | textMuted      | "YOUR ORDERS"              |
+| `micro`        | body          | 11 / 14                | textMuted      | Tab labels, legends        |
 
 Each variant caps how far the phone's font-size setting can enlarge it, so huge type never breaks a layout. Roman numerals are decoration only: a small eyebrow above a big Arabic number.
 
@@ -185,4 +186,4 @@ Sounds are generated from the prototype's own recipes by `scripts/generate-sound
 4. **Theme**: add `src/theme/themes/<theme-id>.ts` exporting a `ThemeDefinition`, then add it to `THEMES` in `themes/registry.ts`.
 5. **Check**: `npm run check` (contrast and completeness tests run on every registered theme), then review it in the theme lab in both schemes.
 
-Switching at runtime: `useThemeControls().setThemeId('<id>')`, `setColorMode('light' | 'dark' | 'system')`, `setSoundEnabled`, `setHapticsEnabled`. Changing the default for everyone: `DEFAULT_THEME_PREFERENCES` in `themes/registry.ts`. Preferences are saved to the phone from Step 7 (local database), through the provider's `initialPreferences` and `onPreferencesChange` props.
+Switching at runtime: `useThemeControls().setThemeId('<id>')`, `setColorMode('light' | 'dark' | 'system')`, `setSoundEnabled`, `setHapticsEnabled`. Changing the default for everyone: `DEFAULT_THEME_PREFERENCES` in `themes/registry.ts`. `ThemeProvider` is controlled: the root layout passes `preferences` from the persisted Zustand store (`src/stores/preferencesStore.ts`) and saves changes through `onPreferencesChange`. Saved values are validated on restore, so a corrupted or outdated save falls back to defaults.
