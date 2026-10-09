@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -10,6 +10,7 @@ import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionHeader } from '@/components/SectionHeader';
 import { Txt } from '@/components/Txt';
+import { FEATURES } from '@/config/features';
 import { ordersCopy } from '@/copy';
 import {
   CUSTOM_ORDER_LIMITS,
@@ -27,8 +28,14 @@ import { createStyles, useFeedback } from '@/theme';
 /**
  * Your orders: Vinco's four (fixed) and the user's own (add, stand down).
  * Every order must hold for the day to count. See docs/ORDERS-AND-TASKS.md.
+ * Switched off for now (FEATURES.customOrders): the route sends the user back to Vici.
  */
 export default function OrdersScreen() {
+  if (!FEATURES.customOrders) return <Redirect href="/vici" />;
+  return <OrdersContent />;
+}
+
+function OrdersContent() {
   const styles = useStyles();
   const play = useFeedback();
   const { arc, targets } = useActiveArc();

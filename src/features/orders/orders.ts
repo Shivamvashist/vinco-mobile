@@ -22,6 +22,17 @@ export const DEFAULT_ORDER_TARGETS: OrderTargets = {
 
 export const EMPTY_ORDER_AMOUNTS: OrderAmounts = { water: 0, wake: 0, meal: 0, workout: 0 };
 
+/**
+ * The full goal is not a ceiling: going past it is logged (5 L on a 4 L goal). These caps only
+ * stop slips and silly numbers. A full goal tuned above its cap raises the cap to match.
+ */
+export const ORDER_MAX_AMOUNTS: Record<OrderKind, number> = { water: 10, wake: 1, meal: 8, workout: 300 };
+
+/** The most an order can log today: its cap, or its full goal if that is higher. */
+export function maxAmountFor(kind: OrderKind, target: OrderTarget): number {
+  return Math.max(ORDER_MAX_AMOUNTS[kind], target.full);
+}
+
 /** Where an amount stands against its target. */
 export function getOrderStatus(amount: number, target: OrderTarget): OrderStatus {
   if (!Number.isFinite(amount) || amount < target.min) return 'none';
@@ -29,20 +40,23 @@ export function getOrderStatus(amount: number, target: OrderTarget): OrderStatus
   return 'full';
 }
 
-/** One tap: adds a step, never past the full goal. */
-export function addStep(amount: number, target: OrderTarget): number {
-  return clampAmount(amount + target.step, target);
+/** One tap: adds a step, never past `max` (the full goal unless a higher cap is given). */
+export function addStep(amount: number, target: OrderTarget, max: number = target.full): number {
+  return clampAmount(amount + target.step, target, max);
 }
 
 /** Long-press undo: removes a step, never below zero. */
-export function removeStep(amount: number, target: OrderTarget): number {
-  return clampAmount(amount - target.step, target);
+export function removeStep(amount: number, target: OrderTarget, max: number = target.full): number {
+  return clampAmount(amount - target.step, target, max);
 }
 
-/** Keeps an amount between 0 and the full goal, rounded to avoid floating-point noise. */
-export function clampAmount(amount: number, target: OrderTarget): number {
+/**
+ * Keeps an amount between 0 and `max` (the full goal unless a higher cap is given),
+ * rounded to avoid floating-point noise.
+ */
+export function clampAmount(amount: number, target: OrderTarget, max: number = target.full): number {
   if (!Number.isFinite(amount)) return 0;
-  return roundToHundredths(Math.min(target.full, Math.max(0, amount)));
+  return roundToHundredths(Math.min(Math.max(max, target.full), Math.max(0, amount)));
 }
 
 /** The status of every order. */

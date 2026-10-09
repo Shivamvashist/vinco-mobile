@@ -11,9 +11,13 @@ const SELFIE_FOLDER = 'selfies';
 const OATH_FOLDER = 'oath';
 const DEFAULT_AUDIO_EXTENSION = '.m4a';
 
-/** Saves a day's selfie as selfies/YYYY-MM-DD.jpg. Retaking replaces that day's photo. */
+/**
+ * Saves a day's selfie as selfies/YYYY-MM-DD-<time>.jpg. Every capture gets its own name, so a
+ * retake can never show the old photo from the image cache. The caller deletes the old file
+ * once the new path is saved (see useDailySelfie).
+ */
 export async function saveSelfie(sourceUri: string, day: DayKey): Promise<string> {
-  return keepFile(sourceUri, SELFIE_FOLDER, `${day}.jpg`);
+  return keepFile(sourceUri, SELFIE_FOLDER, `${day}-${Date.now()}.jpg`);
 }
 
 /** Saves the oath recording with a unique name, keeping the recorder's file type. */

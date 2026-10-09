@@ -83,6 +83,8 @@ export const todayCopy = {
       name: 'Water',
       action: '+1 L',
       line: (amount: number, full: number, status: OrderStatus): string => {
+        if (status === 'full' && amount > full)
+          return `${litres(amount)} L · conquered, ${litres(amount - full)} over`;
         if (status === 'full') return `${litres(full)} of ${litres(full)} L · conquered`;
         const progress = `${litres(amount)} of ${litres(full)} L`;
         return status === 'min' ? `${progress} · minimum held` : progress;
@@ -93,13 +95,16 @@ export const todayCopy = {
       name: 'Wake-up',
       action: "I'm up",
       idleLine: 'Tap when you are out of bed',
-      doneLine: (time: string): string => `Up at ${time}`,
-      hint: 'Double tap when you are up. Long press to undo.',
+      doneLine: (time: string, sleep: string | null): string =>
+        sleep ? `Up at ${time} · ${sleep} sleep` : `Up at ${time}`,
+      hint: 'Double tap to change your wake and sleep times. Long press to undo.',
     },
     meal: {
       name: 'Protein meal',
       action: '+1',
       line: (amount: number, full: number, status: OrderStatus): string => {
+        if (status === 'full' && amount > full)
+          return `${amount} ${plural(amount, 'meal', 'meals')} · conquered, ${amount - full} over`;
         if (status === 'full') return `${full} of ${full} ${plural(full, 'meal', 'meals')} · conquered`;
         const progress = `${amount} of ${full} ${plural(full, 'meal', 'meals')}`;
         return status === 'min' ? `${progress} · minimum held` : progress;
@@ -123,6 +128,37 @@ export const todayCopy = {
     min: 'minimum held',
     full: 'conquered',
   },
+
+  /** Before wake-up is logged, Today opens on the dawn card. */
+  dawn: {
+    eyebrow: '"Surgo" · I rise',
+    greeting: (hour: number): string =>
+      hour < 5 ? 'Up early' : hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening',
+    planned: (time: string): string => `Planned wake-up: ${time}`,
+    action: "I'm up",
+    waiting: "Your orders open once you're up.",
+  },
+
+  /** The wake sheet: when you woke, when you slept. */
+  wakeSheet: {
+    title: 'Report for duty',
+    editTitle: 'Wake and sleep times',
+    wokeLabel: 'Woke up at',
+    sleptLabel: 'Went to sleep at',
+    pickerHint: 'Opens the clock',
+    sleepLine: (duration: string): string => `${duration} of sleep`,
+    errors: {
+      inFuture: "That wake time hasn't happened yet.",
+      tooShort: 'Under an hour of sleep? Check the times.',
+      tooLong: 'Over 16 hours of sleep? Check the times.',
+    },
+    save: 'Start the day',
+    saveEdit: 'Save times',
+    cancel: 'Not yet',
+  },
+
+  /** Proof: the selfie and body weight, under the orders. */
+  proofSection: 'Proof',
 
   /** The user's own orders on Today. */
   customOrder: {
@@ -160,6 +196,9 @@ export const todayCopy = {
     holdDescription: (minutes: number): string => `${minutes} min walk or a short home set`,
     conquerTitle: 'Conquer',
     conquerDescription: (minutes: number): string => `${minutes} min, gym or home`,
+    exactLabel: 'Exact time',
+    exactAccessibility: 'Workout minutes',
+    minutes: (minutes: number): string => `${minutes} min`,
     noteLabel: 'Note (optional)',
     notePlaceholder: 'Push day. Bench 3 sets, shoulder press.',
     save: 'Log workout',

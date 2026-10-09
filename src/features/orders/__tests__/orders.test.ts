@@ -3,6 +3,8 @@ import {
   areAllOrdersConquered,
   areAllOrdersHeld,
   clampAmount,
+  maxAmountFor,
+  ORDER_MAX_AMOUNTS,
   countOrdersHeld,
   DEFAULT_ORDER_TARGETS,
   EMPTY_ORDER_AMOUNTS,
@@ -81,5 +83,23 @@ describe('day totals', () => {
 
   it('is not held when one order is missing', () => {
     expect(areAllOrdersHeld({ water: 4, wake: 1, meal: 2, workout: 0 }, DEFAULT_ORDER_TARGETS)).toBe(false);
+  });
+});
+
+describe('going past the full goal', () => {
+  const water = { min: 1, full: 4, step: 1 };
+
+  it('keeps adding up to the cap when a cap is given', () => {
+    expect(addStep(4, water, maxAmountFor('water', water))).toBe(5);
+    expect(addStep(ORDER_MAX_AMOUNTS.water, water, maxAmountFor('water', water))).toBe(
+      ORDER_MAX_AMOUNTS.water,
+    );
+    expect(clampAmount(90, water, maxAmountFor('water', water))).toBe(ORDER_MAX_AMOUNTS.water);
+  });
+
+  it('never caps below a full goal tuned above the cap', () => {
+    const bigMeals = { min: 1, full: 9, step: 1 };
+    expect(maxAmountFor('meal', bigMeals)).toBe(9);
+    expect(clampAmount(9, bigMeals, 2)).toBe(9);
   });
 });

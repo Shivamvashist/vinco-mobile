@@ -43,6 +43,63 @@ export const progressCopy = {
     ready: 'Enough selfies for your first timelapse. Making it arrives in an update.',
   },
 
+  /** The segmented control under the stats. */
+  segments: {
+    calendar: 'Calendar',
+    logs: 'Commentarii',
+  },
+
+  /** The Commentarii: Caesar's campaign notes, Vinco's logs. Weight stays neutral in every tone. */
+  logs: {
+    eyebrow: '"Commentarii" · your campaign notes',
+    kinds: { sleep: 'Sleep', water: 'Water', workout: 'Workout', weight: 'Weight' },
+    week: (from: string, to: string): string => `${from} to ${to}`,
+    previousWeek: 'Previous week',
+    nextWeek: 'Next week',
+    weekdayInitials: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
+    sleep: {
+      title: 'Sleep this week',
+      target: (duration: string): string => `Target ${duration}`,
+      insight: (average: string, bestDay: string, best: string): string =>
+        `Average ${average}. Longest: ${bestDay}, ${best}.`,
+      empty: "No sleep logged this week. Tap I'm up each morning and it fills in.",
+    },
+    water: {
+      title: 'Water this week',
+      target: (litres: string): string => `Goal ${litres} L`,
+      insight: (average: string, atGoal: number, logged: number): string =>
+        `Average ${average} L a day. Full goal on ${atGoal} of ${logged} days.`,
+      empty: 'No water logged this week yet.',
+    },
+    workout: {
+      title: 'Workout this week',
+      target: (minutes: number): string => `Goal ${minutes} min`,
+      insight: (total: number, atGoal: number, logged: number): string =>
+        `${total} min in all. Full goal on ${atGoal} of ${logged} days.`,
+      empty: 'No workouts logged this week yet.',
+    },
+    weight: {
+      title: 'Body weight',
+      thisWeek: (kg: string): string => `${kg} kg this week`,
+      change: (kg: number): string =>
+        kg === 0
+          ? 'Same as last week'
+          : kg < 0
+            ? `Down ${Math.abs(kg)} kg from last week`
+            : `Up ${kg} kg from last week`,
+      firstWeek: 'Your first week of weigh-ins. The trend shows from next week.',
+      noneThisWeek: 'Nothing logged this week yet.',
+      empty: 'No weight logged yet. A weekly trend shows once you log a few days.',
+      range: (low: string, high: string): string => (low === high ? `${low} kg` : `${low} to ${high} kg`),
+      logToday: "Log today's weight",
+      updateToday: "Update today's weight",
+      chartLabel: (count: number): string => `Weight chart, ${count} ${count === 1 ? 'entry' : 'entries'}`,
+    },
+    /** Screen reader text for one bar. */
+    barLabel: (day: string, value: string | null): string =>
+      value ? `${day}, ${value}` : `${day}, not logged`,
+  },
+
   /** Shown until the first day is sealed. */
   emptyLine: {
     philosopher: 'Proof is built one day at a time. Your calendar and selfies will gather here.',

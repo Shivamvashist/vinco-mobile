@@ -92,14 +92,16 @@ src/
     navigation/        TabBar
     today/             TaskRow, WorkoutSheet, StampOverlay, SelfieTile, SealDayCard, TruceBanner, TodoTile
     orders/            AddOrderSheet
+    proof/             WeightTile, WeightSheet
     tasks/             TaskItemRow, CarryOverCard, AddTaskSheet
     onboarding/        FlowLayout, QuoteCarousel, RiverLines, TypingPreview, OathRecorder
-    progress/          StatTile, MonthCalendar
+    progress/          StatTile, MonthCalendar, WeekBarChart, WeightChart, Commentarii
     arc/               ArcJourney, RankCard, SettingsRow, RetreatSheet
     campaign/          Column
     dayCard/           DayCard
   theme/               design system: tokens, palettes, themes, feedback (see DESIGN-SYSTEM.md)
   copy/                ALL user-facing text, one file per area, three tones where it varies
+  config/              FEATURES: flags for built-but-off features
   features/<name>/     product logic as pure functions, each folder with an index.ts (tone; later orders, campaign...)
   stores/              Zustand app/UI state, persisted to the phone (preferences, onboarding draft, notices, dev mode)
   db/                  SQLite + Drizzle schema, migrations, queries   (Step 7)

@@ -2,17 +2,21 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { Card } from '@/components/Card';
+import { Commentarii } from '@/components/progress/Commentarii';
 import { type CalendarDay, MonthCalendar } from '@/components/progress/MonthCalendar';
 import { StatTile } from '@/components/progress/StatTile';
+import { WeightSheet } from '@/components/proof/WeightSheet';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { SegmentedControl } from '@/components/SegmentedControl';
 import { ToneLine } from '@/components/ToneLine';
 import { Txt } from '@/components/Txt';
 import { pickTone, progressCopy } from '@/copy';
 import { arcEndDay, getArcPosition, TIMELAPSE_SELFIES } from '@/features/arc';
 import { type Campaign, useCampaign } from '@/hooks/useCampaign';
 import { useActiveArc } from '@/hooks/useActiveArc';
+import { useDailySelfie } from '@/hooks/useDailySelfie';
 import { useToday } from '@/hooks/useToday';
 import { type DayKey, daysBetween, parseDayKey, shiftMonth } from '@/lib/dates';
 import { toRoman } from '@/lib/toRoman';
@@ -20,14 +24,26 @@ import { usePreferencesStore } from '@/stores';
 import { createStyles } from '@/theme';
 
 type YearMonth = { year: number; month: number };
+type Segment = 'calendar' | 'logs';
 
-/** Vidi: the proof. Stats, the arc calendar and timelapse progress. */
+const SEGMENTS: readonly { value: Segment; label: string }[] = [
+  { value: 'calendar', label: progressCopy.segments.calendar },
+  { value: 'logs', label: progressCopy.segments.logs },
+];
+
+/**
+ * Vidi: the proof. Stats, then two views: Calendar (the arc calendar and timelapse) and the
+ * Commentarii (sleep, water, workout and weight logs). See docs/DAY-FLOW.md, section 4.
+ */
 export default function VidiScreen() {
   const styles = useStyles();
   const today = useToday();
   const tone = usePreferencesStore((state) => state.tone);
   const { arc, targets, isLoaded: isArcLoaded } = useActiveArc();
   const campaign = useCampaign(arc, targets, today);
+  const selfie = useDailySelfie(today);
+  const [segment, setSegment] = useState<Segment>('calendar');
+  const [isWeightSheetOpen, setIsWeightSheetOpen] = useState(false);
 
   const header = <ScreenHeader eyebrow={progressCopy.eyebrow} title={progressCopy.title} />;
 
@@ -53,20 +69,49 @@ export default function VidiScreen() {
     (campaign.todayStatus === 'conquered' ? 1 : 0);
 
   return (
-    <Screen>
-      {header}
-      <View style={[styles.section, styles.stats]}>
-        <StatTile value={String(campaign.campaign)} label={progressCopy.stats.campaign} color="accent" />
-        <StatTile value={`${conqueredDays}/${daysSoFar}`} label={progressCopy.stats.fullGoalDays} />
-        <StatTile value={String(daysToGo)} label={progressCopy.stats.daysToGo} />
-      </View>
-      <View style={styles.section}>
-        <ArcCalendar arc={arc} today={today} campaign={campaign} />
-      </View>
-      <View style={styles.section}>
-        <TimelapseCard selfies={campaign.selfieDays} />
-      </View>
-    </Screen>
+    <>
+      <Screen>
+        {header}
+        <View style={[styles.section, styles.stats]}>
+          <StatTile value={String(campaign.campaign)} label={progressCopy.stats.campaign} color="accent" />
+          <StatTile value={`${conqueredDays}/${daysSoFar}`} label={progressCopy.stats.fullGoalDays} />
+          <StatTile value={String(daysToGo)} label={progressCopy.stats.daysToGo} />
+        </View>
+        <View style={styles.segments}>
+          <SegmentedControl options={SEGMENTS} value={segment} onChange={setSegment} />
+        </View>
+        {segment === 'calendar' ? (
+          <>
+            <View style={styles.section}>
+              <ArcCalendar arc={arc} today={today} campaign={campaign} />
+            </View>
+            <View style={styles.section}>
+              <TimelapseCard selfies={campaign.selfieDays} />
+            </View>
+          </>
+        ) : (
+          <View style={styles.section}>
+            <Commentarii
+              arc={arc}
+              targets={targets}
+              today={today}
+              todayWeightKg={selfie.weightKg}
+              onLogWeight={() => setIsWeightSheetOpen(true)}
+            />
+          </View>
+        )}
+      </Screen>
+
+      <WeightSheet
+        visible={isWeightSheetOpen}
+        onClose={() => setIsWeightSheetOpen(false)}
+        currentKg={selfie.weightKg}
+        onSave={(kg) => {
+          selfie.saveWeight(kg);
+          setIsWeightSheetOpen(false);
+        }}
+      />
+    </>
   );
 }
 
@@ -145,6 +190,7 @@ function clampMonth(month: YearMonth, first: YearMonth, last: YearMonth): YearMo
 const useStyles = createStyles((theme) => ({
   section: { marginTop: theme.space.xl },
   stats: { flexDirection: 'row', gap: theme.space.sm },
+  segments: { marginTop: theme.space.lg },
   timelapseHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   timelapseBar: { marginVertical: theme.space.sm },
 }));

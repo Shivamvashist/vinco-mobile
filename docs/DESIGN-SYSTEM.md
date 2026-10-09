@@ -175,6 +175,9 @@ Components never play a file directly. They call `play(cue)` from `useFeedback()
 | `rise`                       | Resurgo                         | four-note arpeggio      | success          |
 | `truce`                      | Truce used                      | two calm notes          | medium           |
 | `denied`                     | Tap on something locked         | low tick                | warning          |
+| `whoosh`                     | Switching tabs                  | soft filtered air       | selection        |
+
+**Levels.** Each recipe keeps the prototype's shape, then the file is scaled to its tier's peak: ticks (tap, select, toggle, steps, denied) -6 dBFS, moments (win, confirm, chime, record, shutter, rise, truce) -3 dBFS, signature (stamp, cross, seal) -1.5 dBFS, soft (whoosh) -9 dBFS. Nothing clips; the stamp stays the loudest moment. Playback rewinds, then plays once the rewind lands, so rapid taps never click.
 
 Sounds are generated from the prototype's own recipes by `scripts/generate-sounds.mjs` into `assets/sounds/vinco/`. To change a sound, edit its recipe and run `npm run sounds`.
 

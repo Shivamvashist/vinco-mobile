@@ -68,8 +68,10 @@ export const orderLogs = sqliteTable(
 /** One row per day: the facts about the day itself. */
 export const dayLogs = sqliteTable('day_logs', {
   day: text('day').primaryKey(),
-  /** When "I'm up" was tapped. */
+  /** When the user woke (confirmed in the wake sheet; "I'm up"). */
   wokeAt: text('woke_at'),
+  /** When the user went to sleep the night before (or after midnight), from the wake sheet. */
+  sleptAt: text('slept_at'),
   /** When the VINCO stamp was shown. It shows once per day. */
   stampedAt: text('stamped_at'),
   /** The day's selfie in the app's private folder. Never uploaded. */

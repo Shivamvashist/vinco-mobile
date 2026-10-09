@@ -8,6 +8,7 @@ Read this before every task. Then read [HISTORY.md](../HISTORY.md) for the curre
 | [docs/CONVENTIONS.md](../docs/CONVENTIONS.md)                 | Naming, exports, folders, edge-case checklist, UI process. **Follow it**                |
 | [docs/DESIGN-SYSTEM.md](../docs/DESIGN-SYSTEM.md)             | Theme, colour roles, type, sounds, haptics, adding a theme                              |
 | [docs/ORDERS-AND-TASKS.md](../docs/ORDERS-AND-TASKS.md)       | Orders (decide the day) vs daily and day tasks (the plan): rules, screens, data         |
+| [docs/DAY-FLOW.md](../docs/DAY-FLOW.md)                       | The day screen by screen: dawn and wake sheet, orders, proof, Commentarii, sounds       |
 | [docs/v1-docs/BUILD-STEPS.md](../docs/v1-docs/BUILD-STEPS.md) | The step-by-step plan and what's next                                                   |
 | [docs/v1-docs/PLAN.md](../docs/v1-docs/PLAN.md)               | Full product plan                                                                       |
 | `docs/v1-reference/Vinco app UI.html`                         | Clickable prototype of all 18 screens: exact layouts, copy, motion and sounds           |
@@ -69,7 +70,8 @@ Two repos: `vinco-mobile` (this one) and `vinco-api` (later: Hono, OpenAPI spec 
 - **Screens:** always wrapped in `Screen` (`@/components/Screen`) for safe area and background.
 - **Styles:** `createStyles((theme) => ...)` from `@/theme`. Colour **roles** only (`theme.colors.accent`), never hex. Spacing, radius and sizes from tokens.
 - **Fonts:** pick weight by family (`theme.fonts.bodySemiBold`), never `fontWeight`.
-- **Feedback:** `useFeedback()` then `play('tap')`. Never play audio files directly.
+- **Feedback:** `useFeedback()` then `play('tap')`. Never play audio files directly. Sound files carry their own level (tiers in `scripts/generate-sounds.mjs`); the theme plays them at full volume.
+- **Feature flags:** built-but-off features live behind `FEATURES` (`src/config/features.ts`). Own orders and the to-do list are off for now.
 - **Copy:** all user-facing text in `src/copy/`, keyed by tone where it varies. Latin phrases stay short and sit in quotes inside sentences (`earn "Resurgo" (I rise again)`); every Latin word has a plain label nearby.
 - **Logic:** pure functions in `src/features/`; screens call them. Records in SQLite via `src/db/`.
 - **State:** app/UI state in `src/stores/` (Zustand, persisted). Never mirror database records into a store.

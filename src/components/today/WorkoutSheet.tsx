@@ -10,15 +10,19 @@ import { BottomSheet } from '../BottomSheet';
 import { Button } from '../Button';
 import { Icon } from '../Icon';
 import { OptionCard } from '../OptionCard';
+import { Stepper } from '../Stepper';
 import { TextField } from '../TextField';
 import { Txt } from '../Txt';
 
-type WorkoutLevel = 'min' | 'full';
+/** The exact-time stepper moves in 5-minute steps, from 5 minutes. */
+const MINUTE_STEP = 5;
 
 export type WorkoutSheetProps = {
   visible: boolean;
   onClose: () => void;
   target: OrderTarget;
+  /** Most minutes that can be logged (past the full goal is fine). */
+  maxMinutes: number;
   /** Saves the minutes for the chosen level and the note. */
   onSave: (minutes: number, note: string) => void;
 };
@@ -26,12 +30,12 @@ export type WorkoutSheetProps = {
 const copy = todayCopy.workoutSheet;
 
 /**
- * Logs the workout at the minimum or the full goal, with an optional short note.
- * Typed for now; the voice note arrives with the recorder in Step 8.
+ * Logs the workout: pick Hold the line or Conquer, then fine-tune the exact time if it was
+ * different (a 90-minute session logs as 90). An optional short note.
  */
-export function WorkoutSheet({ visible, onClose, target, onSave }: WorkoutSheetProps) {
+export function WorkoutSheet({ visible, onClose, target, maxMinutes, onSave }: WorkoutSheetProps) {
   const styles = useStyles();
-  const [level, setLevel] = useState<WorkoutLevel | null>(null);
+  const [minutes, setMinutes] = useState<number | null>(null);
   const [note, setNote] = useState('');
   const [wasVisible, setWasVisible] = useState(visible);
 
@@ -39,14 +43,14 @@ export function WorkoutSheet({ visible, onClose, target, onSave }: WorkoutSheetP
   if (visible !== wasVisible) {
     setWasVisible(visible);
     if (visible) {
-      setLevel(null);
+      setMinutes(null);
       setNote('');
     }
   }
 
   const handleSave = () => {
-    if (!level) return;
-    onSave(level === 'full' ? target.full : target.min, note);
+    if (minutes == null) return;
+    onSave(minutes, note);
   };
 
   return (
@@ -56,18 +60,32 @@ export function WorkoutSheet({ visible, onClose, target, onSave }: WorkoutSheetP
         <OptionCard
           title={copy.holdTitle}
           description={copy.holdDescription(target.min)}
-          selected={level === 'min'}
-          onPress={() => setLevel('min')}
-          leading={<Icon name="workout" color={level === 'min' ? 'accent' : 'textMuted'} />}
+          selected={minutes === target.min}
+          onPress={() => setMinutes(target.min)}
+          leading={<Icon name="workout" color={minutes === target.min ? 'accent' : 'textMuted'} />}
         />
         <OptionCard
           title={copy.conquerTitle}
           description={copy.conquerDescription(target.full)}
-          selected={level === 'full'}
-          onPress={() => setLevel('full')}
-          leading={<Icon name="flame" color={level === 'full' ? 'accent' : 'textMuted'} />}
+          selected={minutes === target.full}
+          onPress={() => setMinutes(target.full)}
+          leading={<Icon name="flame" color={minutes === target.full ? 'accent' : 'textMuted'} />}
         />
       </View>
+      {minutes != null ? (
+        <View style={styles.exact}>
+          <Stepper
+            caption={copy.exactLabel}
+            value={minutes}
+            onChange={setMinutes}
+            min={MINUTE_STEP}
+            max={Math.max(maxMinutes, target.full)}
+            step={MINUTE_STEP}
+            formatValue={copy.minutes}
+            accessibilityLabel={copy.exactAccessibility}
+          />
+        </View>
+      ) : null}
       <TextField
         label={copy.noteLabel}
         value={note}
@@ -78,7 +96,7 @@ export function WorkoutSheet({ visible, onClose, target, onSave }: WorkoutSheetP
         returnKeyType="done"
       />
       <View style={styles.actions}>
-        <Button label={copy.save} disabled={level === null} cue={null} onPress={handleSave} />
+        <Button label={copy.save} disabled={minutes === null} cue={null} onPress={handleSave} />
         <Button label={copy.cancel} variant="ghost" cue={null} onPress={onClose} />
       </View>
     </BottomSheet>
@@ -87,5 +105,6 @@ export function WorkoutSheet({ visible, onClose, target, onSave }: WorkoutSheetP
 
 const useStyles = createStyles((theme) => ({
   options: { gap: theme.space.sm, marginVertical: theme.space.lg },
+  exact: { marginBottom: theme.space.lg },
   actions: { marginTop: theme.space.xl, gap: theme.space.xs },
 }));

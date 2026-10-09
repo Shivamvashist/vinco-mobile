@@ -18,11 +18,23 @@ describe('createSoundBank', () => {
     expect(mockedCreatePlayer.mock.results[0]?.value.volume).toBe(0.5);
   });
 
-  it('rewinds and plays a cue', () => {
+  it('rewinds, then plays once the rewind has landed', async () => {
     const bank = createSoundBank(feedbackWith({ tap: 1 }));
     const player = mockedCreatePlayer.mock.results[0]?.value;
     bank.play('tap');
     expect(player.seekTo).toHaveBeenCalledWith(0);
+    expect(player.play).not.toHaveBeenCalled();
+    await Promise.resolve();
+    expect(player.play).toHaveBeenCalledTimes(1);
+  });
+
+  it('still plays when the rewind fails', async () => {
+    const bank = createSoundBank(feedbackWith({ tap: 1 }));
+    const player = mockedCreatePlayer.mock.results[0]?.value;
+    player.seekTo.mockReturnValueOnce(Promise.reject(new Error('seek failed')));
+    bank.play('tap');
+    await Promise.resolve();
+    await Promise.resolve();
     expect(player.play).toHaveBeenCalledTimes(1);
   });
 

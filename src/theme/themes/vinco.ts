@@ -37,7 +37,8 @@ export const vincoTheme: ThemeDefinition = {
     },
   },
   feedback: {
-    volume: 0.8,
+    // The files carry their own levels (scripts/generate-sounds.mjs); play them as made.
+    volume: 1,
     sounds: {
       tap: require('@/assets/sounds/vinco/tap.wav'),
       select: require('@/assets/sounds/vinco/select.wav'),
@@ -56,6 +57,7 @@ export const vincoTheme: ThemeDefinition = {
       rise: require('@/assets/sounds/vinco/rise.wav'),
       truce: require('@/assets/sounds/vinco/truce.wav'),
       denied: require('@/assets/sounds/vinco/denied.wav'),
+      whoosh: require('@/assets/sounds/vinco/whoosh.wav'),
     },
     haptics: {
       tap: 'light',
@@ -75,6 +77,7 @@ export const vincoTheme: ThemeDefinition = {
       rise: 'success',
       truce: 'medium',
       denied: 'warning',
+      whoosh: 'selection',
     },
   },
 };

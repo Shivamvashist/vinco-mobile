@@ -7,6 +7,7 @@ import {
   normalizeCustomOrder,
   validateCustomOrder,
 } from '@/features/orders';
+import { FEATURES } from '@/config/features';
 import type { DayKey } from '@/lib/dates';
 
 import { type AppDatabase, nowIso } from './database';
@@ -17,14 +18,22 @@ export function selectCustomOrders(db: AppDatabase, arcId: number) {
   return db.select().from(customOrders).where(eq(customOrders.arcId, arcId)).orderBy(asc(customOrders.id));
 }
 
-/** The query for an arc's own orders that count on a day. Pass to useLiveQuery. */
+/** Matches no arc: used while own orders are switched off. */
+const NO_ARC_ID = -1;
+
+/**
+ * The query for an arc's own orders that count on a day. Pass to useLiveQuery. Every reader
+ * of "which own orders count" goes through here, so while the feature is off (FEATURES)
+ * this matches nothing and own orders never count toward a day.
+ */
 export function selectCustomOrdersOn(db: AppDatabase, arcId: number, day: DayKey) {
+  const effectiveArcId = FEATURES.customOrders ? arcId : NO_ARC_ID;
   return db
     .select()
     .from(customOrders)
     .where(
       and(
-        eq(customOrders.arcId, arcId),
+        eq(customOrders.arcId, effectiveArcId),
         lte(customOrders.firstDay, day),
         or(isNull(customOrders.lastDay), gte(customOrders.lastDay, day)),
       ),

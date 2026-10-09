@@ -71,7 +71,7 @@ describe('usePreferencesStore', () => {
     loadStore().getState().setTone('roast');
     const saved = JSON.parse(Storage.getItemSync(STORAGE_KEY) ?? '{}') as { state: Record<string, unknown> };
     expect(Object.keys(saved.state).sort()).toEqual(
-      ['colorMode', 'hapticsEnabled', 'soundEnabled', 'themeId', 'tone'].sort(),
+      ['colorMode', 'ghostOpacity', 'hapticsEnabled', 'soundEnabled', 'themeId', 'tone'].sort(),
     );
   });
 });

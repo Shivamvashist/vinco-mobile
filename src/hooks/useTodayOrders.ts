@@ -30,6 +30,7 @@ import {
   getCustomOrderStatus,
   getOrderStatus,
   getOrderStatuses,
+  maxAmountFor,
   nextCustomAmount,
   ORDER_KINDS,
   type OrderAmounts,
@@ -66,14 +67,18 @@ export type TodayOrders = {
   /** Every order that counts today. */
   totalCount: number;
   wokeAt: Date | null;
+  /** When the user went to sleep before today's wake-up, if logged. */
+  sleptAt: Date | null;
   workoutNote: string;
   isStampVisible: boolean;
   /** True when the last change could not be saved. Cleared by the next successful save. */
   hasSaveError: boolean;
   /** Adds one step. Returns the order's new status so the caller can pick a sound. */
   addOne: (kind: OrderKind) => OrderStatus;
-  /** Removes one step (long-press undo). Returns the new status. */
+  /** Removes one step (long-press undo). Undoing wake-up clears both wake and sleep times. */
   undoOne: (kind: OrderKind) => OrderStatus;
+  /** Logs wake-up with its times (from the wake sheet): wake-up held, sleep recorded. */
+  logWakeUp: (wokeAt: Date, sleptAt: Date | null) => OrderStatus;
   /** Logs the workout at a number of minutes, with an optional note. */
   logWorkout: (minutes: number, note: string) => OrderStatus;
   /** Own order, one tap: up a level (minimum, then full goal). Returns the new status. */
@@ -83,12 +88,15 @@ export type TodayOrders = {
   dismissStamp: () => void;
 };
 
+/** Day-log fields an order change may set alongside it. */
+type DayPatch = { wokeAt?: string | null; sleptAt?: string | null };
+
 type Change = {
   /** The order's next amount, from its current one. */
   nextAmount: (current: number) => number;
   note?: string;
   /** Extra fields for today's day log, from the order's amount before and after. */
-  dayPatch?: (before: number, after: number) => { wokeAt?: string | null };
+  dayPatch?: (before: number, after: number) => DayPatch;
 };
 
 /**
@@ -120,6 +128,8 @@ export function useTodayOrders(
   const customHeld = customOrders.filter((item) => item.status !== 'none').length;
   const wokeAtIso = dayLog.data[0]?.wokeAt ?? null;
   const wokeAt = wokeAtIso ? new Date(wokeAtIso) : null;
+  const sleptAtIso = dayLog.data[0]?.sleptAt ?? null;
+  const sleptAt = sleptAtIso ? new Date(sleptAtIso) : null;
 
   /**
    * Runs one change in a transaction, then lands the stamp if every order now holds
@@ -128,7 +138,7 @@ export function useTodayOrders(
   const runChange = (
     label: string,
     fallback: OrderStatus,
-    save: (tx: AppDatabase) => { status: OrderStatus; dayPatch?: { wokeAt?: string | null } },
+    save: (tx: AppDatabase) => { status: OrderStatus; dayPatch?: DayPatch },
   ): OrderStatus => {
     try {
       const result = db.transaction((tx) => {
@@ -154,7 +164,11 @@ export function useTodayOrders(
   const applyChange = (kind: OrderKind, change: Change): OrderStatus =>
     runChange(kind, getOrderStatus(amounts[kind], targets[kind]), (tx) => {
       const before = toOrderAmounts(getOrderLogsForDay(tx, today));
-      const amount = clampAmount(change.nextAmount(before[kind]), targets[kind]);
+      const amount = clampAmount(
+        change.nextAmount(before[kind]),
+        targets[kind],
+        maxAmountFor(kind, targets[kind]),
+      );
       saveOrderAmount(tx, today, kind, amount, { note: change.note });
       return {
         status: getOrderStatus(amount, targets[kind]),
@@ -186,25 +200,34 @@ export function useTodayOrders(
     heldCount: countOrdersHeld(amounts, targets) + customHeld,
     totalCount: ORDER_KINDS.length + customOrders.length,
     wokeAt: wokeAt && !Number.isNaN(wokeAt.getTime()) ? wokeAt : null,
+    sleptAt: sleptAt && !Number.isNaN(sleptAt.getTime()) ? sleptAt : null,
     workoutNote: toWorkoutNote(orderLogs.data),
     isStampVisible: stampVisibleDay === today,
     hasSaveError,
     addOne: (kind) =>
       applyChange(kind, {
-        nextAmount: (current) => addStep(current, targets[kind]),
+        nextAmount: (current) => addStep(current, targets[kind], maxAmountFor(kind, targets[kind])),
         dayPatch: (before, after) =>
           kind === 'wake' && before === 0 && after > 0 ? { wokeAt: nowIso() } : {},
       }),
     undoOne: (kind) =>
       applyChange(kind, {
-        nextAmount: (current) => removeStep(current, targets[kind]),
+        nextAmount: (current) => removeStep(current, targets[kind], maxAmountFor(kind, targets[kind])),
         note: kind === 'workout' ? '' : undefined,
-        dayPatch: (_before, after) => (kind === 'wake' && after === 0 ? { wokeAt: null } : {}),
+        dayPatch: (_before, after) => (kind === 'wake' && after === 0 ? { wokeAt: null, sleptAt: null } : {}),
       }),
     logWorkout: (minutes, note) =>
       applyChange('workout', {
         nextAmount: () => minutes,
         note: note.trim().slice(0, WORKOUT_NOTE_MAX_LENGTH),
+      }),
+    logWakeUp: (wokeAtTime, sleptAtTime) =>
+      applyChange('wake', {
+        nextAmount: () => targets.wake.full,
+        dayPatch: () => ({
+          wokeAt: nowIso(wokeAtTime),
+          sleptAt: sleptAtTime ? nowIso(sleptAtTime) : null,
+        }),
       }),
     addOneCustom: (orderId) => applyCustomChange(orderId, nextCustomAmount),
     undoOneCustom: (orderId) => applyCustomChange(orderId, previousCustomAmount),

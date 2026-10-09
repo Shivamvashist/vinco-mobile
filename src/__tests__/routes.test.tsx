@@ -31,11 +31,14 @@ import {
   getActiveArc,
   getDayLog,
   getTruceReserve,
+  nowIso,
   saveOrderAmount,
   sealFinishedDays,
+  updateDayLog,
   selectArcOrders,
   toOrderTargets,
 } from '@/db';
+import { FEATURES } from '@/config/features';
 import { DEFAULT_ORDER_TARGETS } from '@/features/orders';
 import { addDays, toDayKey } from '@/lib/dates';
 import { useDevStore, useNoticesStore, useOnboardingStore, usePreferencesStore } from '@/stores';
@@ -51,6 +54,19 @@ function startArc() {
     targets: DEFAULT_ORDER_TARGETS,
     oathPath: null,
   });
+}
+
+/** Wake-up logged for today, as if "I'm up" was reported: the orders are open. */
+function markAwake() {
+  const today = toDayKey(new Date());
+  saveOrderAmount(db, today, 'wake', 1);
+  updateDayLog(db, today, { wokeAt: nowIso() });
+}
+
+/** Yesterday's bedtime, 8 hours before now: the wake sheet then defaults to 8 hours of sleep. */
+function seedBedtime() {
+  const yesterday = addDays(toDayKey(new Date()), -1);
+  updateDayLog(db, yesterday, { sleptAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString() });
 }
 
 beforeEach(() => {
@@ -130,10 +146,60 @@ describe('app routes', () => {
 });
 
 describe('Today', () => {
-  beforeEach(startArc);
+  beforeEach(() => {
+    startArc();
+    markAwake();
+  });
 
   const water = todayCopy.orders.water;
   const workout = todayCopy.orders.workout;
+
+  it('keeps adding water past the full goal', async () => {
+    renderRouter(APP_DIR, { initialUrl: '/veni' });
+    const press = () => fireEvent.press(screen.getByLabelText(new RegExp(`^${water.name},`)));
+    await screen.findByLabelText(new RegExp(`^${water.name},`));
+    for (let tap = 0; tap < 5; tap += 1) press();
+    expect(await screen.findByText(water.line(5, 4, 'full'))).toBeTruthy();
+    expect(water.line(5, 4, 'full')).toBe('5 L · conquered, 1 over');
+  });
+
+  it('logs an exact workout time past the full goal', async () => {
+    renderRouter(APP_DIR, { initialUrl: '/veni' });
+    fireEvent.press(await screen.findByLabelText(`${workout.name}, ${workout.idleLine(40)}`));
+    fireEvent.press(await screen.findByLabelText(new RegExp(`^${todayCopy.workoutSheet.conquerTitle}`)));
+    const more = screen.getByLabelText(commonCopy.increase);
+    for (let tap = 0; tap < 10; tap += 1) {
+      act(() => jest.advanceTimersByTime(200));
+      fireEvent.press(more);
+    }
+    fireEvent.press(screen.getByText(todayCopy.workoutSheet.save));
+    act(() => jest.advanceTimersByTime(1000));
+    expect(await screen.findByText(workout.doneLine(90, 'full', ''))).toBeTruthy();
+  });
+
+  it('opens the wake sheet to correct the times from the wake-up row', async () => {
+    renderRouter(APP_DIR, { initialUrl: '/veni' });
+    fireEvent.press(await screen.findByLabelText(new RegExp(`^${todayCopy.orders.wake.name},`)));
+    expect(await screen.findByText(todayCopy.wakeSheet.editTitle)).toBeTruthy();
+  });
+
+  it('logs body weight from the proof tile', async () => {
+    renderRouter(APP_DIR, { initialUrl: '/veni' });
+    fireEvent.press(
+      await screen.findByLabelText(`${proofCopy.weightTile.title}, ${proofCopy.weightTile.notLogged}`),
+    );
+    const field = await screen.findByLabelText(proofCopy.weightSheet.label);
+    fireEvent.changeText(field, '12');
+    fireEvent.press(screen.getByLabelText(proofCopy.weightSheet.save));
+    expect(await screen.findByText(proofCopy.daily.weightInvalid)).toBeTruthy();
+    fireEvent.changeText(field, '72,5');
+    act(() => jest.advanceTimersByTime(600));
+    fireEvent.press(screen.getByLabelText(proofCopy.weightSheet.save));
+    expect(
+      await screen.findByLabelText(`${proofCopy.weightTile.title}, ${proofCopy.weightTile.today('72.5')}`),
+    ).toBeTruthy();
+    expect(getDayLog(db, toDayKey(new Date()))?.weightKg).toBe(72.5);
+  });
 
   it('adds water on tap and undoes on long press', async () => {
     renderRouter(APP_DIR, { initialUrl: '/veni' });
@@ -157,7 +223,6 @@ describe('Today', () => {
   it('shows the VINCO stamp when all four orders are held', async () => {
     renderRouter(APP_DIR, { initialUrl: '/veni' });
     fireEvent.press(await screen.findByLabelText(new RegExp(`^${water.name},`)));
-    fireEvent.press(screen.getByLabelText(new RegExp(`^${todayCopy.orders.wake.name},`)));
     fireEvent.press(screen.getByLabelText(new RegExp(`^${todayCopy.orders.meal.name},`)));
     fireEvent.press(screen.getByLabelText(new RegExp(`^${workout.name},`)));
     fireEvent.press(await screen.findByLabelText(new RegExp(`^${todayCopy.workoutSheet.holdTitle}`)));
@@ -165,6 +230,73 @@ describe('Today', () => {
     expect(await screen.findByText(todayCopy.stamp.titleWithDay('I'))).toBeTruthy();
     fireEvent.press(screen.getByText(todayCopy.stamp.back));
     expect(await screen.findByText(todayCopy.progressLines[3].centurion)).toBeTruthy();
+  });
+});
+
+describe('Commentarii', () => {
+  it('shows the week of sleep, then water, then weight with its log button', async () => {
+    startArc();
+    const today = toDayKey(new Date());
+    // Today: 7 h 30 m of sleep and 2 L of water.
+    updateDayLog(db, today, {
+      sleptAt: new Date(Date.now() - 450 * 60 * 1000).toISOString(),
+      wokeAt: nowIso(),
+    });
+    saveOrderAmount(db, today, 'wake', 1);
+    saveOrderAmount(db, today, 'water', 2);
+    renderRouter(APP_DIR, { initialUrl: '/vidi' });
+
+    fireEvent.press(await screen.findByLabelText(progressCopy.segments.logs));
+    expect(await screen.findByText(progressCopy.logs.sleep.title)).toBeTruthy();
+    const average = commonCopy.duration(450);
+    expect(await screen.findByText(new RegExp(`^Average ${average}\.`))).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText(progressCopy.logs.kinds.water));
+    expect(await screen.findByText(progressCopy.logs.water.title)).toBeTruthy();
+    expect(screen.getByText(progressCopy.logs.water.insight('2', 0, 1))).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText(progressCopy.logs.kinds.weight));
+    expect(await screen.findByText(progressCopy.logs.weight.empty)).toBeTruthy();
+    fireEvent.press(screen.getByLabelText(progressCopy.logs.weight.logToday));
+    fireEvent.changeText(await screen.findByLabelText(proofCopy.weightSheet.label), '72.5');
+    act(() => jest.advanceTimersByTime(600));
+    fireEvent.press(screen.getByLabelText(proofCopy.weightSheet.save));
+    expect(await screen.findByText(progressCopy.logs.weight.thisWeek('72.5'))).toBeTruthy();
+    expect(screen.getByText(progressCopy.logs.weight.firstWeek)).toBeTruthy();
+  });
+
+  it('keeps the week arrows inside the arc', async () => {
+    startArc();
+    renderRouter(APP_DIR, { initialUrl: '/vidi' });
+    fireEvent.press(await screen.findByLabelText(progressCopy.segments.logs));
+    const title = await screen.findByText(progressCopy.logs.sleep.title);
+    fireEvent.press(screen.getByLabelText(progressCopy.logs.previousWeek));
+    fireEvent.press(screen.getByLabelText(progressCopy.logs.nextWeek));
+    expect(title).toBeTruthy();
+    expect(screen.getByText(progressCopy.logs.sleep.empty)).toBeTruthy();
+  });
+});
+
+describe('Dawn', () => {
+  it('opens on the dawn card, then "I\'m up" logs wake-up and sleep and opens the orders', async () => {
+    startArc();
+    seedBedtime();
+    renderRouter(APP_DIR, { initialUrl: '/veni' });
+    expect(await screen.findByText(todayCopy.dawn.waiting)).toBeTruthy();
+    // The orders wait, hidden from touch and screen readers.
+    expect(screen.queryByLabelText(new RegExp(`^${todayCopy.orders.water.name},`))).toBeNull();
+
+    fireEvent.press(screen.getByLabelText(todayCopy.dawn.action));
+    expect(await screen.findByText(todayCopy.wakeSheet.title)).toBeTruthy();
+    expect(screen.getByText(todayCopy.wakeSheet.sleepLine(commonCopy.duration(8 * 60)))).toBeTruthy();
+    fireEvent.press(screen.getByLabelText(todayCopy.wakeSheet.save));
+
+    expect(await screen.findByLabelText(new RegExp(`^${todayCopy.orders.water.name},`))).toBeTruthy();
+    expect(screen.queryByText(todayCopy.dawn.waiting)).toBeNull();
+    const log = getDayLog(db, toDayKey(new Date()));
+    expect(log?.wokeAt).toBeTruthy();
+    expect(log?.sleptAt).toBeTruthy();
+    expect(await screen.findByText(new RegExp(`· ${commonCopy.duration(8 * 60)} sleep$`))).toBeTruthy();
   });
 });
 
@@ -399,6 +531,18 @@ describe('Dev mode', () => {
   });
 });
 
+describe('Switched-off features', () => {
+  it('hides own orders and the to-do list, and their routes go back', async () => {
+    startArc();
+    renderRouter(APP_DIR, { initialUrl: '/veni' });
+    await screen.findByText(todayCopy.ordersSection);
+    expect(screen.queryByLabelText(todayCopy.addOrder)).toBeNull();
+    expect(screen.queryByLabelText(new RegExp(`^${todayCopy.todoTile.title},`))).toBeNull();
+    act(() => router.push('/tasks'));
+    expect(await screen.findByText(todayCopy.ordersSection)).toBeTruthy();
+  });
+});
+
 describe('Campaign lost', () => {
   it('shows once after a break, then leads to the comeback', async () => {
     // Eight empty days: a break with no campaign before it, so there is nothing a Truce could save.
@@ -493,6 +637,10 @@ describe('Campaign lost', () => {
 });
 
 describe('Own orders', () => {
+  // Built but switched off in the app; these tests cover it switched on.
+  beforeEach(() => jest.replaceProperty(FEATURES, 'customOrders', true));
+  afterEach(() => jest.restoreAllMocks());
+
   const READ = { name: 'Read', unit: 'pages', min: 10, full: 30 };
   const custom = todayCopy.customOrder;
 
@@ -500,13 +648,13 @@ describe('Own orders', () => {
   function holdVincoFour() {
     const today = toDayKey(new Date());
     saveOrderAmount(db, today, 'water', 1);
-    saveOrderAmount(db, today, 'wake', 1);
     saveOrderAmount(db, today, 'meal', 1);
     saveOrderAmount(db, today, 'workout', 15);
   }
 
   it('adds an order from Today, refusing a full goal below the minimum', async () => {
     startArc();
+    markAwake();
     renderRouter(APP_DIR, { initialUrl: '/veni' });
     fireEvent.press(await screen.findByLabelText(todayCopy.addOrder));
     fireEvent.changeText(await screen.findByLabelText(ordersCopy.add.nameLabel), 'Read');
@@ -521,11 +669,12 @@ describe('Own orders', () => {
     act(() => jest.advanceTimersByTime(600));
     fireEvent.press(screen.getByLabelText(ordersCopy.add.save));
     expect(await screen.findByLabelText(`Read, ${custom.line(0, 10, 30, 'pages', 'none')}`)).toBeTruthy();
-    expect(screen.getByLabelText(todayCopy.ringLabel(0, 5))).toBeTruthy();
+    expect(screen.getByLabelText(todayCopy.ringLabel(1, 5))).toBeTruthy();
   });
 
   it('holds the day only once the own order holds too, then the stamp lands', async () => {
     startArc();
+    markAwake();
     const arc = getActiveArc(db)!;
     addCustomOrder(db, arc.id, READ, toDayKey(new Date()));
     holdVincoFour();
@@ -569,6 +718,9 @@ describe('Own orders', () => {
 });
 
 describe('To-do', () => {
+  beforeEach(() => jest.replaceProperty(FEATURES, 'tasks', true));
+  afterEach(() => jest.restoreAllMocks());
+
   it('adds, ticks and removes tasks, and the Today tile follows', async () => {
     startArc();
     renderRouter(APP_DIR, { initialUrl: '/veni' });
@@ -634,6 +786,10 @@ describe('Daily selfie', () => {
       await screen.findByLabelText(`${proofCopy.todayTile.title}, ${proofCopy.todayTile.notTaken}`),
     );
     fireEvent.press(await screen.findByLabelText(proofCopy.camera.takeSelfie));
+    // The check: the shot waits for "Looks right" before it is saved.
+    expect(await screen.findByText(proofCopy.camera.reviewQuestionFirst)).toBeTruthy();
+    expect(getDayLog(db, toDayKey(new Date()))?.selfiePath ?? null).toBeNull();
+    fireEvent.press(screen.getByLabelText(proofCopy.camera.looksRight));
     expect(await screen.findByText(proofCopy.daily.saved('I', 1, 60))).toBeTruthy();
 
     fireEvent.changeText(screen.getByLabelText(proofCopy.daily.weightLabel), '400');
@@ -651,14 +807,33 @@ describe('Daily selfie', () => {
   });
 });
 
+describe('Selfie retake', () => {
+  it('saves a retake as a new photo, so the old one never shows again', async () => {
+    startArc();
+    markAwake();
+    renderRouter(APP_DIR, { initialUrl: '/selfie' });
+    fireEvent.press(await screen.findByLabelText(proofCopy.camera.takeSelfie));
+    fireEvent.press(await screen.findByLabelText(proofCopy.camera.looksRight));
+    await screen.findByText(proofCopy.daily.saved('I', 1, 60));
+    const first = getDayLog(db, toDayKey(new Date()))?.selfiePath;
+
+    act(() => jest.advanceTimersByTime(1000));
+    fireEvent.press(screen.getByLabelText(proofCopy.camera.retake));
+    fireEvent.press(await screen.findByLabelText(proofCopy.camera.takeSelfie));
+    fireEvent.press(await screen.findByLabelText(proofCopy.camera.looksRight));
+    await waitFor(() => expect(getDayLog(db, toDayKey(new Date()))?.selfiePath).not.toBe(first));
+    expect(getDayLog(db, toDayKey(new Date()))?.selfiePath).toMatch(/selfies\/\d{4}-\d{2}-\d{2}-\d+\.jpg$/);
+  });
+});
+
 describe('Day card', () => {
   async function sealToday() {
     startArc();
+    markAwake();
     renderRouter(APP_DIR, { initialUrl: '/veni' });
     const press = (pattern: RegExp) => fireEvent.press(screen.getByLabelText(pattern));
     await screen.findByText(todayCopy.ordersSection);
     press(new RegExp(`^${todayCopy.orders.water.name},`));
-    press(new RegExp(`^${todayCopy.orders.wake.name},`));
     press(new RegExp(`^${todayCopy.orders.meal.name},`));
     press(new RegExp(`^${todayCopy.orders.workout.name},`));
     fireEvent.press(await screen.findByLabelText(new RegExp(`^${todayCopy.workoutSheet.holdTitle}`)));

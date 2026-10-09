@@ -239,6 +239,12 @@ From an empty folder to Early Access on **2 November 2026**. Each step lists its
 
 ## Step 12: Nudges, to-do, step one
 
+- [x] Dawn and the wake sheet: "I'm up" logs wake time and bedtime (`day_logs.slept_at`), sleep tracked; orders wait until then ([docs/DAY-FLOW.md](../DAY-FLOW.md))
+- [x] The Commentarii on Vidi: sleep, water and workout weeks (bars after the prototype), weight trend and line, log weight
+- [x] Proof tiles on Today: selfie and body weight calls to action; selfie review step and ghost slider (0 to 60%)
+- [x] Amounts past the full goal (capped), exact workout minutes
+- [x] Own orders and to-do list switched off behind `FEATURES` until their UX is settled
+
 - [ ] `expo-notifications`, local only; permission asked when first needed
 - [ ] Scheduler: morning brief, evening check (only if something's open), wind-down; at most three a day (tested)
 - [x] Orders and tasks ([docs/ORDERS-AND-TASKS.md](../ORDERS-AND-TASKS.md)): the user's own orders (minimum and full goal, count toward the seal, stand down from tomorrow), daily tasks to the arc's end, day tasks for today or tomorrow, "carry over or drop?", the to-do tile and screen, "Your orders" screen; day results stored at sealing

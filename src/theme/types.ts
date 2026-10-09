@@ -145,7 +145,8 @@ export type FeedbackCue =
   | 'seal'
   | 'rise'
   | 'truce'
-  | 'denied';
+  | 'denied'
+  | 'whoosh';
 
 export type HapticPattern =
   'none' | 'selection' | 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error';

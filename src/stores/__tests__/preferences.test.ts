@@ -1,4 +1,9 @@
-import { DEFAULT_PREFERENCES, sanitizePreferences } from '../preferences';
+import {
+  clampGhostOpacity,
+  DEFAULT_PREFERENCES,
+  GHOST_OPACITY_MAX,
+  sanitizePreferences,
+} from '../preferences';
 
 describe('sanitizePreferences', () => {
   it('keeps every valid field', () => {
@@ -8,6 +13,7 @@ describe('sanitizePreferences', () => {
       colorMode: 'light',
       soundEnabled: false,
       hapticsEnabled: false,
+      ghostOpacity: 0.45,
     };
     expect(sanitizePreferences(saved)).toEqual(saved);
   });
@@ -41,5 +47,16 @@ describe('sanitizePreferences', () => {
 
   it('has defaults that pass their own validation', () => {
     expect(sanitizePreferences(DEFAULT_PREFERENCES)).toEqual(DEFAULT_PREFERENCES);
+  });
+});
+
+describe('ghost opacity', () => {
+  it('stays between 0 and the maximum', () => {
+    expect(clampGhostOpacity(0.9)).toBe(GHOST_OPACITY_MAX);
+    expect(clampGhostOpacity(-1)).toBe(0);
+    expect(clampGhostOpacity(0.333)).toBe(0.33);
+    expect(clampGhostOpacity(Number.NaN)).toBe(DEFAULT_PREFERENCES.ghostOpacity);
+    expect(sanitizePreferences({ ghostOpacity: 5 })).toEqual({ ghostOpacity: GHOST_OPACITY_MAX });
+    expect(sanitizePreferences({ ghostOpacity: 'half' })).toEqual({});
   });
 });

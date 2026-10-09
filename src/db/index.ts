@@ -13,7 +13,15 @@ export {
 } from './arcs';
 export { db } from './client';
 export { type AppDatabase, nowIso } from './database';
-export { getDayLog, selectDayLog, selectRecentSelfies, updateDayLog } from './dayLogs';
+export {
+  getDayLog,
+  selectDayLog,
+  selectLatestBedtime,
+  selectLatestWeight,
+  selectRecentSelfies,
+  selectWeightsBetween,
+  updateDayLog,
+} from './dayLogs';
 export {
   getOrderAmount,
   getOrderLogsForDay,

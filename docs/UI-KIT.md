@@ -156,6 +156,18 @@ Shared rules for all components:
 - **Props:** `StampMark` props plus `cue` (played on impact) and `delay`.
 - **Motion:** drops from 3x and rotated, overshoots, settles at -8 degrees; cue 55% into the slam. Plays once per mount; with reduced motion it appears and the cue plays at once.
 
+### TimeField
+
+- **Used in:** the wake sheet (woke up at, went to sleep at).
+- **Props:** `label`, `minutes` (after midnight), `onChange(minutes)`, `accessibilityHint?`.
+- **Behaviour:** on Android a big tappable value opens the system clock dialog; dismissing changes nothing. Elsewhere the inline picker shows.
+
+### SegmentedControl
+
+- **Used in:** Vidi (Calendar, Commentarii), matching the prototype's segment pill.
+- **Props:** `options` (value and label), `value`, `onChange`. Plays the prototype's segment tick (`toggle`); re-tapping the selected segment does nothing.
+- **Accessibility:** a tab list; the selected segment reads as selected.
+
 ## Built with their screens, not in the kit
 
-These are specific to one screen, so they live with it: `today/` (`TaskRow`, `WorkoutSheet`, `StampOverlay`, `SelfieTile`, `SealDayCard`: stays once every order holds so the day card is always one tap away; `TruceBanner`: while a Truce can still save the campaign; `TodoTile`: the to-do summary), `orders/` (`AddOrderSheet`: name, unit, minimum, full goal; errors inline, closes only once saved), `tasks/` (`TaskItemRow`: a checkbox row with a remove button, simpler than an order row on purpose; `CarryOverCard`: carry over or drop, one by one or all; `AddTaskSheet`: stays open after each save for quick entry), `onboarding/` (`FlowLayout`, `QuoteCarousel`, `RiverLines`, `TypingPreview`, `OathRecorder`), `progress/` (`StatTile`, `MonthCalendar`), `arc/` (`ArcJourney`, `RankCard`, `SettingsRow`, `RetreatSheet`: confirm button stays disabled until RETREAT is typed; "Hold the line" cancels), `campaign/` (`Column`), `dayCard/` (`DayCard`, fixed palettes so a shared card looks the same on every phone). Also outside the kit: `StartupError` (database recovery screen).
+These are specific to one screen, so they live with it: `today/` (`TaskRow`, `WorkoutSheet`, `StampOverlay`, `SelfieTile`, `SealDayCard`: stays once every order holds so the day card is always one tap away; `TruceBanner`: while a Truce can still save the campaign; `TodoTile`: the to-do summary; `DawnCard`: the first step until wake-up is logged; `WakeSheet`: wake and bed times with live hours slept and validation), `proof/` (`WeightTile`, `WeightSheet`: neutral, 30 to 250 kg), `progress/` also `WeekBarChart` (a week of bars after the prototype: values over bars, dashed target, tones full, held, short, rest), `WeightChart` (one line across the arc, latest point larger), `Commentarii` (the logs view: chips, week arrows, chart, insight), `orders/` (`AddOrderSheet`: name, unit, minimum, full goal; errors inline, closes only once saved), `tasks/` (`TaskItemRow`: a checkbox row with a remove button, simpler than an order row on purpose; `CarryOverCard`: carry over or drop, one by one or all; `AddTaskSheet`: stays open after each save for quick entry), `onboarding/` (`FlowLayout`, `QuoteCarousel`, `RiverLines`, `TypingPreview`, `OathRecorder`), `progress/` (`StatTile`, `MonthCalendar`), `arc/` (`ArcJourney`, `RankCard`, `SettingsRow`, `RetreatSheet`: confirm button stays disabled until RETREAT is typed; "Hold the line" cancels), `campaign/` (`Column`), `dayCard/` (`DayCard`, fixed palettes so a shared card looks the same on every phone). Also outside the kit: `StartupError` (database recovery screen).

@@ -8,6 +8,8 @@ export {
   EMPTY_ORDER_AMOUNTS,
   getOrderStatus,
   getOrderStatuses,
+  maxAmountFor,
+  ORDER_MAX_AMOUNTS,
   removeStep,
 } from './orders';
 export {

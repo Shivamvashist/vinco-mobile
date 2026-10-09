@@ -15,6 +15,7 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { ToneLine } from '@/components/ToneLine';
 import { Txt } from '@/components/Txt';
 import { arcCopy, commonCopy, devCopy, onboardingCopy, pickTone } from '@/copy';
+import { FEATURES } from '@/config/features';
 import { DevPanel } from '@/dev/DevPanel';
 import { arcEndDay, getArcPosition, isArcLength, OATH_PLAYBACK_DAY } from '@/features/arc';
 import { TRUCES } from '@/features/campaign';
@@ -110,7 +111,7 @@ export default function ViciScreen() {
 
         <SectionHeader title={arcCopy.settingsSection} />
         <View style={styles.settings}>
-          {arc ? (
+          {FEATURES.customOrders && arc ? (
             <SettingsRow
               hasDivider={false}
               label={arcCopy.settings.orders}
@@ -119,7 +120,7 @@ export default function ViciScreen() {
             />
           ) : null}
           <SettingsRow
-            hasDivider={arc != null}
+            hasDivider={FEATURES.customOrders && arc != null}
             label={arcCopy.settings.tone}
             value={commonCopy.toneNames[tone]}
             onPress={() => setOpenSheet('tone')}

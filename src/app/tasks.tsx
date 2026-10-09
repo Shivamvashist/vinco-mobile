@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -13,6 +13,7 @@ import { CarryOverCard } from '@/components/tasks/CarryOverCard';
 import { TaskItemRow } from '@/components/tasks/TaskItemRow';
 import { ToneLine } from '@/components/ToneLine';
 import { Txt } from '@/components/Txt';
+import { FEATURES } from '@/config/features';
 import { commonCopy, pickTone, tasksCopy } from '@/copy';
 import { arcEndDay } from '@/features/arc';
 import { useActiveArc } from '@/hooks/useActiveArc';
@@ -23,8 +24,14 @@ import { createStyles } from '@/theme';
 /**
  * The to-do list: daily tasks (every day of the arc) and day tasks (today, tomorrow).
  * Tasks never decide the day; orders do. See docs/ORDERS-AND-TASKS.md.
+ * Switched off for now (FEATURES.tasks): the route sends the user back to Today.
  */
 export default function TasksScreen() {
+  if (!FEATURES.tasks) return <Redirect href="/veni" />;
+  return <TasksContent />;
+}
+
+function TasksContent() {
   const styles = useStyles();
   const tone = usePreferencesStore((state) => state.tone);
   const { arc } = useActiveArc();

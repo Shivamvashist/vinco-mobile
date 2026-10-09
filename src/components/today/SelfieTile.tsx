@@ -11,7 +11,7 @@ export type SelfieTileProps = {
   onPress: () => void;
 };
 
-/** Today's selfie: opens the camera, and says whether today's photo is taken. */
+/** Today's selfie: opens the camera. Until taken, an accent border marks it as the next step. */
 export function SelfieTile({ isTaken, onPress }: SelfieTileProps) {
   const theme = useTheme();
   const styles = useStyles();
@@ -21,7 +21,7 @@ export function SelfieTile({ isTaken, onPress }: SelfieTileProps) {
       accessibilityRole="button"
       accessibilityLabel={`${proofCopy.todayTile.title}, ${status}`}
       onPress={onPress}
-      style={({ pressed }) => [styles.tile, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.tile, !isTaken && styles.call, pressed && styles.pressed]}
     >
       <View style={styles.icon}>
         <Icon name={isTaken ? 'check' : 'camera'} color="accent" />
@@ -44,8 +44,12 @@ const useStyles = createStyles((theme) => ({
     gap: theme.layout.cardPadding,
     padding: theme.layout.cardPadding,
     borderRadius: theme.radius.md,
+    borderWidth: theme.layout.borderWidth,
+    borderColor: 'transparent',
     backgroundColor: theme.colors.surface,
   },
+  /** Not taken yet: an accent border makes it the next thing to do. */
+  call: { borderColor: theme.colors.accentBorder },
   pressed: { opacity: 0.85 },
   icon: {
     width: theme.layout.iconTileSize,

@@ -69,6 +69,7 @@ describe('day logs', () => {
     expect(getDayLog(db, DAY)).toEqual({
       day: DAY,
       wokeAt: '2026-10-17T01:04:00.000Z',
+      sleptAt: null,
       stampedAt: '2026-10-17T15:00:00.000Z',
       selfiePath: null,
       weightKg: null,

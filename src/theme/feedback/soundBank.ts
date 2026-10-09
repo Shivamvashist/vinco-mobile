@@ -49,12 +49,19 @@ export function createSoundBank(feedback: FeedbackSet): SoundBank {
     play(cue) {
       const player = players.get(cue);
       if (!player) return;
+      const start = () => {
+        try {
+          player.play();
+        } catch (error) {
+          if (__DEV__) console.warn(`[feedback] Could not play "${cue}".`, error);
+        }
+      };
+      // Rewind first, then play once the rewind has landed: playing while the seek is still
+      // in flight can restart mid-sound and click. Seeking a local file takes a few ms.
       try {
-        // Rewind so rapid taps replay from the start instead of being ignored.
-        void player.seekTo(0).catch(() => undefined);
-        player.play();
-      } catch (error) {
-        if (__DEV__) console.warn(`[feedback] Could not play "${cue}".`, error);
+        player.seekTo(0).then(start, start);
+      } catch {
+        start();
       }
     },
     release() {

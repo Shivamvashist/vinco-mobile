@@ -1,5 +1,7 @@
 import { act, renderHook } from '@testing-library/react-native';
 
+import { ORDER_MAX_AMOUNTS } from '@/features/orders';
+
 import { useTodayOrders, WORKOUT_NOTE_MAX_LENGTH } from '../useTodayOrders';
 
 let mockToday = '2026-10-17';
@@ -49,16 +51,42 @@ describe('useTodayOrders', () => {
     expect(status).toBe('full');
   });
 
-  it('never goes past the full goal or below zero', () => {
+  it('goes past the full goal up to the cap, and never below zero', () => {
     const { result } = renderHook(() => useTodayOrders());
     act(() => {
-      for (let i = 0; i < 10; i += 1) result.current.addOne('water');
+      result.current.addOne('water');
+      result.current.addOne('water');
+      result.current.addOne('water');
+      result.current.addOne('water');
+      result.current.addOne('water');
     });
-    expect(result.current.amounts.water).toBe(4);
+    expect(result.current.amounts.water).toBe(5);
+    expect(result.current.statuses.water).toBe('full');
     act(() => {
-      for (let i = 0; i < 10; i += 1) result.current.undoOne('water');
+      for (let i = 0; i < 20; i += 1) result.current.addOne('water');
+    });
+    expect(result.current.amounts.water).toBe(ORDER_MAX_AMOUNTS.water);
+    act(() => {
+      for (let i = 0; i < 20; i += 1) result.current.undoOne('water');
     });
     expect(result.current.amounts.water).toBe(0);
+  });
+
+  it('logs wake-up with its sleep, and undo clears both', () => {
+    const { result } = renderHook(() => useTodayOrders());
+    const sleptAt = new Date(2026, 9, 16, 23, 10);
+    const wokeAt = new Date(2026, 9, 17, 6, 40);
+    act(() => {
+      result.current.logWakeUp(wokeAt, sleptAt);
+    });
+    expect(result.current.statuses.wake).toBe('full');
+    expect(result.current.wokeAt?.getTime()).toBe(wokeAt.getTime());
+    expect(result.current.sleptAt?.getTime()).toBe(sleptAt.getTime());
+    act(() => {
+      result.current.undoOne('wake');
+    });
+    expect(result.current.wokeAt).toBeNull();
+    expect(result.current.sleptAt).toBeNull();
   });
 
   it('records the wake-up time and clears it on undo', () => {

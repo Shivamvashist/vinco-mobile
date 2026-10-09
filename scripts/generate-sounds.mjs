@@ -7,6 +7,10 @@
  * Usage:   node scripts/generate-sounds.mjs
  * Output:  assets/sounds/vinco/<cue>.wav   (44.1 kHz, 16-bit, mono)
  *
+ * Levels: the recipes keep the prototype's gains for the shape of each sound, then every cue
+ * is scaled to the peak of its tier (LEVELS), so small ticks are clearly audible on a phone
+ * speaker and the stamp stays the loudest moment. Nothing clips.
+ *
  * To add a sound theme later: copy the RECIPES object, change the notes,
  * write to a new folder, and register it in src/theme/sounds.
  */
@@ -17,7 +21,8 @@ import { fileURLToPath } from 'node:url';
 const SAMPLE_RATE = 44100;
 const SILENCE = 0.0001;
 const TAIL_FADE_SECONDS = 0.01;
-const TARGET_PEAK = 0.9;
+/** Peak per tier, as a share of full scale: soft -9 dBFS, tick -6, moment -3, signature -1.5. */
+const LEVELS = { soft: 0.35, tick: 0.5, moment: 0.71, signature: 0.84 };
 const OUTPUT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'sounds', 'vinco');
 
 /** Deterministic noise so the files are identical on every run. */
@@ -91,16 +96,45 @@ function renderNoise(buffer, { at = 0, length, volume, curve = 1, seed = 7 }) {
   }
 }
 
+/**
+ * Noise through a band-pass filter whose centre glides from `from` to `to` Hz, under a smooth
+ * swell: a soft whoosh. Uses a state-variable filter, so it is deterministic and click-free.
+ */
+function renderWhoosh(buffer, { at = 0, length, volume, from, to, q = 1.2, seed = 31 }) {
+  const random = createRandom(seed);
+  const start = Math.floor(at * SAMPLE_RATE);
+  const total = Math.floor(length * SAMPLE_RATE);
+  let low = 0;
+  let band = 0;
+  for (let i = 0; i < total && start + i < buffer.length; i++) {
+    const progress = i / total;
+    const centre = from * Math.pow(to / from, progress);
+    const f = 2 * Math.sin((Math.PI * centre) / SAMPLE_RATE);
+    const input = random() * 2 - 1;
+    low += f * band;
+    const high = input - low - band / q;
+    band += f * high;
+    // Swell up over the first 40%, then fade: sin-shaped, no hard edges.
+    const envelope = Math.sin(Math.PI * Math.min(1, progress / 0.4) * 0.5) * Math.pow(1 - progress, 1.5);
+    buffer[start + i] += volume * band * envelope;
+  }
+}
+
 const tone = (options) => ({ kind: 'tone', ...options });
+const whoosh = (options) => ({ kind: 'whoosh', ...options });
 const noise = (options) => ({ kind: 'noise', ...options });
 /** A run of notes spaced `gap` seconds apart, starting at `at`. */
 const notes = (frequencies, { gap, at = 0, ...rest }) =>
   frequencies.map((frequency, k) => tone({ ...rest, frequency, at: at + k * gap }));
 
-/** Each cue: total duration in seconds and its layers. Names match SoundCue in src/theme/sounds. */
+/**
+ * Each cue: total duration in seconds, its loudness tier and its layers.
+ * Names match FeedbackCue in src/theme/types.ts.
+ */
 const RECIPES = {
   // Today: a task tap (+1 L, +1 meal)
   tap: {
+    level: 'tick',
     duration: 0.2,
     layers: [
       tone({ frequency: 880, type: 'triangle', volume: 0.1, length: 0.08 }),
@@ -109,6 +143,7 @@ const RECIPES = {
   },
   // Picking an option card (arc length, tone)
   select: {
+    level: 'tick',
     duration: 0.18,
     layers: [
       tone({
@@ -122,22 +157,34 @@ const RECIPES = {
       }),
     ],
   },
-  // Segmented control or small toggle
+  // Segmented control (the Vidi tick) or small toggle
   toggle: {
+    level: 'tick',
     duration: 0.14,
     layers: [tone({ frequency: 760, type: 'triangle', volume: 0.08, attack: 0, length: 0.08 })],
   },
   // Stepper + and -
-  stepUp: { duration: 0.15, layers: [tone({ frequency: 880, volume: 0.1, attack: 0, length: 0.09 })] },
-  stepDown: { duration: 0.15, layers: [tone({ frequency: 587, volume: 0.1, attack: 0, length: 0.09 })] },
+  stepUp: {
+    level: 'tick',
+    duration: 0.15,
+    layers: [tone({ frequency: 880, volume: 0.1, attack: 0, length: 0.09 })],
+  },
+  stepDown: {
+    level: 'tick',
+    duration: 0.15,
+    layers: [tone({ frequency: 587, volume: 0.1, attack: 0, length: 0.09 })],
+  },
   // A task reaches its full goal
   win: {
+    level: 'moment',
     duration: 0.6,
     layers: notes([659.25, 830.61, 987.77], { gap: 0.07, type: 'triangle', volume: 0.09, length: 0.35 }),
   },
   // The VINCO stamp: low thud, then a rising brass figure
   stamp: {
-    duration: 1.2,
+    level: 'signature',
+    // The brass tail fades out by about 1.28 s.
+    duration: 1.3,
     layers: [
       tone({ frequency: 130, sweepTo: 40, sweepTime: 0.35, volume: 0.45, attack: 0, length: 0.45 }),
       ...notes([392, 493.88, 587.33, 783.99], {
@@ -151,6 +198,7 @@ const RECIPES = {
   },
   // Cross the Rubicon
   cross: {
+    level: 'signature',
     duration: 1.0,
     layers: [
       tone({ frequency: 140, sweepTo: 48, sweepTime: 0.35, volume: 0.35, attack: 0, length: 0.45 }),
@@ -166,20 +214,24 @@ const RECIPES = {
   },
   // Splash "Enter"
   chime: {
+    level: 'moment',
     duration: 0.8,
     layers: notes([523.25, 783.99], { gap: 0.09, volume: 0.12, attack: 0.02, length: 0.6 }),
   },
   // Share or save confirmed
   confirm: {
+    level: 'moment',
     duration: 0.7,
     layers: notes([783.99, 1046.5], { gap: 0.08, volume: 0.1, attack: 0.02, length: 0.5 }),
   },
   // Voice recording starts and is sealed
   recordStart: {
+    level: 'moment',
     duration: 0.2,
     layers: [tone({ frequency: 880, volume: 0.12, attack: 0.02, length: 0.15 })],
   },
   recordStop: {
+    level: 'moment',
     duration: 1.0,
     layers: notes([196, 261.63, 392], {
       gap: 0.1,
@@ -191,6 +243,7 @@ const RECIPES = {
   },
   // Daily selfie shutter
   shutter: {
+    level: 'moment',
     duration: 0.15,
     layers: [
       noise({ length: 0.04, volume: 0.3, curve: 2, seed: 11 }),
@@ -199,6 +252,7 @@ const RECIPES = {
   },
   // First selfie: shutter, then the DAY I stamp thud
   seal: {
+    level: 'signature',
     duration: 0.8,
     layers: [
       noise({ length: 0.06, volume: 0.25, seed: 5 }),
@@ -207,6 +261,7 @@ const RECIPES = {
   },
   // Resurgo: rise again
   rise: {
+    level: 'moment',
     duration: 0.9,
     layers: notes([261.63, 329.63, 392, 523.25], {
       gap: 0.12,
@@ -218,13 +273,21 @@ const RECIPES = {
   },
   // Truce used
   truce: {
+    level: 'moment',
     duration: 0.6,
     layers: notes([440, 554.37], { gap: 0.1, volume: 0.1, attack: 0.02, length: 0.4 }),
   },
   // Tapped something locked or unavailable
   denied: {
+    level: 'tick',
     duration: 0.2,
     layers: [tone({ frequency: 330, type: 'triangle', volume: 0.1, attack: 0, length: 0.15 })],
+  },
+  // Switching tabs: a short, soft air movement (not in the prototype, which had no tab sound)
+  whoosh: {
+    level: 'soft',
+    duration: 0.2,
+    layers: [whoosh({ length: 0.18, volume: 1, from: 500, to: 2600 })],
   },
 };
 
@@ -232,6 +295,7 @@ function renderCue({ duration, layers }) {
   const buffer = new Float32Array(Math.ceil(duration * SAMPLE_RATE));
   for (const layer of layers) {
     if (layer.kind === 'tone') renderTone(buffer, layer);
+    else if (layer.kind === 'whoosh') renderWhoosh(buffer, layer);
     else renderNoise(buffer, layer);
   }
   const fade = Math.floor(TAIL_FADE_SECONDS * SAMPLE_RATE);
@@ -263,19 +327,18 @@ function encodeWav(samples, gain) {
   return out;
 }
 
-const rendered = Object.entries(RECIPES).map(([name, recipe]) => [name, renderCue(recipe)]);
-// One shared gain keeps the relative loudness from the prototype.
-const loudestPeak = Math.max(
-  ...rendered.map(([, samples]) => samples.reduce((max, s) => Math.max(max, Math.abs(s)), 0)),
-);
-if (!Number.isFinite(loudestPeak) || loudestPeak <= 0)
-  throw new Error('Rendered sounds are silent; check RECIPES.');
-const sharedGain = TARGET_PEAK / loudestPeak;
-
 mkdirSync(OUTPUT_DIR, { recursive: true });
-for (const [name, samples] of rendered) {
-  const file = join(OUTPUT_DIR, `${name}.wav`);
-  writeFileSync(file, encodeWav(samples, sharedGain));
-  console.log(`${name}.wav  ${(samples.length / SAMPLE_RATE).toFixed(2)}s`);
+for (const [name, recipe] of Object.entries(RECIPES)) {
+  const target = LEVELS[recipe.level];
+  if (target == null) throw new Error(`${name}: unknown level "${recipe.level}".`);
+  const samples = renderCue(recipe);
+  const peak = samples.reduce((max, sample) => Math.max(max, Math.abs(sample)), 0);
+  if (!Number.isFinite(peak) || peak <= 0) throw new Error(`${name} rendered silent; check RECIPES.`);
+  const gain = target / peak;
+  writeFileSync(join(OUTPUT_DIR, `${name}.wav`), encodeWav(samples, gain));
+  const peakDb = (20 * Math.log10(target)).toFixed(1);
+  console.log(
+    `${name}.wav  ${(samples.length / SAMPLE_RATE).toFixed(2)}s  ${recipe.level} peak ${peakDb} dBFS`,
+  );
 }
-console.log(`Wrote ${rendered.length} sounds to ${OUTPUT_DIR} (gain ${sharedGain.toFixed(2)}).`);
+console.log(`Wrote ${Object.keys(RECIPES).length} sounds to ${OUTPUT_DIR}.`);

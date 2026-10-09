@@ -5,10 +5,11 @@ import type { Tone } from '@/features/tone';
 import type { ThemePreferences } from '@/theme';
 
 import { createPhoneStorage } from './phoneStorage';
-import { DEFAULT_PREFERENCES, sanitizePreferences, type Preferences } from './preferences';
+import { clampGhostOpacity, DEFAULT_PREFERENCES, sanitizePreferences, type Preferences } from './preferences';
 
 type PreferencesActions = {
   setTone: (tone: Tone) => void;
+  setGhostOpacity: (opacity: number) => void;
   updateThemePreferences: (patch: Partial<ThemePreferences>) => void;
   /** Back to the defaults (dev reset only: a journey reset keeps preferences). */
   reset: () => void;
@@ -28,6 +29,7 @@ export const usePreferencesStore = create<PreferencesStore>()(
     (set) => ({
       ...DEFAULT_PREFERENCES,
       setTone: (tone) => set({ tone }),
+      setGhostOpacity: (opacity) => set({ ghostOpacity: clampGhostOpacity(opacity) }),
       updateThemePreferences: (patch) => set(sanitizePreferences(patch)),
       reset: () => set(DEFAULT_PREFERENCES),
     }),
@@ -35,8 +37,9 @@ export const usePreferencesStore = create<PreferencesStore>()(
       name: 'vinco.preferences',
       version: STORE_VERSION,
       storage: createPhoneStorage<Preferences>(),
-      partialize: ({ tone, themeId, colorMode, soundEnabled, hapticsEnabled }) => ({
+      partialize: ({ tone, themeId, colorMode, soundEnabled, hapticsEnabled, ghostOpacity }) => ({
         tone,
+        ghostOpacity,
         themeId,
         colorMode,
         soundEnabled,

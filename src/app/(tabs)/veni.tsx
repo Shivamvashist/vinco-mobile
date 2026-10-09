@@ -5,30 +5,52 @@ import { View } from 'react-native';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { AddOrderSheet } from '@/components/orders/AddOrderSheet';
+import { WeightSheet } from '@/components/proof/WeightSheet';
+import { WeightTile } from '@/components/proof/WeightTile';
 import { StatChip } from '@/components/StatChip';
 import { ProgressRing } from '@/components/ProgressRing';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionHeader } from '@/components/SectionHeader';
+import { DawnCard } from '@/components/today/DawnCard';
 import { SealDayCard } from '@/components/today/SealDayCard';
 import { SelfieTile } from '@/components/today/SelfieTile';
 import { StampOverlay } from '@/components/today/StampOverlay';
 import { TaskRow } from '@/components/today/TaskRow';
 import { TodoTile } from '@/components/today/TodoTile';
+import { FEATURES } from '@/config/features';
 import { TruceBanner } from '@/components/today/TruceBanner';
+import { WakeSheet } from '@/components/today/WakeSheet';
 import { WorkoutSheet } from '@/components/today/WorkoutSheet';
 import { ToneLine } from '@/components/ToneLine';
 import { Txt } from '@/components/Txt';
 import { commonCopy, pickTone, todayCopy } from '@/copy';
 import { arcEndDay, getArcPosition } from '@/features/arc';
-import { CUSTOM_ORDER_LIMITS, ORDER_KINDS, type OrderKind, type OrderStatus } from '@/features/orders';
+import {
+  CUSTOM_ORDER_LIMITS,
+  maxAmountFor,
+  ORDER_KINDS,
+  type OrderKind,
+  type OrderStatus,
+} from '@/features/orders';
+import { sleepMinutesFromMoments, toWakeMoments } from '@/features/sleep';
 import { useActiveArc } from '@/hooks/useActiveArc';
 import { useCampaign } from '@/hooks/useCampaign';
 import { useDailySelfie } from '@/hooks/useDailySelfie';
+import { useLatestBedtime } from '@/hooks/useLatestBedtime';
 import { useOwnOrderActions } from '@/hooks/useOwnOrderActions';
 import { useTasks } from '@/hooks/useTasks';
 import { type TodayOrders, useTodayOrders } from '@/hooks/useTodayOrders';
-import { type DayKey, daysLeftInYear, formatClockTime, parseDayKey, weekdayIndex } from '@/lib/dates';
+import {
+  type DayKey,
+  daysLeftInYear,
+  formatClockMinutes,
+  formatClockTime,
+  parseClockMinutes,
+  parseDayKey,
+  toDayKey,
+  weekdayIndex,
+} from '@/lib/dates';
 import { toRoman } from '@/lib/toRoman';
 import { usePreferencesStore } from '@/stores';
 import { createStyles, useFeedback } from '@/theme';
@@ -49,21 +71,41 @@ export default function VeniScreen() {
   const selfie = useDailySelfie(orders.today);
   const tasks = useTasks(activeArc.arc ? arcEndDay(activeArc.arc.startDay, activeArc.arc.lengthDays) : null);
   const ownOrders = useOwnOrderActions(arcId);
+  const latestBedtime = useLatestBedtime(orders.today);
   const [isWorkoutSheetOpen, setIsWorkoutSheetOpen] = useState(false);
   const [isAddOrderOpen, setIsAddOrderOpen] = useState(false);
+  const [isWakeSheetOpen, setIsWakeSheetOpen] = useState(false);
+  const [isWeightSheetOpen, setIsWeightSheetOpen] = useState(false);
   const { today, targets, statuses, heldCount, totalCount } = orders;
   const activeOwnOrders = orders.customOrders.filter((item) => item.order.lastDay == null).length;
-  const canAddOrder = activeArc.arc != null && activeOwnOrders < CUSTOM_ORDER_LIMITS.maxActive;
+  const canAddOrder =
+    FEATURES.customOrders && activeArc.arc != null && activeOwnOrders < CUSTOM_ORDER_LIMITS.maxActive;
 
   const weekday = commonCopy.weekdays[weekdayIndex(today)] ?? '';
   const caption = commonCopy.daysLeftInYear(daysLeftInYear(today), parseDayKey(today).year);
   const header = describeArcHeader(activeArc.arc, today);
   const isLoaded = orders.isLoaded && activeArc.isLoaded;
+  // Until wake-up is logged, the day opens on the dawn card and the orders wait.
+  const isAwake = orders.amounts.wake > 0;
+  const isDawn = activeArc.arc != null && isLoaded && !isAwake;
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  // The dev clock can run ahead: then "now" isn't on today and there is no future check.
+  const isRealToday = toDayKey(now) === today;
+  const plannedWakeMinutes = activeArc.arc ? parseClockMinutes(activeArc.arc.wakeTime) : null;
+  const wokeMinutes = orders.wokeAt ? orders.wokeAt.getHours() * 60 + orders.wokeAt.getMinutes() : null;
+  const sleptMinutes = orders.sleptAt ? orders.sleptAt.getHours() * 60 + orders.sleptAt.getMinutes() : null;
 
   const playForStatus = (status: OrderStatus) => play(status === 'full' ? 'win' : 'tap');
 
   const handlePress = (kind: OrderKind) => {
-    if (statuses[kind] === 'full') {
+    if (kind === 'wake') {
+      play('tap');
+      setIsWakeSheetOpen(true);
+      return;
+    }
+    // The full goal isn't a ceiling: only the cap stops more being logged.
+    if (orders.amounts[kind] >= maxAmountFor(kind, targets[kind])) {
       play('denied');
       return;
     }
@@ -99,6 +141,12 @@ export default function VeniScreen() {
     }
     play('stepDown');
     orders.undoOneCustom(orderId);
+  };
+
+  const handleWakeSave = (wakeMinutes: number, bedtimeMinutes: number) => {
+    setIsWakeSheetOpen(false);
+    const { wokeAt, sleptAt } = toWakeMoments(today, bedtimeMinutes, wakeMinutes);
+    orders.logWakeUp(wokeAt, sleptAt);
   };
 
   const handleWorkoutSave = (minutes: number, note: string) => {
@@ -142,7 +190,22 @@ export default function VeniScreen() {
           </View>
         ) : null}
 
+        {isDawn ? (
+          <View style={styles.notice}>
+            <DawnCard
+              hour={now.getHours()}
+              plannedTime={plannedWakeMinutes != null ? formatClockMinutes(plannedWakeMinutes) : null}
+              onRise={() => setIsWakeSheetOpen(true)}
+            />
+          </View>
+        ) : null}
+
         <SectionHeader title={todayCopy.ordersSection} />
+        {isDawn ? (
+          <Txt variant="caption" style={styles.waiting}>
+            {todayCopy.dawn.waiting}
+          </Txt>
+        ) : null}
         {orders.hasSaveError ? (
           <Card variant="sunk" style={styles.error} accessibilityRole="alert">
             <Txt variant="caption" color="danger">
@@ -150,8 +213,14 @@ export default function VeniScreen() {
             </Txt>
           </Card>
         ) : null}
-        {/* Rows wait for the first read, so status circles don't pop on open. */}
-        <View style={styles.rows}>
+        {/* Rows wait for the first read, so status circles don't pop on open. Before
+            wake-up they show dimmed and can't be tapped: the dawn card is the first step. */}
+        <View
+          style={[styles.rows, isDawn && styles.rowsWaiting]}
+          pointerEvents={isDawn ? 'none' : 'auto'}
+          importantForAccessibility={isDawn ? 'no-hide-descendants' : 'auto'}
+          accessibilityElementsHidden={isDawn}
+        >
           {(isLoaded ? ORDER_KINDS : []).map((kind) => {
             const row = describeRow(kind, orders);
             return (
@@ -200,13 +269,22 @@ export default function VeniScreen() {
             <SealDayCard status={campaign.todayStatus} onSeal={() => router.push('/day-card')} />
           </View>
         ) : null}
-        {/* The daily selfie belongs to an arc: it becomes the timelapse. */}
+        {/* Proof belongs to an arc: the selfies become the timelapse, the weights a trend. */}
         {activeArc.arc && isLoaded ? (
-          <View style={styles.proof}>
-            <SelfieTile isTaken={selfie.todayPath != null} onPress={() => router.push('/selfie')} />
-          </View>
+          <>
+            <SectionHeader title={todayCopy.proofSection} />
+            <View style={styles.rows}>
+              <SelfieTile isTaken={selfie.todayPath != null} onPress={() => router.push('/selfie')} />
+              <WeightTile
+                today={today}
+                todayKg={selfie.weightKg}
+                latest={selfie.latestWeight}
+                onPress={() => setIsWeightSheetOpen(true)}
+              />
+            </View>
+          </>
         ) : null}
-        {activeArc.arc && isLoaded && tasks.isLoaded ? (
+        {FEATURES.tasks && activeArc.arc && isLoaded && tasks.isLoaded ? (
           <View style={styles.tile}>
             <TodoTile summary={tasks.summary} onPress={() => router.push('/tasks')} />
           </View>
@@ -223,10 +301,31 @@ export default function VeniScreen() {
         }}
       />
 
+      <WakeSheet
+        visible={isWakeSheetOpen}
+        onClose={() => setIsWakeSheetOpen(false)}
+        isEditing={isAwake}
+        initialWakeMinutes={wokeMinutes ?? (isRealToday ? nowMinutes : (plannedWakeMinutes ?? nowMinutes))}
+        initialBedtimeMinutes={sleptMinutes ?? latestBedtime}
+        nowMinutes={isRealToday ? nowMinutes : null}
+        onSave={handleWakeSave}
+      />
+
+      <WeightSheet
+        visible={isWeightSheetOpen}
+        onClose={() => setIsWeightSheetOpen(false)}
+        currentKg={selfie.weightKg}
+        onSave={(kg) => {
+          selfie.saveWeight(kg);
+          setIsWeightSheetOpen(false);
+        }}
+      />
+
       <WorkoutSheet
         visible={isWorkoutSheetOpen}
         onClose={() => setIsWorkoutSheetOpen(false)}
         target={targets.workout}
+        maxMinutes={maxAmountFor('workout', targets.workout)}
         onSave={handleWorkoutSave}
       />
 
@@ -295,7 +394,13 @@ function describeRow(kind: OrderKind, orders: TodayOrders): RowContent {
     }
     case 'wake': {
       const copy = todayCopy.orders.wake;
-      const line = orders.wokeAt ? copy.doneLine(formatClockTime(orders.wokeAt)) : copy.idleLine;
+      const sleep = sleepMinutesFromMoments(
+        orders.sleptAt?.toISOString() ?? null,
+        orders.wokeAt?.toISOString() ?? null,
+      );
+      const line = orders.wokeAt
+        ? copy.doneLine(formatClockTime(orders.wokeAt), sleep != null ? commonCopy.duration(sleep) : null)
+        : copy.idleLine;
       return { name: copy.name, line, action: copy.action, hint: copy.hint };
     }
     case 'meal': {
@@ -320,6 +425,8 @@ const useStyles = createStyles((theme) => ({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space.sm, marginTop: theme.space.md },
   toneLine: { marginTop: theme.space.lg },
   notice: { marginTop: theme.space.lg },
+  waiting: { marginBottom: theme.space.sm },
+  rowsWaiting: { opacity: 0.45 },
   rows: { gap: theme.space.sm },
   proof: { marginTop: theme.space.lg },
   tile: { marginTop: theme.space.sm },

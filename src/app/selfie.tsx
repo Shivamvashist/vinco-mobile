@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { Image, ScrollView, View } from 'react-native';
 
 import { Button } from '@/components/Button';
-import { ChoiceChip } from '@/components/ChoiceChip';
 import { Icon } from '@/components/Icon';
 import { IconButton } from '@/components/IconButton';
 import { Screen } from '@/components/Screen';
@@ -18,11 +17,10 @@ import { useCampaign } from '@/hooks/useCampaign';
 import { useDailySelfie } from '@/hooks/useDailySelfie';
 import { useToday } from '@/hooks/useToday';
 import { toRoman } from '@/lib/toRoman';
+import { GHOST_OPACITY_MAX, usePreferencesStore } from '@/stores';
 import { createStyles, SchemeOverride } from '@/theme';
 
 const copy = proofCopy.daily;
-const GHOST_LEVELS = { off: 0, faint: 0.2, strong: 0.4 } as const;
-type GhostLevel = keyof typeof GHOST_LEVELS;
 
 const THUMB_WIDTH = 52;
 const THUMB_HEIGHT = 66;
@@ -42,7 +40,8 @@ function DailySelfieContent() {
   const { arc, targets } = useActiveArc();
   const campaign = useCampaign(arc, targets, today);
   const selfie = useDailySelfie(today);
-  const [ghostLevel, setGhostLevel] = useState<GhostLevel>('faint');
+  const ghostOpacity = usePreferencesStore((state) => state.ghostOpacity);
+  const setGhostOpacity = usePreferencesStore((state) => state.setGhostOpacity);
   // Until the user types, the field shows the saved weight (which may load a moment after opening).
   const [editedWeight, setEditedWeight] = useState<string | null>(null);
   const weightText = editedWeight ?? (selfie.weightKg != null ? String(selfie.weightKg) : '');
@@ -88,24 +87,13 @@ function DailySelfieContent() {
         <SelfieCapture
           day={today}
           ghostUri={selfie.ghostPath}
-          ghostOpacity={GHOST_LEVELS[ghostLevel]}
+          ghostOpacity={ghostOpacity}
+          ghostOpacityMax={GHOST_OPACITY_MAX}
+          onGhostOpacityChange={setGhostOpacity}
+          confirmAlignment
           existingUri={selfie.todayPath}
           onCaptured={selfie.saveSelfie}
         />
-
-        {selfie.ghostPath && !selfie.todayPath ? (
-          <View style={styles.ghostRow} accessibilityRole="radiogroup">
-            <Txt variant="caption">{copy.ghostLabel}</Txt>
-            {(Object.keys(GHOST_LEVELS) as GhostLevel[]).map((level) => (
-              <ChoiceChip
-                key={level}
-                label={copy.ghostOptions[level]}
-                selected={ghostLevel === level}
-                onPress={() => setGhostLevel(level)}
-              />
-            ))}
-          </View>
-        ) : null}
 
         {selfie.todayPath ? (
           <View style={styles.after}>
@@ -168,7 +156,6 @@ const useStyles = createStyles((theme) => ({
   title: { flex: 1, textAlign: 'center', letterSpacing: 2 },
   headerSpacer: { width: theme.layout.minTouchTarget },
   body: { padding: theme.space.lg, paddingBottom: theme.space.xxxl, gap: theme.space.lg },
-  ghostRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: theme.space.sm },
   after: { gap: theme.space.md },
   saved: { flexDirection: 'row', alignItems: 'center', gap: theme.space.sm },
   savedText: { flex: 1 },

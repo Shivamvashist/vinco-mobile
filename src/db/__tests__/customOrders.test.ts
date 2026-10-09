@@ -1,3 +1,4 @@
+import { FEATURES } from '@/config/features';
 import { CUSTOM_ORDER_LIMITS, DEFAULT_ORDER_TARGETS, type OrderAmounts } from '@/features/orders';
 
 import { createArc } from '../arcs';
@@ -16,6 +17,10 @@ import { sealFinishedDays, selectDayLogsBetween, selectOrderLogsBetween, toDayRe
 import { createTestDatabase } from '../testing/testDatabase';
 
 const START = '2026-10-12';
+
+// Built but switched off in the app; these tests cover it switched on.
+beforeEach(() => jest.replaceProperty(FEATURES, 'customOrders', true));
+afterEach(() => jest.restoreAllMocks());
 const HELD: OrderAmounts = { water: 1, wake: 1, meal: 1, workout: 15 };
 const CONQUERED: OrderAmounts = { water: 4, wake: 1, meal: 2, workout: 40 };
 const READ = { name: '  Read ', unit: 'pages', min: 10, full: 30 };

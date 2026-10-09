@@ -85,12 +85,26 @@ Answer when convenient; work continues with the safe default shown.
 - Template leftovers not used by the app: `assets/images/react-logo*.png`, `expo-badge*.png`, `expo-logo.png`, `logo-glow.png`, `tutorial-web.png`, `tabIcons/`; packages `@expo/ui`, `expo-glass-effect`, `expo-symbols`, `expo-web-browser`, `expo-device`. Remove when convenient (`expo-device` may be useful later).
 - `docs/v1-reference/` (the plan HTML) still describes the weekly Truce; it's a reference snapshot, left as is. PLAN.md is updated.
 - `assets/images/android-icon-background.png` is no longer referenced (the adaptive icon uses a background colour). Delete with the other template leftovers.
+- Thud-based cues (stamp, cross, seal) put most energy at 40 to 140 Hz, which phone speakers barely play. Kept as the prototype has it; lifting the brass layers or adding an octave-up layer would make the stamp fuller on a phone. Ask the developer.
 - `npm audit` reports 30 advisories in the dependency tree (mostly dev tooling). Review before the production build.
 - `README.md` is now a short project readme.
 
 ---
 
 ## Milestone log
+
+### 9 Oct 2026: Polish: sounds, selfie, dawn and sleep, proof, Commentarii
+
+- Spec first: [docs/DAY-FLOW.md](docs/DAY-FLOW.md).
+- **Sounds:** an audit found all 17 recipes match the prototype exactly. Levels were the problem: one shared gain set by the stamp's sub-bass left ticks at -14 to -16 dBFS, then a 0.8 player volume. Now each cue is scaled to its tier (ticks -6, moments -3, signature -1.5, soft -9 dBFS), the theme plays at volume 1, and the sound bank rewinds before playing (no click on rapid taps). New `whoosh` cue for tab switches.
+- **Feature flags:** `src/config/features.ts`. Own orders and the to-do list are off: hidden, routes redirect, and `selectCustomOrdersOn` matches nothing so own orders can never count while off. Their tests switch them on with `jest.replaceProperty`.
+- **Selfie:** each capture gets its own file name (`YYYY-MM-DD-<time>.jpg`), and the replaced file is deleted after the new path is saved (the retake bug was the image cache showing the same URI). Review step: "Face inside the outline, like yesterday?" with Looks right or Retake; nothing is saved until confirmed. The ghost is the latest earlier selfie, with a slider from 0 to 60% (`ghostOpacity` in preferences, default 30%). Real face detection needs a custom build.
+- **Dawn and sleep:** `DawnCard` until wake-up is logged (orders dimmed and not tappable). `WakeSheet` with `TimeField`s (native clock): woke up at (now) and went to sleep at (last bedtime, else 11 pm), live hours slept, validation (1 to 16 h, not in the future; no future check on the dev clock). Saved through `logWakeUp` in the orders transaction (stamp-aware). Migration `0006_day_sleep` adds `day_logs.slept_at`. Logic in `src/features/sleep/`.
+- **Amounts past the goal:** `ORDER_MAX_AMOUNTS` (water 10 L, meals 8, workout 300 min); lines read "5 L · conquered, 1 over"; the workout sheet has an exact-time stepper.
+- **Proof on Today:** "Proof" section with the selfie tile and a new body weight tile and sheet, both with call-to-action styling until done.
+- **Commentarii (Vidi):** `SegmentedControl` (Calendar, Commentarii). Chips for sleep, water, workout, weight. Week bars after the prototype with week arrows inside the arc, insight lines; weight as weekly trend plus a line across the arc and a log button. Logic in `src/features/logs/`, data in `useCommentarii`.
+- New packages: `@react-native-community/slider`, `@react-native-community/datetimepicker` (both in Expo Go).
+- Verified: 336 tests, no console warnings, Android bundle builds.
 
 ### 9 Oct 2026: App icon
 

@@ -1,0 +1,1 @@
+ALTER TABLE `day_logs` ADD `slept_at` text;

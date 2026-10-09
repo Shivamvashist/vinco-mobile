@@ -51,6 +51,15 @@ export const commonCopy = {
 
   toneLabel: (toneName: string): string => `${toneName} tone`,
 
+  /** A span of minutes: "7 h 20 m", "45 m", "8 h". */
+  duration: (minutes: number): string => {
+    const safe = Math.max(0, Math.round(minutes));
+    const hours = Math.floor(safe / 60);
+    const mins = safe % 60;
+    if (hours === 0) return `${mins} m`;
+    return mins === 0 ? `${hours} h` : `${hours} h ${String(mins).padStart(2, '0')} m`;
+  },
+
   /** Shown if the phone's database can't be opened or upgraded at start-up. */
   startupError: {
     title: 'Vinco could not open your data',
