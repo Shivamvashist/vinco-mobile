@@ -12,7 +12,7 @@ import { Txt } from '@/components/Txt';
 import { commonCopy } from '@/copy';
 import { TONES } from '@/features/tone';
 import { KitGallery } from '@/dev/KitGallery';
-import { usePreferencesStore } from '@/stores';
+import { IS_DEV_MODE_AVAILABLE, usePreferencesStore } from '@/stores';
 import {
   createStyles,
   useFeedback,
@@ -66,7 +66,7 @@ const FEEDBACK_CUES: FeedbackCue[] = [
 const COLOR_MODES: ColorMode[] = ['dark', 'light', 'system'];
 
 export default function ThemeLab() {
-  if (!__DEV__) return <Redirect href="/" />;
+  if (!IS_DEV_MODE_AVAILABLE) return <Redirect href="/" />;
   return <ThemeLabContent />;
 }
 

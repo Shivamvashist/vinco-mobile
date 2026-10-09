@@ -40,7 +40,7 @@ The memory of this project. Any AI model or developer joining should read this, 
 | 9 Oct | `app.json` `userInterfaceStyle` stays `automatic`                                                                               | Lets `colorMode: 'system'` work; the app's own default is still dark                        |
 | 9 Oct | Sounds generated as WAV from the prototype recipes                                                                              | Matches the design exactly; a new theme can ship its own set                                |
 | 9 Oct | Fonts imported per weight from subpaths                                                                                         | Package index would bundle all 14 Figtree weights                                           |
-| 9 Oct | Android package name **not** set yet                                                                                            | It becomes permanent on first Play upload; decide in Step 6                                 |
+| 9 Oct | Android package `com.ninjavashist.vinco` (placeholder), test APKs from EAS "preview" profile                                    | Developer's choice; permanent only once uploaded to Play                                    |
 | 9 Oct | Play closed-test build moved to Step 6 (before the database)                                                                    | The 14-day closed test must start by 12 Oct to make 2 Nov                                   |
 | 9 Oct | State: Zustand for app/UI state (persisted), SQLite + Drizzle live queries for records, never mirrored; TanStack Query from 1.0 | Developer's decision. One source of truth per kind of data                                  |
 | 9 Oct | Zustand persisted to expo-sqlite kv-store with its sync API                                                                     | One storage engine for the app; synchronous restore means no flash of default theme or tone |
@@ -60,8 +60,8 @@ The memory of this project. Any AI model or developer joining should read this, 
 
 Answer when convenient; work continues with the safe default shown.
 
-1. **Package name and Play account** (needed for Step 6, target 12 Oct). Default: nothing set until you decide.
-2. **App icon and splash art.** Default: Expo template images remain; Step 6 can't ship without real ones.
+1. **Play account.** Package name set to the placeholder `com.ninjavashist.vinco` (developer's choice, 9 Oct). It becomes permanent on the first Play upload, so confirm or change it before then. No Play account yet.
+2. **Splash art.** The app icon is done (`assets/app-icon/vinco_dark_v1.png`, built into every size by `npm run icons`). The splash shows the same mark on Basalt. Say if you want a different splash.
 3. **Onboarding order:** built as the prototype's five steps (arc, orders with wake time, tone, oath, selfie). Bedtime moves to Step 12 (wind-down nudge) and step one to a Today card (Step 12). Change if you prefer otherwise.
 4. **Default tone before onboarding.** Default: Centurion.
 5. **Truce numbers.** Built: one Truce when an arc begins, one per 7 days of campaign, at most 3 held, 50 denarii to buy, and the Truce must be called before the day after the miss ends. All in `TRUCES` (`src/features/campaign/truces.ts`). Say if you want different numbers or a longer window.
@@ -84,12 +84,26 @@ Answer when convenient; work continues with the safe default shown.
 
 - Template leftovers not used by the app: `assets/images/react-logo*.png`, `expo-badge*.png`, `expo-logo.png`, `logo-glow.png`, `tutorial-web.png`, `tabIcons/`; packages `@expo/ui`, `expo-glass-effect`, `expo-symbols`, `expo-web-browser`, `expo-device`. Remove when convenient (`expo-device` may be useful later).
 - `docs/v1-reference/` (the plan HTML) still describes the weekly Truce; it's a reference snapshot, left as is. PLAN.md is updated.
+- `assets/images/android-icon-background.png` is no longer referenced (the adaptive icon uses a background colour). Delete with the other template leftovers.
 - `npm audit` reports 30 advisories in the dependency tree (mostly dev tooling). Review before the production build.
 - `README.md` is now a short project readme.
 
 ---
 
 ## Milestone log
+
+### 9 Oct 2026: App icon
+
+- Source: `assets/app-icon/vinco_dark_v1.png` (the developer's icon: light V and leaf on a dark rounded tile).
+- `scripts/generate-icons.mjs` (`npm run icons`) lifts the mark off the tile by brightness (cut set in the gap of the image's histogram, small specks and glow dropped) and writes the adaptive foreground and monochrome layers (inside Android's safe circle), the full-bleed `icon.png`, the splash mark and the favicon. Adaptive icon background `#131318` (the tile's colour); splash mark 120 wide on Basalt.
+- Re-run after replacing the source; then rebuild the APK (icons are baked into the build, Expo Go shows its own).
+
+### 9 Oct 2026: Test APK setup
+
+- `app.json`: `android.package` = `com.ninjavashist.vinco` (placeholder until a Play account exists).
+- `eas.json`: `preview` profile builds an installable APK (internal distribution) with `EXPO_PUBLIC_DEV_TOOLS=1`; `production` builds the Play bundle (AAB) with auto-incremented version codes (stored on EAS: `appVersionSource: remote`).
+- `IS_DEV_MODE_AVAILABLE` is now true in dev builds and preview APKs, never in production. The theme lab and the Vici long-press use the same flag.
+- Build: `npm install -g eas-cli`, `eas login`, `eas build -p android --profile preview`, then open the build link on the phone and install. EAS keeps the signing key; keep using it so updates install over the old APK and keep data.
 
 ### 9 Oct 2026: Orders and tasks
 

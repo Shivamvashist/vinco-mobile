@@ -3,8 +3,11 @@ import { persist } from 'zustand/middleware';
 
 import { createPhoneStorage } from './phoneStorage';
 
-/** Dev builds only: dev mode does nothing in a production build. */
-export const IS_DEV_MODE_AVAILABLE = __DEV__;
+/**
+ * Dev tools exist in dev builds (Expo Go) and in test APKs built with the EAS "preview"
+ * profile, which sets EXPO_PUBLIC_DEV_TOOLS=1 (eas.json). Never in a production build.
+ */
+export const IS_DEV_MODE_AVAILABLE = __DEV__ || process.env.EXPO_PUBLIC_DEV_TOOLS === '1';
 
 /** Furthest the simulated clock can move ahead: far past any arc. */
 export const MAX_DAY_OFFSET = 366;

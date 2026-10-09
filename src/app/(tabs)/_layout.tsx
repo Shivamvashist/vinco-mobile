@@ -4,10 +4,13 @@ import { TabBar } from '@/components/navigation/TabBar';
 import { tabsCopy } from '@/copy';
 import { useLossNotice } from '@/hooks/useLossNotice';
 import { useSealFinishedDays } from '@/hooks/useSealFinishedDays';
+import { IS_DEV_MODE_AVAILABLE } from '@/stores';
 import { useTheme } from '@/theme';
 
 /** Dev shortcut: long-press the Vici tab to open the theme lab. Does nothing in production. */
-const devListeners = __DEV__ ? { tabLongPress: () => router.push('/dev/theme-lab') } : undefined;
+const devListeners = IS_DEV_MODE_AVAILABLE
+  ? { tabLongPress: () => router.push('/dev/theme-lab') }
+  : undefined;
 
 export default function TabsLayout() {
   const theme = useTheme();

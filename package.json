@@ -72,6 +72,7 @@
     "check": "npm run typecheck && npm run lint && npm run check:dashes && npm run test",
     "check:dashes": "node scripts/check-em-dash.mjs",
     "sounds": "node scripts/generate-sounds.mjs",
+    "icons": "node scripts/generate-icons.mjs",
     "db:generate": "drizzle-kit generate"
   },
   "private": true,
