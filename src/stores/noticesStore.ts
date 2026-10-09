@@ -13,6 +13,8 @@ type NoticesState = {
 
 type NoticesActions = {
   acknowledgeLoss: (day: DayKey) => void;
+  /** Forgets every notice, for a fresh journey. */
+  reset: () => void;
 };
 
 export type NoticesStore = NoticesState & NoticesActions;
@@ -37,7 +39,14 @@ export const useNoticesStore = create<NoticesStore>()(
   persist(
     (set) => ({
       acknowledgedLossDay: null,
-      acknowledgeLoss: (day) => set({ acknowledgedLossDay: day }),
+      // Only ever moves forward (day keys sort as text): an older break never lowers it.
+      acknowledgeLoss: (day) =>
+        set((state) =>
+          state.acknowledgedLossDay != null && state.acknowledgedLossDay >= day
+            ? state
+            : { acknowledgedLossDay: day },
+        ),
+      reset: () => set({ acknowledgedLossDay: null }),
     }),
     {
       name: 'vinco.notices',

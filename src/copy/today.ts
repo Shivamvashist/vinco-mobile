@@ -13,22 +13,24 @@ const PROGRESS_LINES = [
   {
     philosopher: 'Small things done well make the day. Begin with one.',
     centurion: 'Orders are posted. Move.',
-    roast: 'Your water bottle has been staring at you all morning. Go on, pick it up.',
+    roast:
+      "Your thumb has scrolled a marathon today and your legs haven't left the couch. Pick one order. Any order.",
   },
   {
     philosopher: 'Halfway. The obstacle is the way.',
-    centurion: 'Two down. Keep marching.',
-    roast: 'Halfway there. Your phone is getting nervous. Keep going.',
+    centurion: 'Halfway. Keep marching.',
+    roast: 'Halfway. Your phone just called its lawyer about custody of your evenings. Keep going.',
   },
   {
     philosopher: 'One order remains. Finish what you started.',
     centurion: 'One left. No excuses, soldier.',
-    roast: 'One left. Finish it before your phone finds you.',
+    roast: 'One left. The algorithm is cooking a reel so perfect it should be illegal. Finish first.',
   },
   {
     philosopher: 'All orders held. Rest well, you earned it.',
     centurion: 'Line held. Dismissed.',
-    roast: 'Look at you. Productive. Suspicious, honestly. Same again tomorrow.',
+    roast:
+      'Every order held. Somewhere, an algorithm just lost its favourite customer and is crying in a car park. Same again tomorrow.',
   },
 ] as const satisfies readonly [ToneLines, ToneLines, ToneLines, ToneLines];
 
@@ -42,16 +44,33 @@ export const todayCopy = {
 
   chips: {
     campaign: (days: number): string => `Campaign ${days}`,
-    truceReady: 'Truce ready',
-    truceUsed: 'Truce used this week',
+    truces: (count: number): string =>
+      count === 0 ? 'No Truces' : `${count} ${count === 1 ? 'Truce' : 'Truces'}`,
   },
 
-  /** The line under the header: [0 or 1 held, 2 held, 3 held, all 4 held]. */
+  /** Shown once every order holds, so the day can be sealed even after the stamp is dismissed. */
+  sealCard: {
+    heldTitle: 'Line held',
+    conqueredTitle: 'Day conquered',
+    detail: 'Your day card is ready. Seal it and share the proof.',
+    action: 'Seal the day',
+  },
+
+  /** Shown while a Truce can still save the campaign (until today ends). */
+  truceBanner: {
+    title: 'Yesterday fell',
+    detail: (campaign: number, days: number): string =>
+      `${days === 1 ? 'A Truce' : `${days} Truces`} can still save your ${campaign}-day campaign, until midnight.`,
+    action: 'See your options',
+  },
+
+  /** The line under the header: [under half held, half or more, one left, all held]. */
   progressLines: PROGRESS_LINES,
 
-  /** The progress line for a number of orders held (any number is safe). */
-  progressLine(held: number): ToneLines {
-    const index = held >= 4 ? 3 : held === 3 ? 2 : held === 2 ? 1 : 0;
+  /** The progress line for orders held out of the day's total (any numbers are safe). */
+  progressLine(held: number, total: number): ToneLines {
+    const remaining = total - held;
+    const index = remaining <= 0 ? 3 : remaining === 1 ? 2 : held * 2 >= total ? 1 : 0;
     return PROGRESS_LINES[index];
   },
 
@@ -105,6 +124,35 @@ export const todayCopy = {
     full: 'conquered',
   },
 
+  /** The user's own orders on Today. */
+  customOrder: {
+    /** "10 of 30 pages · minimum held". */
+    line: (amount: number, min: number, full: number, unit: string, status: OrderStatus): string => {
+      const goal = unit ? `${full} ${unit}` : String(full);
+      // A yes-or-no order (minimum equals full goal) has no partial step.
+      if (min === full) return status === 'full' ? 'Done · conquered' : unit ? goal : 'Once today';
+      if (status === 'full') return `${goal} · conquered`;
+      if (status === 'min') return `${amount} of ${goal} · minimum held`;
+      return `Hold ${min}, conquer ${goal}`;
+    },
+    action: (status: OrderStatus, min: number, full: number): string =>
+      status === 'none' ? (min === full ? 'Done' : 'Hold') : 'Conquer',
+    hint: 'Double tap to move up a level: minimum, then full goal. Long press to go back one.',
+  },
+
+  addOrder: 'Add an order',
+
+  /** The to-do tile under the orders. */
+  todoTile: {
+    title: 'To-do',
+    empty: 'Plan your day',
+    summary: (done: number, total: number, toCarryOver: number): string => {
+      const parts = total > 0 ? [`${done} of ${total} done`] : [];
+      if (toCarryOver > 0) parts.push(`${toCarryOver} to carry over`);
+      return parts.length > 0 ? parts.join(' · ') : 'Plan your day';
+    },
+  },
+
   workoutSheet: {
     title: 'What did you train?',
     subtitle: 'Pick what you did. A few words help you see the pattern later.',
@@ -122,7 +170,7 @@ export const todayCopy = {
     stampText: 'VINCO',
     title: 'Day conquered',
     titleWithDay: (romanDay: string): string => `Day ${romanDay} conquered`,
-    subtitle: 'All four orders held. Tomorrow, the same line holds.',
+    subtitle: 'Every order held. Tomorrow, the same line holds.',
     seal: 'Seal the day',
     back: 'Back to Today',
   },

@@ -90,21 +90,23 @@ src/
     dev/               dev-only screens (theme lab: long-press the Vici tab)
   components/          shared UI, one component per file, no barrel
     navigation/        TabBar
-    today/             TaskRow, WorkoutSheet, StampOverlay, SelfieTile
+    today/             TaskRow, WorkoutSheet, StampOverlay, SelfieTile, SealDayCard, TruceBanner, TodoTile
+    orders/            AddOrderSheet
+    tasks/             TaskItemRow, CarryOverCard, AddTaskSheet
     onboarding/        FlowLayout, QuoteCarousel, RiverLines, TypingPreview, OathRecorder
     progress/          StatTile, MonthCalendar
-    arc/               ArcJourney, RankCard, SettingsRow
+    arc/               ArcJourney, RankCard, SettingsRow, RetreatSheet
     campaign/          Column
     dayCard/           DayCard
   theme/               design system: tokens, palettes, themes, feedback (see DESIGN-SYSTEM.md)
   copy/                ALL user-facing text, one file per area, three tones where it varies
   features/<name>/     product logic as pure functions, each folder with an index.ts (tone; later orders, campaign...)
-  stores/              Zustand app/UI state, persisted to the phone (preferences; later onboarding, overlays)
+  stores/              Zustand app/UI state, persisted to the phone (preferences, onboarding draft, notices, dev mode)
   db/                  SQLite + Drizzle schema, migrations, queries   (Step 7)
-  hooks/               shared React hooks (useToday, useTodayOrders, useActiveArc, useCompleteOnboarding)
+  hooks/               shared React hooks (useToday, useTodayOrders, useActiveArc, useCampaign, useTasks, useOwnOrderActions, useCompleteOnboarding, useResetJourney)
   media/               photos and recordings in the app's private folder (never uploaded)
   lib/                 small generic pure helpers (dates, toRoman, progress), no barrel: import each file
-  dev/                 dev-only UI used by dev routes (kit gallery). Never imported by real screens
+  dev/                 dev-only UI (kit gallery, DevPanel, devActions). Real screens import only DevPanel, and only behind IS_DEV_MODE_AVAILABLE
   __tests__/           render tests that boot the real app from src/app
 assets/
   fonts/ images/ sounds/<theme-id>/
@@ -172,7 +174,7 @@ Run through this for every change. Write a test for each case that lives in pure
 - Midnight rollover while the app is open.
 - App not opened for several days (seal the missed days on next open).
 - Time zone change, daylight saving, phone clock moved backwards.
-- Week boundaries for the Truce.
+- The Truce window: a Truce covers only the missed run that ends yesterday, and only while today lasts.
 
 **Device**
 

@@ -3,7 +3,7 @@
  * Catches render errors (bad imports, hooks used outside providers, crashes on first paint)
  * without a phone.
  */
-import { act, fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { renderRouter } from 'expo-router/testing-library';
@@ -13,24 +13,32 @@ import {
   campaignCopy,
   commonCopy,
   dayCardCopy,
+  devCopy,
   onboardingCopy,
+  ordersCopy,
   progressCopy,
   proofCopy,
   tabAccessibilityLabel,
+  tasksCopy,
   todayCopy,
 } from '@/copy';
 import {
+  addCustomOrder,
+  addTask,
+  callTruce,
   createArc,
   db,
   getActiveArc,
   getDayLog,
+  getTruceReserve,
   saveOrderAmount,
+  sealFinishedDays,
   selectArcOrders,
   toOrderTargets,
 } from '@/db';
 import { DEFAULT_ORDER_TARGETS } from '@/features/orders';
 import { addDays, toDayKey } from '@/lib/dates';
-import { useNoticesStore, useOnboardingStore, usePreferencesStore } from '@/stores';
+import { useDevStore, useNoticesStore, useOnboardingStore, usePreferencesStore } from '@/stores';
 
 const APP_DIR = './src/app';
 
@@ -54,7 +62,29 @@ beforeEach(() => {
   });
   useOnboardingStore.getState().reset();
   useNoticesStore.setState({ acknowledgedLossDay: null });
+  useDevStore.setState({ isDevModeOn: false, dayOffset: 0 });
 });
+
+/** An arc that started some days ago, with every day before today held at the minimum. */
+function startHeldArc(daysAgo: number, { missYesterday = false } = {}) {
+  const today = toDayKey(new Date());
+  const start = addDays(today, -daysAgo);
+  createArc(db, {
+    lengthDays: 60,
+    startDay: start,
+    wakeTime: '06:30',
+    targets: DEFAULT_ORDER_TARGETS,
+    oathPath: null,
+  });
+  const lastHeld = missYesterday ? daysAgo - 1 : daysAgo;
+  for (let offset = 0; offset < lastHeld; offset += 1) {
+    const day = addDays(start, offset);
+    saveOrderAmount(db, day, 'water', 1);
+    saveOrderAmount(db, day, 'wake', 1);
+    saveOrderAmount(db, day, 'meal', 1);
+    saveOrderAmount(db, day, 'workout', 15);
+  }
+}
 
 describe('app routes', () => {
   beforeEach(startArc);
@@ -263,25 +293,6 @@ describe('Vidi', () => {
 });
 
 describe('Vici', () => {
-  function startHeldArc(daysAgo: number) {
-    const today = toDayKey(new Date());
-    const start = addDays(today, -daysAgo);
-    createArc(db, {
-      lengthDays: 60,
-      startDay: start,
-      wakeTime: '06:30',
-      targets: DEFAULT_ORDER_TARGETS,
-      oathPath: null,
-    });
-    for (let offset = 0; offset < daysAgo; offset += 1) {
-      const day = addDays(start, offset);
-      saveOrderAmount(db, day, 'water', 1);
-      saveOrderAmount(db, day, 'wake', 1);
-      saveOrderAmount(db, day, 'meal', 1);
-      saveOrderAmount(db, day, 'workout', 15);
-    }
-  }
-
   it('shows the arc, the journey and the rank earned from sealed days', async () => {
     startHeldArc(2);
     renderRouter(APP_DIR, { initialUrl: '/vici' });
@@ -307,11 +318,90 @@ describe('Vici', () => {
     fireEvent(screen.getByLabelText(arcCopy.settings.sound), 'valueChange', false);
     expect(usePreferencesStore.getState().soundEnabled).toBe(false);
   });
+
+  it('sounds the retreat only after the word is typed, then returns to the Rubicon', async () => {
+    startHeldArc(2);
+    const app = renderRouter(APP_DIR, { initialUrl: '/vici' });
+    fireEvent.press(
+      await screen.findByLabelText(`${arcCopy.settings.retreat}, ${arcCopy.settings.retreatValue}`),
+    );
+    const field = await screen.findByLabelText(arcCopy.retreat.fieldLabel(arcCopy.retreat.word));
+    const confirm = () => screen.getByRole('button', { name: arcCopy.retreat.confirm });
+
+    fireEvent.changeText(field, 'retire');
+    expect(confirm()).toBeDisabled();
+    fireEvent.changeText(field, ' retreat ');
+    expect(confirm()).toBeEnabled();
+    fireEvent.press(confirm());
+
+    expect(await screen.findByText(onboardingCopy.rubicon.cross)).toBeTruthy();
+    expect(app.getPathname()).toBe('/onboarding');
+    expect(getActiveArc(db)).toBeUndefined();
+    expect(getTruceReserve(db)).toBe(0);
+  });
+
+  it('keeps preferences after a retreat', async () => {
+    startHeldArc(1);
+    act(() => usePreferencesStore.getState().setTone('roast'));
+    renderRouter(APP_DIR, { initialUrl: '/vici' });
+    fireEvent.press(
+      await screen.findByLabelText(`${arcCopy.settings.retreat}, ${arcCopy.settings.retreatValue}`),
+    );
+    fireEvent.changeText(
+      await screen.findByLabelText(arcCopy.retreat.fieldLabel(arcCopy.retreat.word)),
+      arcCopy.retreat.word,
+    );
+    fireEvent.press(screen.getByRole('button', { name: arcCopy.retreat.confirm }));
+    await screen.findByText(onboardingCopy.rubicon.cross);
+    expect(usePreferencesStore.getState().tone).toBe('roast');
+  });
+});
+
+describe('Dev mode', () => {
+  it('fills today, moves to the next day and seals it', async () => {
+    startArc();
+    const today = toDayKey(new Date());
+    const tomorrow = addDays(today, 1);
+    renderRouter(APP_DIR, { initialUrl: '/vici' });
+    fireEvent(await screen.findByLabelText(arcCopy.settings.devMode), 'valueChange', true);
+    expect(await screen.findByText(devCopy.today(commonCopy.fullDateLabel(today), 0))).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText(devCopy.conquerToday));
+    act(() => jest.advanceTimersByTime(600));
+    fireEvent.press(screen.getByLabelText(devCopy.nextDay));
+    expect(await screen.findByText(devCopy.today(commonCopy.fullDateLabel(tomorrow), 1))).toBeTruthy();
+    expect(getDayLog(db, today)?.sealedAt).toBeTruthy();
+    expect(await screen.findByLabelText(arcCopy.journeyLabel(2, 60))).toBeTruthy();
+  });
+
+  it('resets everything back to the Rubicon and the real clock', async () => {
+    // The simulated clock is 3 days ahead and the arc began on that day, so nothing was missed.
+    createArc(db, {
+      lengthDays: 60,
+      startDay: addDays(toDayKey(new Date()), 3),
+      wakeTime: '06:30',
+      targets: DEFAULT_ORDER_TARGETS,
+      oathPath: null,
+    });
+    useDevStore.setState({ isDevModeOn: true, dayOffset: 3 });
+    act(() => usePreferencesStore.getState().setTone('roast'));
+    const app = renderRouter(APP_DIR, { initialUrl: '/vici' });
+    fireEvent.press(await screen.findByLabelText(devCopy.resetAll));
+    const buttons = await screen.findAllByRole('button', { name: devCopy.resetAll });
+    act(() => jest.advanceTimersByTime(600));
+    fireEvent.press(buttons[buttons.length - 1]!);
+
+    expect(await screen.findByText(onboardingCopy.rubicon.cross)).toBeTruthy();
+    expect(app.getPathname()).toBe('/onboarding');
+    expect(getActiveArc(db)).toBeUndefined();
+    expect(useDevStore.getState().dayOffset).toBe(0);
+    expect(usePreferencesStore.getState().tone).toBe('centurion');
+  });
 });
 
 describe('Campaign lost', () => {
   it('shows once after a break, then leads to the comeback', async () => {
-    // Eight empty days always include a miss the week's Truce can't cover.
+    // Eight empty days: a break with no campaign before it, so there is nothing a Truce could save.
     const today = toDayKey(new Date());
     createArc(db, {
       lengthDays: 60,
@@ -324,6 +414,7 @@ describe('Campaign lost', () => {
     const first = renderRouter(APP_DIR, { initialUrl: '/veni' });
     expect(await screen.findByText(campaignCopy.lost.title)).toBeTruthy();
     expect(first.getPathname()).toBe('/campaign-lost');
+    expect(screen.queryByText(campaignCopy.truce.title)).toBeNull();
 
     act(() => jest.advanceTimersByTime(600));
     fireEvent.press(screen.getByLabelText(campaignCopy.lost.rise));
@@ -337,6 +428,201 @@ describe('Campaign lost', () => {
     await screen.findByText(todayCopy.ordersSection);
     expect(again.getPathname()).toBe('/veni');
     expect(screen.queryByText(campaignCopy.lost.title)).toBeNull();
+  });
+
+  it('offers a Truce for yesterday, and calling it saves the campaign', async () => {
+    // Days I to III held, yesterday (day IV) missed. The arc began with one Truce in reserve.
+    startHeldArc(4, { missYesterday: true });
+    renderRouter(APP_DIR, { initialUrl: '/veni' });
+    expect(await screen.findByText(campaignCopy.truce.title)).toBeTruthy();
+    expect(screen.getByText(campaignCopy.truce.fromReserve(1, 3, 1))).toBeTruthy();
+
+    act(() => jest.advanceTimersByTime(600));
+    fireEvent.press(screen.getByLabelText(campaignCopy.truce.action(1)));
+    expect(await screen.findByText(campaignCopy.truced.title)).toBeTruthy();
+    expect(screen.getByText(campaignCopy.truced.detail(3, 0))).toBeTruthy();
+    expect(getTruceReserve(db)).toBe(0);
+    expect(getDayLog(db, addDays(toDayKey(new Date()), -1))?.truceUsed).toBe(true);
+
+    act(() => jest.advanceTimersByTime(600));
+    fireEvent.press(screen.getByLabelText(campaignCopy.truced.toToday));
+    expect(await screen.findByText(todayCopy.chips.campaign(4))).toBeTruthy();
+    expect(screen.queryByText(todayCopy.truceBanner.title)).toBeNull();
+  });
+
+  it('keeps the Truce on offer from Today after rising again, until the day ends', async () => {
+    startHeldArc(4, { missYesterday: true });
+    renderRouter(APP_DIR, { initialUrl: '/veni' });
+    await screen.findByText(campaignCopy.truce.title);
+    act(() => jest.advanceTimersByTime(600));
+    fireEvent.press(screen.getByLabelText(campaignCopy.lost.rise));
+    act(() => jest.advanceTimersByTime(600));
+    fireEvent.press(await screen.findByLabelText(campaignCopy.risen.toToday));
+
+    expect(await screen.findByText(todayCopy.truceBanner.title)).toBeTruthy();
+    fireEvent.press(screen.getByLabelText(todayCopy.truceBanner.action));
+    expect(await screen.findByText(campaignCopy.truce.title)).toBeTruthy();
+  });
+
+  it('prices the Truce in denarii when the reserve is empty, and refuses when short', async () => {
+    // Six days ago the arc began. Day II was missed and the starting Truce covered it;
+    // days I, III, IV and V held (20 denarii); yesterday was missed with nothing in reserve.
+    const today = toDayKey(new Date());
+    const start = addDays(today, -6);
+    createArc(db, {
+      lengthDays: 60,
+      startDay: start,
+      wakeTime: '06:30',
+      targets: DEFAULT_ORDER_TARGETS,
+      oathPath: null,
+    });
+    for (const offset of [0, 2, 3, 4]) {
+      const day = addDays(start, offset);
+      saveOrderAmount(db, day, 'water', 1);
+      saveOrderAmount(db, day, 'wake', 1);
+      saveOrderAmount(db, day, 'meal', 1);
+      saveOrderAmount(db, day, 'workout', 15);
+    }
+    sealFinishedDays(db, { startDay: start, lengthDays: 60 }, DEFAULT_ORDER_TARGETS, addDays(start, 2));
+    callTruce(db, [addDays(start, 1)]);
+
+    renderRouter(APP_DIR, { initialUrl: '/veni' });
+    expect(await screen.findByText(campaignCopy.truce.cannotAfford(50, 20))).toBeTruthy();
+    expect(screen.queryByLabelText(new RegExp(`^${campaignCopy.truce.title}`))).toBeNull();
+  });
+});
+
+describe('Own orders', () => {
+  const READ = { name: 'Read', unit: 'pages', min: 10, full: 30 };
+  const custom = todayCopy.customOrder;
+
+  /** Every one of Vinco's four held at the minimum, straight in the database. */
+  function holdVincoFour() {
+    const today = toDayKey(new Date());
+    saveOrderAmount(db, today, 'water', 1);
+    saveOrderAmount(db, today, 'wake', 1);
+    saveOrderAmount(db, today, 'meal', 1);
+    saveOrderAmount(db, today, 'workout', 15);
+  }
+
+  it('adds an order from Today, refusing a full goal below the minimum', async () => {
+    startArc();
+    renderRouter(APP_DIR, { initialUrl: '/veni' });
+    fireEvent.press(await screen.findByLabelText(todayCopy.addOrder));
+    fireEvent.changeText(await screen.findByLabelText(ordersCopy.add.nameLabel), 'Read');
+    fireEvent.changeText(screen.getByLabelText(ordersCopy.add.unitLabel), 'pages');
+    fireEvent.changeText(screen.getByLabelText(ordersCopy.add.minLabel), '30');
+    fireEvent.changeText(screen.getByLabelText(ordersCopy.add.fullLabel), '10');
+    fireEvent.press(screen.getByLabelText(ordersCopy.add.save));
+    expect(await screen.findByText(ordersCopy.add.errors.fullBelowMin)).toBeTruthy();
+
+    fireEvent.changeText(screen.getByLabelText(ordersCopy.add.minLabel), '10');
+    fireEvent.changeText(screen.getByLabelText(ordersCopy.add.fullLabel), '30');
+    act(() => jest.advanceTimersByTime(600));
+    fireEvent.press(screen.getByLabelText(ordersCopy.add.save));
+    expect(await screen.findByLabelText(`Read, ${custom.line(0, 10, 30, 'pages', 'none')}`)).toBeTruthy();
+    expect(screen.getByLabelText(todayCopy.ringLabel(0, 5))).toBeTruthy();
+  });
+
+  it('holds the day only once the own order holds too, then the stamp lands', async () => {
+    startArc();
+    const arc = getActiveArc(db)!;
+    addCustomOrder(db, arc.id, READ, toDayKey(new Date()));
+    holdVincoFour();
+    renderRouter(APP_DIR, { initialUrl: '/veni' });
+
+    const row = await screen.findByLabelText(`Read, ${custom.line(0, 10, 30, 'pages', 'none')}`);
+    expect(screen.getByLabelText(todayCopy.ringLabel(4, 5))).toBeTruthy();
+    expect(screen.queryByText(todayCopy.sealCard.heldTitle)).toBeNull();
+
+    fireEvent.press(row);
+    expect(await screen.findByText(todayCopy.stamp.subtitle)).toBeTruthy();
+    fireEvent.press(screen.getByLabelText(todayCopy.stamp.back));
+    expect(await screen.findByText(custom.line(10, 10, 30, 'pages', 'min'))).toBeTruthy();
+    expect(await screen.findByText(todayCopy.sealCard.heldTitle)).toBeTruthy();
+
+    fireEvent(screen.getByLabelText(`Read, ${custom.line(10, 10, 30, 'pages', 'min')}`), 'longPress');
+    expect(await screen.findByText(custom.line(0, 10, 30, 'pages', 'none'))).toBeTruthy();
+  });
+
+  it('stands an order down from the orders screen: counts today, gone tomorrow', async () => {
+    startArc();
+    const arc = getActiveArc(db)!;
+    addCustomOrder(db, arc.id, READ, addDays(toDayKey(new Date()), -1));
+    renderRouter(APP_DIR, { initialUrl: '/orders' });
+    expect(await screen.findByText(ordersCopy.screen.vincoSection)).toBeTruthy();
+    fireEvent.press(await screen.findByLabelText(ordersCopy.screen.standDown));
+    fireEvent.press(await screen.findByLabelText(ordersCopy.standDownSheet.confirm));
+    expect(await screen.findByText(ordersCopy.screen.standsDownTomorrow)).toBeTruthy();
+    expect(screen.queryByLabelText(ordersCopy.screen.standDown)).toBeNull();
+  });
+
+  it('opens Your orders from Vici', async () => {
+    startArc();
+    const app = renderRouter(APP_DIR, { initialUrl: '/vici' });
+    fireEvent.press(
+      await screen.findByLabelText(`${arcCopy.settings.orders}, ${arcCopy.settings.ordersValue}`),
+    );
+    expect(await screen.findByText(ordersCopy.screen.ownEmpty)).toBeTruthy();
+    expect(app.getPathname()).toBe('/orders');
+  });
+});
+
+describe('To-do', () => {
+  it('adds, ticks and removes tasks, and the Today tile follows', async () => {
+    startArc();
+    renderRouter(APP_DIR, { initialUrl: '/veni' });
+    fireEvent.press(await screen.findByLabelText(`${todayCopy.todoTile.title}, ${todayCopy.todoTile.empty}`));
+    expect(await screen.findByText(tasksCopy.emptyLine.centurion)).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText(tasksCopy.add.open));
+    const field = await screen.findByLabelText(tasksCopy.add.label);
+    fireEvent.press(screen.getByLabelText(tasksCopy.add.save));
+    expect(await screen.findByText(tasksCopy.add.errors.titleMissing)).toBeTruthy();
+
+    fireEvent.changeText(field, 'Call the bank');
+    act(() => jest.advanceTimersByTime(600));
+    fireEvent.press(screen.getByLabelText(tasksCopy.add.save));
+    fireEvent.changeText(field, 'Stretch');
+    fireEvent.press(screen.getByLabelText(tasksCopy.add.when.daily));
+    act(() => jest.advanceTimersByTime(600));
+    fireEvent.press(screen.getByLabelText(tasksCopy.add.save));
+    act(() => jest.advanceTimersByTime(600));
+    fireEvent.press(screen.getByLabelText(tasksCopy.add.done));
+
+    fireEvent.press(await screen.findByLabelText(tasksCopy.checkLabel('Call the bank', false)));
+    expect(await screen.findByLabelText(tasksCopy.checkLabel('Call the bank', true))).toBeTruthy();
+    expect(screen.getByLabelText(tasksCopy.checkLabel('Stretch', false))).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText(tasksCopy.remove('Stretch')));
+    await waitFor(() => expect(screen.queryByText('Stretch')).toBeNull());
+
+    fireEvent.press(screen.getByLabelText(tasksCopy.back));
+    expect(
+      await screen.findByLabelText(`${todayCopy.todoTile.title}, ${todayCopy.todoTile.summary(1, 1, 0)}`),
+    ).toBeTruthy();
+  });
+
+  it('asks to carry over or drop what was left yesterday', async () => {
+    startArc();
+    const today = toDayKey(new Date());
+    const yesterday = addDays(today, -1);
+    addTask(db, 'Carry me', 'today', yesterday, addDays(today, 30));
+    addTask(db, 'Drop me', 'today', yesterday, addDays(today, 30));
+    renderRouter(APP_DIR, { initialUrl: '/veni' });
+    expect(
+      await screen.findByLabelText(`${todayCopy.todoTile.title}, ${todayCopy.todoTile.summary(0, 0, 2)}`),
+    ).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText(new RegExp(`^${todayCopy.todoTile.title},`)));
+    expect(await screen.findByText(tasksCopy.carryOver.title(2))).toBeTruthy();
+    const carryButtons = screen.getAllByLabelText(tasksCopy.carryOver.carry);
+    fireEvent.press(carryButtons[0]!);
+    expect(await screen.findByText(tasksCopy.carriedOver)).toBeTruthy();
+    act(() => jest.advanceTimersByTime(600));
+    fireEvent.press(screen.getByLabelText(tasksCopy.carryOver.drop));
+    await waitFor(() => expect(screen.queryByText('Drop me')).toBeNull());
+    expect(screen.queryByText(tasksCopy.carryOver.title(1))).toBeNull();
   });
 });
 
@@ -378,13 +664,17 @@ describe('Day card', () => {
     fireEvent.press(await screen.findByLabelText(new RegExp(`^${todayCopy.workoutSheet.holdTitle}`)));
     fireEvent.press(screen.getByText(todayCopy.workoutSheet.save));
     act(() => jest.advanceTimersByTime(600));
-    fireEvent.press(await screen.findByLabelText(todayCopy.stamp.seal));
+    // The stamp lands; dismissing it leaves the seal card on Today.
+    fireEvent.press(await screen.findByLabelText(todayCopy.stamp.back));
+    act(() => jest.advanceTimersByTime(600));
+    expect(await screen.findByText(todayCopy.sealCard.heldTitle)).toBeTruthy();
+    fireEvent.press(screen.getByLabelText(todayCopy.sealCard.action));
     return screen.findByText(dayCardCopy.header);
   }
 
-  it('opens from Seal the day with today on the card, and shares it', async () => {
+  it('opens from the seal card after the stamp, with today on the card, and shares it', async () => {
     await sealToday();
-    expect(screen.getByLabelText(dayCardCopy.cardLabel('I', 'LX', 4))).toBeTruthy();
+    expect(screen.getByLabelText(dayCardCopy.cardLabel('I', 'LX', 4, 4))).toBeTruthy();
     expect(screen.getByText(dayCardCopy.values.litres(1))).toBeTruthy();
     expect(screen.getByText(dayCardCopy.values.minutes(15))).toBeTruthy();
 

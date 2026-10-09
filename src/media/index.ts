@@ -32,6 +32,18 @@ export function deleteMediaFile(uri: string | null | undefined): void {
   }
 }
 
+/** Deletes every saved selfie and oath. Never throws: what can't be deleted is left behind. */
+export function deleteAllMedia(): void {
+  for (const folderName of [SELFIE_FOLDER, OATH_FOLDER]) {
+    try {
+      const folder = new Directory(Paths.document, folderName);
+      if (folder.exists) folder.delete();
+    } catch (error) {
+      if (__DEV__) console.warn(`[media] Could not delete ${folderName}.`, error);
+    }
+  }
+}
+
 async function keepFile(sourceUri: string, folderName: string, fileName: string): Promise<string> {
   const folder = new Directory(Paths.document, folderName);
   if (!folder.exists) folder.create({ intermediates: true, idempotent: true });

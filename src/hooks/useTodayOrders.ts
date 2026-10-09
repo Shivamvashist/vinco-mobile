@@ -2,29 +2,41 @@ import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useState } from 'react';
 
 import {
+  type AppDatabase,
   db,
+  getCustomOrderAmount,
   getDayLog,
+  getDayStanding,
   getOrderLogsForDay,
   nowIso,
+  saveCustomOrderAmount,
   saveOrderAmount,
+  selectCustomOrderLogsBetween,
+  selectCustomOrdersOn,
   selectDayLog,
   selectOrderLogsForDay,
+  toCustomAmounts,
+  toCustomOrder,
   toOrderAmounts,
   toWorkoutNote,
   updateDayLog,
 } from '@/db';
 import {
   addStep,
-  areAllOrdersHeld,
   clampAmount,
   countOrdersHeld,
+  type CustomOrder,
   DEFAULT_ORDER_TARGETS,
+  getCustomOrderStatus,
   getOrderStatus,
   getOrderStatuses,
+  nextCustomAmount,
+  ORDER_KINDS,
   type OrderAmounts,
   type OrderKind,
   type OrderStatus,
   type OrderTargets,
+  previousCustomAmount,
   removeStep,
 } from '@/features/orders';
 import type { DayKey } from '@/lib/dates';
@@ -34,6 +46,12 @@ import { useToday } from './useToday';
 /** Longest workout note kept. Notes are a few words, not a diary. */
 export const WORKOUT_NOTE_MAX_LENGTH = 80;
 
+/** Never matches a real arc: used to query no own orders until the arc is known. */
+const NO_ARC_ID = -1;
+
+/** One of the user's own orders on today. */
+export type TodayCustomOrder = { order: CustomOrder; amount: number; status: OrderStatus };
+
 export type TodayOrders = {
   today: DayKey;
   /** False until today's rows are read for the first time. Render rows only once loaded. */
@@ -41,7 +59,12 @@ export type TodayOrders = {
   targets: OrderTargets;
   amounts: OrderAmounts;
   statuses: Record<OrderKind, OrderStatus>;
+  /** The user's own orders that count today, oldest first. */
+  customOrders: TodayCustomOrder[];
+  /** Orders held today, Vinco's four and own orders together. */
   heldCount: number;
+  /** Every order that counts today. */
+  totalCount: number;
   wokeAt: Date | null;
   workoutNote: string;
   isStampVisible: boolean;
@@ -53,6 +76,10 @@ export type TodayOrders = {
   undoOne: (kind: OrderKind) => OrderStatus;
   /** Logs the workout at a number of minutes, with an optional note. */
   logWorkout: (minutes: number, note: string) => OrderStatus;
+  /** Own order, one tap: up a level (minimum, then full goal). Returns the new status. */
+  addOneCustom: (orderId: number) => OrderStatus;
+  /** Own order, long press: down a level. Returns the new status. */
+  undoOneCustom: (orderId: number) => OrderStatus;
   dismissStamp: () => void;
 };
 
@@ -65,54 +92,99 @@ type Change = {
 };
 
 /**
- * Today's four orders, saved on the phone as the user taps.
+ * Today's orders (Vinco's four and the user's own), saved on the phone as the user taps.
  * Reads with Drizzle live queries, so the screen updates whenever a row changes.
  * Each tap is one transaction that reads the fresh value first, so rapid taps never race.
+ * @param arcId the active arc, whose own orders count; null for Vinco's four only
  */
-export function useTodayOrders(targets: OrderTargets = DEFAULT_ORDER_TARGETS): TodayOrders {
+export function useTodayOrders(
+  targets: OrderTargets = DEFAULT_ORDER_TARGETS,
+  arcId: number | null = null,
+): TodayOrders {
   const today = useToday();
   const orderLogs = useLiveQuery(selectOrderLogsForDay(db, today), [today]);
   const dayLog = useLiveQuery(selectDayLog(db, today), [today]);
+  const customRows = useLiveQuery(selectCustomOrdersOn(db, arcId ?? NO_ARC_ID, today), [arcId, today]);
+  const customLogs = useLiveQuery(selectCustomOrderLogsBetween(db, today, today), [today]);
   // The overlay is UI state; whether the stamp was already shown lives in the day log.
   const [stampVisibleDay, setStampVisibleDay] = useState<DayKey | null>(null);
   const [hasSaveError, setHasSaveError] = useState(false);
 
   const amounts = toOrderAmounts(orderLogs.data);
+  const customAmounts = toCustomAmounts(customLogs.data, today);
+  const customOrders: TodayCustomOrder[] = customRows.data.map((row) => {
+    const order = toCustomOrder(row);
+    const amount = customAmounts.get(order.id) ?? 0;
+    return { order, amount, status: getCustomOrderStatus(amount, order) };
+  });
+  const customHeld = customOrders.filter((item) => item.status !== 'none').length;
   const wokeAtIso = dayLog.data[0]?.wokeAt ?? null;
   const wokeAt = wokeAtIso ? new Date(wokeAtIso) : null;
 
-  const applyChange = (kind: OrderKind, change: Change): OrderStatus => {
+  /**
+   * Runs one change in a transaction, then lands the stamp if every order now holds
+   * (once per day). The save returns the order's new status; on failure, the old one.
+   */
+  const runChange = (
+    label: string,
+    fallback: OrderStatus,
+    save: (tx: AppDatabase) => { status: OrderStatus; dayPatch?: { wokeAt?: string | null } },
+  ): OrderStatus => {
     try {
       const result = db.transaction((tx) => {
-        const before = toOrderAmounts(getOrderLogsForDay(tx, today));
-        const amount = clampAmount(change.nextAmount(before[kind]), targets[kind]);
-        saveOrderAmount(tx, today, kind, amount, { note: change.note });
-
-        const after = { ...before, [kind]: amount };
-        const shouldStamp = !getDayLog(tx, today)?.stampedAt && areAllOrdersHeld(after, targets);
+        const saved = save(tx);
+        const shouldStamp =
+          !getDayLog(tx, today)?.stampedAt && getDayStanding(tx, arcId, today, targets) !== 'missed';
         updateDayLog(tx, today, {
-          ...change.dayPatch?.(before[kind], amount),
+          ...saved.dayPatch,
           ...(shouldStamp ? { stampedAt: nowIso() } : {}),
         });
-        return { status: getOrderStatus(amount, targets[kind]), shouldStamp };
+        return { status: saved.status, shouldStamp };
       });
       setHasSaveError(false);
       if (result.shouldStamp) setStampVisibleDay(today);
       return result.status;
     } catch (error) {
-      if (__DEV__) console.warn(`[orders] Could not save ${kind}.`, error);
+      if (__DEV__) console.warn(`[orders] Could not save ${label}.`, error);
       setHasSaveError(true);
-      return getOrderStatus(amounts[kind], targets[kind]);
+      return fallback;
     }
+  };
+
+  const applyChange = (kind: OrderKind, change: Change): OrderStatus =>
+    runChange(kind, getOrderStatus(amounts[kind], targets[kind]), (tx) => {
+      const before = toOrderAmounts(getOrderLogsForDay(tx, today));
+      const amount = clampAmount(change.nextAmount(before[kind]), targets[kind]);
+      saveOrderAmount(tx, today, kind, amount, { note: change.note });
+      return {
+        status: getOrderStatus(amount, targets[kind]),
+        dayPatch: change.dayPatch?.(before[kind], amount),
+      };
+    });
+
+  const applyCustomChange = (orderId: number, next: (amount: number, order: CustomOrder) => number) => {
+    const item = customOrders.find((candidate) => candidate.order.id === orderId);
+    if (!item) return 'none';
+    return runChange(`own order ${orderId}`, item.status, (tx) => {
+      const amount = next(getCustomOrderAmount(tx, orderId, today), item.order);
+      saveCustomOrderAmount(tx, orderId, today, amount);
+      return { status: getCustomOrderStatus(amount, item.order) };
+    });
   };
 
   return {
     today,
-    isLoaded: orderLogs.updatedAt !== undefined && dayLog.updatedAt !== undefined,
+    isLoaded:
+      orderLogs.updatedAt !== undefined &&
+      dayLog.updatedAt !== undefined &&
+      customRows.updatedAt !== undefined &&
+      customLogs.updatedAt !== undefined,
     targets,
     amounts,
     statuses: getOrderStatuses(amounts, targets),
-    heldCount: countOrdersHeld(amounts, targets),
+    customOrders,
+    heldCount: countOrdersHeld(amounts, targets) + customHeld,
+    totalCount: ORDER_KINDS.length + customOrders.length,
     wokeAt: wokeAt && !Number.isNaN(wokeAt.getTime()) ? wokeAt : null,
     workoutNote: toWorkoutNote(orderLogs.data),
     isStampVisible: stampVisibleDay === today,
@@ -134,6 +206,8 @@ export function useTodayOrders(targets: OrderTargets = DEFAULT_ORDER_TARGETS): T
         nextAmount: () => minutes,
         note: note.trim().slice(0, WORKOUT_NOTE_MAX_LENGTH),
       }),
+    addOneCustom: (orderId) => applyCustomChange(orderId, nextCustomAmount),
+    undoOneCustom: (orderId) => applyCustomChange(orderId, previousCustomAmount),
     dismissStamp: () => setStampVisibleDay(null),
   };
 }

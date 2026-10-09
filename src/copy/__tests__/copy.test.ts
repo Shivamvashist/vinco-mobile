@@ -42,13 +42,17 @@ describe('tabs', () => {
 
 describe('todayCopy.progressLine', () => {
   it('picks the line by orders held, for any number', () => {
-    expect(todayCopy.progressLine(0)).toBe(todayCopy.progressLines[0]);
-    expect(todayCopy.progressLine(1)).toBe(todayCopy.progressLines[0]);
-    expect(todayCopy.progressLine(2)).toBe(todayCopy.progressLines[1]);
-    expect(todayCopy.progressLine(3)).toBe(todayCopy.progressLines[2]);
-    expect(todayCopy.progressLine(4)).toBe(todayCopy.progressLines[3]);
-    expect(todayCopy.progressLine(-1)).toBe(todayCopy.progressLines[0]);
-    expect(todayCopy.progressLine(9)).toBe(todayCopy.progressLines[3]);
+    expect(todayCopy.progressLine(0, 4)).toBe(todayCopy.progressLines[0]);
+    expect(todayCopy.progressLine(1, 4)).toBe(todayCopy.progressLines[0]);
+    expect(todayCopy.progressLine(2, 4)).toBe(todayCopy.progressLines[1]);
+    expect(todayCopy.progressLine(3, 4)).toBe(todayCopy.progressLines[2]);
+    expect(todayCopy.progressLine(4, 4)).toBe(todayCopy.progressLines[3]);
+    expect(todayCopy.progressLine(-1, 4)).toBe(todayCopy.progressLines[0]);
+    expect(todayCopy.progressLine(9, 4)).toBe(todayCopy.progressLines[3]);
+    // With own orders: 3 of 6 is halfway, 5 of 6 is one left.
+    expect(todayCopy.progressLine(2, 6)).toBe(todayCopy.progressLines[0]);
+    expect(todayCopy.progressLine(3, 6)).toBe(todayCopy.progressLines[1]);
+    expect(todayCopy.progressLine(5, 6)).toBe(todayCopy.progressLines[2]);
   });
 
   it('words water and meal lines for each status', () => {

@@ -5,6 +5,7 @@ import type { DayKey } from '@/lib/dates';
 
 import type { AppDatabase } from './database';
 import { type ArcOrderRow, arcOrders, type ArcRow, arcs } from './schema';
+import { grantTruce } from './truces';
 
 export type NewArc = {
   lengthDays: number;
@@ -16,7 +17,7 @@ export type NewArc = {
 };
 
 /**
- * Starts a new arc with its four orders, in one transaction.
+ * Starts a new arc with its four orders and its starting Truce, in one transaction.
  * Any arc still active is marked abandoned first, so there is only ever one active arc.
  * @returns the new arc's id
  */
@@ -36,6 +37,7 @@ export function createArc(db: AppDatabase, arc: NewArc): number {
     tx.insert(arcOrders)
       .values(ORDER_KINDS.map((kind) => ({ arcId: created.id, kind, ...arc.targets[kind] })))
       .run();
+    grantTruce(tx, arc.startDay, 'arc_start');
     return created.id;
   });
 }

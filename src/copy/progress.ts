@@ -13,7 +13,7 @@ export const progressCopy = {
   },
 
   calendar: {
-    /** Monday first, matching the Truce week. */
+    /** Monday first. */
     weekdayInitials: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
     previousMonth: 'Previous month',
     nextMonth: 'Next month',
@@ -47,6 +47,7 @@ export const progressCopy = {
   emptyLine: {
     philosopher: 'Proof is built one day at a time. Your calendar and selfies will gather here.',
     centurion: 'No proof on record. Seal your first day and it starts here.',
-    roast: 'Current proof: zero selfies and a lot of confidence. Seal one day and this starts filling up.',
+    roast:
+      'Proof so far: zero selfies and a screen time report that reads like a hostage note. Seal one day and this fills up.',
   } satisfies ToneLines,
 } as const;

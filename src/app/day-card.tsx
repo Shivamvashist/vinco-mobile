@@ -26,7 +26,7 @@ export default function DayCardScreen() {
   const styles = useStyles();
   const play = useFeedback();
   const { arc, targets } = useActiveArc();
-  const orders = useTodayOrders(targets);
+  const orders = useTodayOrders(targets, arc?.id ?? null);
   const campaign = useCampaign(arc, targets, orders.today);
   const cardRef = useRef<View>(null);
   const [cardStyle, setCardStyle] = useState<DayCardStyle>(DAY_CARD_STYLES[0] as DayCardStyle);
@@ -121,8 +121,13 @@ export default function DayCardScreen() {
   );
 }
 
-/** Today's four orders as card rows. */
+/** Today's orders as card rows: Vinco's four, then the user's own. */
 function describeRows(orders: TodayOrders): DayCardRow[] {
+  const custom = orders.customOrders.map(({ order, amount, status }): DayCardRow => ({
+    label: order.name,
+    value: status === 'none' ? dayCardCopy.values.notDone : dayCardCopy.customValue(amount, order.unit),
+    isDone: status !== 'none',
+  }));
   const values = dayCardCopy.values;
   const row = (kind: OrderKind, label: string, value: string): DayCardRow => ({
     label,
@@ -138,6 +143,7 @@ function describeRows(orders: TodayOrders): DayCardRow[] {
       dayCardCopy.rows.workout,
       orders.amounts.workout > 0 ? values.minutes(orders.amounts.workout) : values.notDone,
     ),
+    ...custom,
   ];
 }
 

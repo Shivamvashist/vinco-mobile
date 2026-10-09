@@ -11,7 +11,8 @@ const PRESS_GUARD_MS = 500;
 export type ButtonProps = {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'ghost';
+  /** danger: wax-seal red, for the confirm step of something that can't be undone. */
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   /** regular 56, compact 48, large 64 (two lines: label in the display face plus a sublabel). */
   size?: 'regular' | 'compact' | 'large';
   /** Second line under the label. Large size only. */
@@ -47,9 +48,11 @@ export function Button({
     ? 'textMuted'
     : isPrimary
       ? 'onAccent'
-      : variant === 'ghost'
-        ? 'textMuted'
-        : 'text';
+      : variant === 'danger'
+        ? 'onSeal'
+        : variant === 'ghost'
+          ? 'textMuted'
+          : 'text';
 
   const handlePress = () => {
     const now = Date.now();
@@ -76,7 +79,9 @@ export function Button({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={theme.colors[isPrimary ? 'onAccent' : 'text']} />
+        <ActivityIndicator
+          color={theme.colors[isPrimary ? 'onAccent' : variant === 'danger' ? 'onSeal' : 'text']}
+        />
       ) : (
         <View style={styles.labels}>
           <Txt
@@ -119,6 +124,8 @@ const useStyles = createStyles((theme) => ({
     borderColor: theme.colors.border,
   },
   secondaryPressed: { backgroundColor: theme.colors.surface },
+  danger: { backgroundColor: theme.colors.seal },
+  dangerPressed: { opacity: 0.85 },
   ghost: { minHeight: theme.layout.minTouchTarget },
   ghostPressed: { opacity: 0.6 },
   disabled: { backgroundColor: theme.colors.surface, borderColor: theme.colors.surface },

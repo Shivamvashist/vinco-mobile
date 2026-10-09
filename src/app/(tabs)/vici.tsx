@@ -1,8 +1,10 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
 import { ArcJourney } from '@/components/arc/ArcJourney';
 import { RankCard } from '@/components/arc/RankCard';
+import { RetreatSheet } from '@/components/arc/RetreatSheet';
 import { SettingsRow } from '@/components/arc/SettingsRow';
 import { BottomSheet } from '@/components/BottomSheet';
 import { Icon, type IconName } from '@/components/Icon';
@@ -11,21 +13,25 @@ import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionHeader } from '@/components/SectionHeader';
 import { ToneLine } from '@/components/ToneLine';
-import { arcCopy, commonCopy, onboardingCopy, pickTone } from '@/copy';
+import { Txt } from '@/components/Txt';
+import { arcCopy, commonCopy, devCopy, onboardingCopy, pickTone } from '@/copy';
+import { DevPanel } from '@/dev/DevPanel';
 import { arcEndDay, getArcPosition, isArcLength, OATH_PLAYBACK_DAY } from '@/features/arc';
+import { TRUCES } from '@/features/campaign';
 import { type Tone, TONES } from '@/features/tone';
 import { useActiveArc } from '@/hooks/useActiveArc';
 import { useCampaign } from '@/hooks/useCampaign';
 import { useOathPlayer } from '@/hooks/useOathPlayer';
+import { useResetJourney } from '@/hooks/useResetJourney';
 import { useToday } from '@/hooks/useToday';
 import { toRoman } from '@/lib/toRoman';
-import { usePreferencesStore } from '@/stores';
+import { IS_DEV_MODE_AVAILABLE, useDevStore, usePreferencesStore } from '@/stores';
 import { type ColorMode, createStyles, useThemeControls } from '@/theme';
 
 const TONE_ICONS: Record<Tone, IconName> = { philosopher: 'book', centurion: 'helmet', roast: 'flame' };
 const COLOR_MODES: ColorMode[] = ['dark', 'light', 'system'];
 
-type OpenSheet = 'tone' | 'colorMode' | null;
+type OpenSheet = 'tone' | 'colorMode' | 'truces' | 'retreat' | null;
 
 /** Vici: the arc. Journey, rank and settings. */
 export default function ViciScreen() {
@@ -37,6 +43,9 @@ export default function ViciScreen() {
   const { arc, targets, isLoaded } = useActiveArc();
   const campaign = useCampaign(arc, targets, today);
   const oath = useOathPlayer(arc?.oathPath ?? null);
+  const resetJourney = useResetJourney();
+  const isDevModeOn = useDevStore((state) => state.isDevModeOn);
+  const setDevModeOn = useDevStore((state) => state.setDevModeOn);
   const [openSheet, setOpenSheet] = useState<OpenSheet>(null);
 
   const position = arc ? getArcPosition(arc.startDay, arc.lengthDays, today) : null;
@@ -101,8 +110,16 @@ export default function ViciScreen() {
 
         <SectionHeader title={arcCopy.settingsSection} />
         <View style={styles.settings}>
+          {arc ? (
+            <SettingsRow
+              hasDivider={false}
+              label={arcCopy.settings.orders}
+              value={arcCopy.settings.ordersValue}
+              onPress={() => router.push('/orders')}
+            />
+          ) : null}
           <SettingsRow
-            hasDivider={false}
+            hasDivider={arc != null}
             label={arcCopy.settings.tone}
             value={commonCopy.toneNames[tone]}
             onPress={() => setOpenSheet('tone')}
@@ -123,17 +140,36 @@ export default function ViciScreen() {
           {arc ? (
             <>
               <SettingsRow
-                label={arcCopy.settings.truce}
-                value={campaign.isTruceAvailable ? arcCopy.settings.truceReady : arcCopy.settings.truceUsed}
+                label={arcCopy.settings.truces}
+                value={String(campaign.truceReserve)}
+                onPress={() => setOpenSheet('truces')}
               />
               <SettingsRow
                 label={arcCopy.settings.oath}
                 value={oathValue}
                 onPress={canPlayOath ? oath.toggle : undefined}
               />
+              <SettingsRow
+                label={arcCopy.settings.retreat}
+                value={arcCopy.settings.retreatValue}
+                onPress={() => setOpenSheet('retreat')}
+              />
             </>
           ) : null}
+          {IS_DEV_MODE_AVAILABLE ? (
+            <SettingsRow
+              label={arcCopy.settings.devMode}
+              toggle={{ value: isDevModeOn, onChange: setDevModeOn }}
+            />
+          ) : null}
         </View>
+
+        {IS_DEV_MODE_AVAILABLE && isDevModeOn ? (
+          <>
+            <SectionHeader title={devCopy.section} />
+            <DevPanel targets={arc ? targets : null} />
+          </>
+        ) : null}
       </Screen>
 
       <BottomSheet
@@ -171,6 +207,25 @@ export default function ViciScreen() {
           ))}
         </View>
       </BottomSheet>
+
+      <BottomSheet
+        visible={openSheet === 'truces'}
+        onClose={() => setOpenSheet(null)}
+        title={arcCopy.sheets.truces(campaign.truceReserve)}
+      >
+        <Txt variant="body" color="textMuted">
+          {arcCopy.truceInfo(TRUCES.earnedEveryCampaignDays, TRUCES.maxHeld, TRUCES.priceDenarii)}
+        </Txt>
+      </BottomSheet>
+
+      <RetreatSheet
+        visible={openSheet === 'retreat'}
+        onClose={() => setOpenSheet(null)}
+        onConfirm={() => {
+          resetJourney('journey');
+          setOpenSheet(null);
+        }}
+      />
     </>
   );
 }

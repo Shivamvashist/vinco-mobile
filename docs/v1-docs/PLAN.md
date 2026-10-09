@@ -36,7 +36,7 @@ Google requires new personal developer accounts to run a closed test with 12+ te
 | Streak                     | Campaign          | Days in a row    |
 | Minimum version of a task  | Hold the line     | Minimum          |
 | Full version of a task     | Conquer           | Full goal        |
-| Weekly rest-day pass       | Truce             | Rest day         |
+| Campaign-saving pass       | Truce             | Rest day         |
 | Restarting within 24 hours | Resurgo           | Comeback         |
 | Earned app unlock          | Clementia         | 10-minute unlock |
 | Wake-up alarm              | Aurora            | Alarm            |
@@ -146,11 +146,11 @@ A good week earns about 125.
 
 ### The Forum
 
-| Item                       | Price              | Limits                                |
-| -------------------------- | ------------------ | ------------------------------------- |
-| Extra Truce                | 60                 | One a week, never two days in a row   |
-| Campaign rescue            | 5 per campaign day | Within 24 hours of a miss, one a week |
-| Day card frames, app icons | 150 to 250         | Cosmetic only                         |
+| Item                       | Price              | Limits                                                                                              |
+| -------------------------- | ------------------ | --------------------------------------------------------------------------------------------------- |
+| Extra Truce                | 50                 | Bought only at the moment of need (Early Access: see `TRUCES` in `src/features/campaign/truces.ts`) |
+| Campaign rescue            | 5 per campaign day | Within 24 hours of a miss, one a week                                                               |
+| Day card frames, app icons | 150 to 250         | Cosmetic only                                                                                       |
 
 ### The Tributum
 

@@ -2,24 +2,31 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
+import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { AddOrderSheet } from '@/components/orders/AddOrderSheet';
 import { StatChip } from '@/components/StatChip';
 import { ProgressRing } from '@/components/ProgressRing';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionHeader } from '@/components/SectionHeader';
+import { SealDayCard } from '@/components/today/SealDayCard';
 import { SelfieTile } from '@/components/today/SelfieTile';
 import { StampOverlay } from '@/components/today/StampOverlay';
 import { TaskRow } from '@/components/today/TaskRow';
+import { TodoTile } from '@/components/today/TodoTile';
+import { TruceBanner } from '@/components/today/TruceBanner';
 import { WorkoutSheet } from '@/components/today/WorkoutSheet';
 import { ToneLine } from '@/components/ToneLine';
 import { Txt } from '@/components/Txt';
 import { commonCopy, pickTone, todayCopy } from '@/copy';
-import { getArcPosition } from '@/features/arc';
-import { ORDER_KINDS, type OrderKind, type OrderStatus } from '@/features/orders';
+import { arcEndDay, getArcPosition } from '@/features/arc';
+import { CUSTOM_ORDER_LIMITS, ORDER_KINDS, type OrderKind, type OrderStatus } from '@/features/orders';
 import { useActiveArc } from '@/hooks/useActiveArc';
 import { useCampaign } from '@/hooks/useCampaign';
 import { useDailySelfie } from '@/hooks/useDailySelfie';
+import { useOwnOrderActions } from '@/hooks/useOwnOrderActions';
+import { useTasks } from '@/hooks/useTasks';
 import { type TodayOrders, useTodayOrders } from '@/hooks/useTodayOrders';
 import { type DayKey, daysLeftInYear, formatClockTime, parseDayKey, weekdayIndex } from '@/lib/dates';
 import { toRoman } from '@/lib/toRoman';
@@ -27,19 +34,26 @@ import { usePreferencesStore } from '@/stores';
 import { createStyles, useFeedback } from '@/theme';
 
 /**
- * Veni: today's four orders. Tap a row to add progress, long-press to undo one step.
- * When all four hold, the VINCO stamp lands (once per day).
+ * Veni: today's orders (Vinco's four, then the user's own). Tap a row to add progress,
+ * long-press to undo one step. When every order holds, the VINCO stamp lands (once per day)
+ * and the seal card stays. Below: the selfie and the to-do list. See docs/ORDERS-AND-TASKS.md.
  */
 export default function VeniScreen() {
   const styles = useStyles();
   const play = useFeedback();
   const tone = usePreferencesStore((state) => state.tone);
   const activeArc = useActiveArc();
-  const orders = useTodayOrders(activeArc.targets);
+  const arcId = activeArc.arc?.id ?? null;
+  const orders = useTodayOrders(activeArc.targets, arcId);
   const campaign = useCampaign(activeArc.arc, activeArc.targets, orders.today);
   const selfie = useDailySelfie(orders.today);
+  const tasks = useTasks(activeArc.arc ? arcEndDay(activeArc.arc.startDay, activeArc.arc.lengthDays) : null);
+  const ownOrders = useOwnOrderActions(arcId);
   const [isWorkoutSheetOpen, setIsWorkoutSheetOpen] = useState(false);
-  const { today, targets, statuses, heldCount } = orders;
+  const [isAddOrderOpen, setIsAddOrderOpen] = useState(false);
+  const { today, targets, statuses, heldCount, totalCount } = orders;
+  const activeOwnOrders = orders.customOrders.filter((item) => item.order.lastDay == null).length;
+  const canAddOrder = activeArc.arc != null && activeOwnOrders < CUSTOM_ORDER_LIMITS.maxActive;
 
   const weekday = commonCopy.weekdays[weekdayIndex(today)] ?? '';
   const caption = commonCopy.daysLeftInYear(daysLeftInYear(today), parseDayKey(today).year);
@@ -70,6 +84,23 @@ export default function VeniScreen() {
     orders.undoOne(kind);
   };
 
+  const handleCustomPress = (orderId: number, status: OrderStatus) => {
+    if (status === 'full') {
+      play('denied');
+      return;
+    }
+    playForStatus(orders.addOneCustom(orderId));
+  };
+
+  const handleCustomLongPress = (orderId: number, amount: number) => {
+    if (amount <= 0) {
+      play('denied');
+      return;
+    }
+    play('stepDown');
+    orders.undoOneCustom(orderId);
+  };
+
   const handleWorkoutSave = (minutes: number, note: string) => {
     setIsWorkoutSheetOpen(false);
     playForStatus(orders.logWorkout(minutes, note));
@@ -84,26 +115,32 @@ export default function VeniScreen() {
           caption={caption}
           accessory={
             <ProgressRing
-              value={heldCount / ORDER_KINDS.length}
-              accessibilityLabel={todayCopy.ringLabel(heldCount, ORDER_KINDS.length)}
+              value={totalCount > 0 ? heldCount / totalCount : 0}
+              accessibilityLabel={todayCopy.ringLabel(heldCount, totalCount)}
             >
-              <Txt variant="headingSmall">{`${heldCount}/${ORDER_KINDS.length}`}</Txt>
+              <Txt variant="headingSmall">{`${heldCount}/${totalCount}`}</Txt>
             </ProgressRing>
           }
         />
         {activeArc.arc && campaign.isLoaded ? (
           <View style={styles.chips}>
             <StatChip icon="flame" label={todayCopy.chips.campaign(campaign.campaign)} />
-            <StatChip
-              label={campaign.isTruceAvailable ? todayCopy.chips.truceReady : todayCopy.chips.truceUsed}
-              emphasis="muted"
-            />
+            <StatChip label={todayCopy.chips.truces(campaign.truceReserve)} emphasis="muted" />
             {campaign.rank.current ? <StatChip label={campaign.rank.current.name} emphasis="muted" /> : null}
           </View>
         ) : null}
         <View style={styles.toneLine}>
-          <ToneLine line={pickTone(todayCopy.progressLine(heldCount), tone)} tone={tone} />
+          <ToneLine line={pickTone(todayCopy.progressLine(heldCount, totalCount), tone)} tone={tone} />
         </View>
+        {campaign.truceOffer ? (
+          <View style={styles.notice}>
+            <TruceBanner
+              campaign={campaign.truceOffer.campaignSaved}
+              missedDays={campaign.truceOffer.days.length}
+              onOpen={() => router.push('/campaign-lost')}
+            />
+          </View>
+        ) : null}
 
         <SectionHeader title={todayCopy.ordersSection} />
         {orders.hasSaveError ? (
@@ -132,14 +169,59 @@ export default function VeniScreen() {
               />
             );
           })}
+          {(isLoaded ? orders.customOrders : []).map(({ order, amount, status }) => {
+            const copy = todayCopy.customOrder;
+            const line = copy.line(amount, order.min, order.full, order.unit, status);
+            return (
+              <TaskRow
+                key={`own-${order.id}`}
+                name={order.name}
+                line={line}
+                status={status}
+                action={copy.action(status, order.min, order.full)}
+                onPress={() => handleCustomPress(order.id, status)}
+                onLongPress={() => handleCustomLongPress(order.id, amount)}
+                accessibilityLabel={`${order.name}, ${line}`}
+                accessibilityHint={copy.hint}
+              />
+            );
+          })}
+          {isLoaded && canAddOrder ? (
+            <Button
+              label={todayCopy.addOrder}
+              variant="ghost"
+              size="compact"
+              onPress={() => setIsAddOrderOpen(true)}
+            />
+          ) : null}
         </View>
+        {activeArc.arc && isLoaded && campaign.todayStatus !== 'open' ? (
+          <View style={styles.proof}>
+            <SealDayCard status={campaign.todayStatus} onSeal={() => router.push('/day-card')} />
+          </View>
+        ) : null}
         {/* The daily selfie belongs to an arc: it becomes the timelapse. */}
         {activeArc.arc && isLoaded ? (
           <View style={styles.proof}>
             <SelfieTile isTaken={selfie.todayPath != null} onPress={() => router.push('/selfie')} />
           </View>
         ) : null}
+        {activeArc.arc && isLoaded && tasks.isLoaded ? (
+          <View style={styles.tile}>
+            <TodoTile summary={tasks.summary} onPress={() => router.push('/tasks')} />
+          </View>
+        ) : null}
       </Screen>
+
+      <AddOrderSheet
+        visible={isAddOrderOpen}
+        onClose={() => setIsAddOrderOpen(false)}
+        onSave={(draft) => {
+          const result = ownOrders.add(draft);
+          if (result === null) setIsAddOrderOpen(false);
+          return result;
+        }}
+      />
 
       <WorkoutSheet
         visible={isWorkoutSheetOpen}
@@ -237,8 +319,10 @@ function describeRow(kind: OrderKind, orders: TodayOrders): RowContent {
 const useStyles = createStyles((theme) => ({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space.sm, marginTop: theme.space.md },
   toneLine: { marginTop: theme.space.lg },
+  notice: { marginTop: theme.space.lg },
   rows: { gap: theme.space.sm },
   proof: { marginTop: theme.space.lg },
+  tile: { marginTop: theme.space.sm },
   error: {
     marginBottom: theme.space.sm,
     borderWidth: theme.layout.borderWidth,

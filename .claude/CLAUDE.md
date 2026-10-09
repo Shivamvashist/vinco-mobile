@@ -7,6 +7,7 @@ Read this before every task. Then read [HISTORY.md](../HISTORY.md) for the curre
 | [HISTORY.md](../HISTORY.md)                                   | Current state, architecture, decisions, milestone log. **Update after every milestone** |
 | [docs/CONVENTIONS.md](../docs/CONVENTIONS.md)                 | Naming, exports, folders, edge-case checklist, UI process. **Follow it**                |
 | [docs/DESIGN-SYSTEM.md](../docs/DESIGN-SYSTEM.md)             | Theme, colour roles, type, sounds, haptics, adding a theme                              |
+| [docs/ORDERS-AND-TASKS.md](../docs/ORDERS-AND-TASKS.md)       | Orders (decide the day) vs daily and day tasks (the plan): rules, screens, data         |
 | [docs/v1-docs/BUILD-STEPS.md](../docs/v1-docs/BUILD-STEPS.md) | The step-by-step plan and what's next                                                   |
 | [docs/v1-docs/PLAN.md](../docs/v1-docs/PLAN.md)               | Full product plan                                                                       |
 | `docs/v1-reference/Vinco app UI.html`                         | Clickable prototype of all 18 screens: exact layouts, copy, motion and sounds           |
@@ -69,7 +70,7 @@ Two repos: `vinco-mobile` (this one) and `vinco-api` (later: Hono, OpenAPI spec 
 - **Styles:** `createStyles((theme) => ...)` from `@/theme`. Colour **roles** only (`theme.colors.accent`), never hex. Spacing, radius and sizes from tokens.
 - **Fonts:** pick weight by family (`theme.fonts.bodySemiBold`), never `fontWeight`.
 - **Feedback:** `useFeedback()` then `play('tap')`. Never play audio files directly.
-- **Copy:** all user-facing text in `src/copy/`, keyed by tone where it varies.
+- **Copy:** all user-facing text in `src/copy/`, keyed by tone where it varies. Latin phrases stay short and sit in quotes inside sentences (`earn "Resurgo" (I rise again)`); every Latin word has a plain label nearby.
 - **Logic:** pure functions in `src/features/`; screens call them. Records in SQLite via `src/db/`.
 - **State:** app/UI state in `src/stores/` (Zustand, persisted). Never mirror database records into a store.
 - **Exports:** named only; default exports only in `src/app/` routes.
@@ -99,9 +100,10 @@ Cross the Rubicon (Begin your arc), Campaign (days in a row), Hold the line (min
 
 ## Product rules (don't break these)
 
-- **Every task has a minimum and a full goal.** Hitting the minimum keeps the campaign alive.
-- **One free Truce per week** protects the campaign on a missed day.
-- **Three tones:** Philosopher (calm Stoic), Centurion (firm coach), Roast me (sarcastic). Every notification and empty state is written all three ways.
+- **Orders decide the day; tasks plan it** ([docs/ORDERS-AND-TASKS.md](../docs/ORDERS-AND-TASKS.md)). Orders are Vinco's four plus up to 4 of the user's own; every order has a minimum and a full goal, and every order must hold its minimum for the day to be held. Daily tasks and day tasks never affect sealing.
+- **Sealed days never change.** A day's result is stored when sealed; adding or standing down orders never rewrites history.
+- **Truces are called by the user**, never applied automatically. A missed day breaks the campaign unless the user calls a Truce before the next day ends. Truces are earned (one when an arc begins, one every 7 days of campaign, at most 3 held) or bought with denarii at the moment of need.
+- **Three tones:** Philosopher (calm Stoic), Centurion (firm coach), Roast me (unhinged friend: properly savage about the phone, the scroll and the excuse, never vulgar). Every notification and empty state is written all three ways.
 - **Humour rule:** roast the habit, the phone and the excuse, never the person. Selfie, weight and slip screens stay neutral in every tone. Every sarcastic line ends with a way forward.
 - **At most three nudges a day**, plus the alarm.
 - **Selfies never leave the phone.**

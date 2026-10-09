@@ -23,6 +23,8 @@ export type DayCardProps = {
 const CARD_WIDTH = 270;
 const CARD_HEIGHT = 480;
 const TICK_SIZE = 18;
+/** Above this many orders, rows tighten so up to eight still fit the fixed card. */
+const COMPACT_AFTER_ROWS = 5;
 
 /**
  * The shareable day card: laurel, "DAY XII OF LX", the day number, today's orders, campaign and rank.
@@ -35,6 +37,8 @@ export const DayCard = forwardRef<View, DayCardProps>(function DayCard(
   const styles = useStyles();
   const ink = { color: cardStyle.foreground };
   const heldCount = rows.filter((row) => row.isDone).length;
+  const isCompact = rows.length > COMPACT_AFTER_ROWS;
+  const rowVariant = isCompact ? 'caption' : 'body';
 
   return (
     <View
@@ -42,7 +46,12 @@ export const DayCard = forwardRef<View, DayCardProps>(function DayCard(
       collapsable={false}
       style={[styles.card, { backgroundColor: cardStyle.background }]}
       accessible
-      accessibilityLabel={dayCardCopy.cardLabel(toRoman(dayNumber), toRoman(lengthDays), heldCount)}
+      accessibilityLabel={dayCardCopy.cardLabel(
+        toRoman(dayNumber),
+        toRoman(lengthDays),
+        heldCount,
+        rows.length,
+      )}
     >
       <Laurel width={96} strokeColor={cardStyle.accent} strokeWidth={1.6} />
       <Txt variant="eyebrow" style={[styles.eyebrow, ink]}>
@@ -52,9 +61,9 @@ export const DayCard = forwardRef<View, DayCardProps>(function DayCard(
         {dayNumber}
       </Txt>
 
-      <View style={styles.rows}>
-        {rows.map((row) => (
-          <View key={row.label} style={styles.row}>
+      <View style={[styles.rows, isCompact && styles.rowsCompact]}>
+        {rows.map((row, index) => (
+          <View key={`${index}-${row.label}`} style={styles.row}>
             <View
               style={[
                 styles.tick,
@@ -75,10 +84,10 @@ export const DayCard = forwardRef<View, DayCardProps>(function DayCard(
                 </Svg>
               ) : null}
             </View>
-            <Txt variant="body" style={[styles.rowLabel, ink]}>
+            <Txt variant={rowVariant} numberOfLines={1} style={[styles.rowLabel, ink]}>
               {row.label}
             </Txt>
-            <Txt variant="body" style={[ink, styles.faded]}>
+            <Txt variant={rowVariant} numberOfLines={1} style={[ink, styles.faded]}>
               {row.value}
             </Txt>
           </View>
@@ -114,6 +123,7 @@ const useStyles = createStyles((theme) => ({
   },
   eyebrow: { marginTop: theme.space.md, letterSpacing: 2.4 },
   rows: { alignSelf: 'stretch', marginTop: theme.space.lg, gap: theme.space.sm },
+  rowsCompact: { marginTop: theme.space.md, gap: theme.space.xs },
   row: { flexDirection: 'row', alignItems: 'center', gap: theme.space.sm },
   tick: {
     width: TICK_SIZE,

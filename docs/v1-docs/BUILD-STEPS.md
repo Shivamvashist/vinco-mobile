@@ -206,13 +206,13 @@ From an empty folder to Early Access on **2 November 2026**. Each step lists its
 
 **Goal:** the rules that make a streak trustworthy, as pure functions with tests.
 
-- [x] `src/features/campaign/`: day results (conquered, held, truce, missed), current and best campaign, completed days, Resurgo days, weeks starting Monday, one Truce per week
+- [x] `src/features/campaign/`: day results (conquered, held, truce, missed), current and best campaign, completed days, Resurgo days, Truces called by the user (reserve, earning, price, the one-day window)
 - [x] Ranks by completed days (Tiro 1, Miles 4, Optio 10, Centurion 20, Tribune 35, Legate 50, Consul 60; Caesar only for finishing a 90-day arc), thresholds in one config
 - [x] Denarii: 5 held, 10 conquered, +25 every 7 days of campaign; `ledger` table keyed by (day, reason) so nothing is paid twice (migration `0002`)
-- [x] Sealing (`src/db/sealing.ts`): seals every finished, unsealed day of the arc in one transaction, including days the app was closed; a missed day takes the week's Truce automatically if free; never re-seals; stops at the arc's end
+- [x] Sealing (`src/db/sealing.ts`): seals every finished, unsealed day of the arc in one transaction, including days the app was closed; a missed day stays missed until the user calls a Truce (`callTruce`); earns a Truce every 7 days of campaign; never re-seals; stops at the arc's end
 - [x] `useSealFinishedDays` runs on open and at midnight (tabs layout); `useCampaign` computes everything live from the rows
 - [x] Today shows "Campaign N", Truce status and rank once real data exists
-- [x] Tests: engine (week boundaries, gaps, breaks, rank edges, bonus), sealing on real SQL (catch-up, Truce per week, idempotent, arc end, clock before arc), and a render test from rows to chips
+- [x] Tests: engine (week boundaries, gaps, breaks, rank edges, bonus), sealing on real SQL (catch-up, Truce earning, idempotent, arc end, clock before arc), and a render test from rows to chips
 
 ---
 
@@ -231,7 +231,7 @@ From an empty folder to Early Access on **2 November 2026**. Each step lists its
 
 - [x] Arc name, dates and "Day XII of LX"; journey line with Roman milestones (`getArcMilestones`) and today's marker
 - [x] Rank card: medallion, meaning, days to next rank with progress, denarii earned
-- [x] Settings: tone and appearance (sheets), sounds and vibration (switches), Truce this week, the oath (sealed until Day X, then Listen; plays even on silent because the user asked, then restores UI audio)
+- [x] Settings: tone and appearance (sheets), sounds and vibration (switches), Truces in reserve, the oath (sealed until Day X, then Listen; plays even on silent because the user asked, then restores UI audio)
 - [x] Campaign lost screen (`/campaign-lost`): shown once per break (`findLatestLoss`, `useNoticesStore`), toppling column, tone line, "Rise again" to the comeback ("Day I, again") with the `rise` cue
 - [x] Render tests: arc and rank from sealed days, settings sheets and switches, the loss flow shown exactly once
 
@@ -241,7 +241,8 @@ From an empty folder to Early Access on **2 November 2026**. Each step lists its
 
 - [ ] `expo-notifications`, local only; permission asked when first needed
 - [ ] Scheduler: morning brief, evening check (only if something's open), wind-down; at most three a day (tested)
-- [ ] To-do list with "carry over or drop?" the next morning
+- [x] Orders and tasks ([docs/ORDERS-AND-TASKS.md](../ORDERS-AND-TASKS.md)): the user's own orders (minimum and full goal, count toward the seal, stand down from tomorrow), daily tasks to the arc's end, day tasks for today or tomorrow, "carry over or drop?", the to-do tile and screen, "Your orders" screen; day results stored at sealing
+- [ ] Own orders in onboarding (orders step), if wanted
 - [ ] Step one templates and the Armory list
 
 ## Step 13: Day card and honours

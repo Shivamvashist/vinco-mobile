@@ -95,8 +95,9 @@ export const onboardingCopy = {
         time: '9:04 pm',
         lines: {
           philosopher: 'The day is not over. One small act still counts.',
-          centurion: 'Two of four done. Finish the line, soldier.',
-          roast: 'Your water bottle has filed a missing person report. Go and find it.',
+          centurion: 'Two orders still open. Finish the line, soldier.',
+          roast:
+            'Your water bottle has filed a missing person report and the police want your screen time. Go and drink.',
         } satisfies ToneLines,
       },
       {
@@ -105,14 +106,14 @@ export const onboardingCopy = {
         lines: {
           philosopher: 'Fall seven times, rise eight. Day I begins again.',
           centurion: 'Campaign lost. Regroup. March at dawn.',
-          roast: "Streak's gone. Good news: Day 1 is the easiest one to win.",
+          roast: "Streak's dead. The couch is throwing a victory party. Crash it: Day I starts now.",
         } satisfies ToneLines,
       },
     ],
     descriptions: {
       philosopher: 'Calm Stoic teacher. Seneca at your shoulder.',
       centurion: 'Firm coach. Short orders, no excuses.',
-      roast: 'Sarcastic friend. Jokes about your habits, never about you.',
+      roast: 'Unhinged friend. Roasts your habits and your phone, never you.',
     } satisfies ToneLines,
   },
 
@@ -147,8 +148,8 @@ export const onboardingCopy = {
     body: (arcLengthRoman: string): string =>
       `One photo a day. It never leaves your phone. On Day ${arcLengthRoman} it becomes your timelapse.`,
     stamp: 'DAY I',
-    quote: '"Dimidium facti qui coepit habet."',
-    quoteMeaning: 'Horace: who has begun is half done.',
+    quote: '"Alea iacta est."',
+    quoteMeaning: 'Caesar, crossing the Rubicon: the die is cast.',
     march: 'March to Today',
     skip: 'Start without a selfie',
     finishFailed: "Your arc couldn't be saved. Try again; your choices are kept.",

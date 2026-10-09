@@ -51,7 +51,7 @@ Shared rules for all components:
 ### Button
 
 - **Used in:** every primary action ("Continue", "Accept my orders", "Seal the day"), secondary ("See your progress", "Record again"), quiet links ("Skip for now", "Back to Today"), and the large two-line "Cross the Rubicon / Begin your arc".
-- **Props:** `label`, `onPress`, `variant: 'primary' | 'secondary' | 'ghost' = 'primary'`, `size: 'regular' | 'compact' | 'large' = 'regular'` (56, 48, 64), `sublabel?` (large only), `disabled`, `loading`, `cue: FeedbackCue | null = 'tap'`, `accessibilityHint?`.
+- **Props:** `label`, `onPress`, `variant: 'primary' | 'secondary' | 'ghost' | 'danger' = 'primary'` (danger: wax-seal red, only for the confirm step of something that can't be undone, like "Retreat to the Rubicon"), `size: 'regular' | 'compact' | 'large' = 'regular'` (56, 48, 64), `sublabel?` (large only), `disabled`, `loading`, `cue: FeedbackCue | null = 'tap'`, `accessibilityHint?`.
 - **States:** pressed (primary darkens to `accentPressed`, secondary fills with `surface`, ghost dims), disabled (primary turns `surface` with muted text, no cue), loading (spinner, presses ignored).
 - **Edge cases:** a second press within 500 ms is ignored, so a double tap can't navigate twice or save twice.
 - **Accessibility:** role button, busy and disabled states, label includes the sublabel.
@@ -64,7 +64,7 @@ Shared rules for all components:
 
 ### StatChip
 
-- **Used in:** Today's chips ("Campaign 11", "Truce ready", "Optio").
+- **Used in:** Today's chips ("Campaign 11", "2 Truces", "Optio").
 - **Props:** `label`, `icon?`, `emphasis: 'default' | 'muted' = 'default'`.
 - **Look:** `surface` pill, height 30, caption-size text, accent icon. Not pressable.
 
@@ -158,4 +158,4 @@ Shared rules for all components:
 
 ## Built with their screens, not in the kit
 
-These are specific to one screen, so they live with it: `today/` (`TaskRow`, `WorkoutSheet`, `StampOverlay`), `onboarding/` (`FlowLayout`, `QuoteCarousel`, `RiverLines`, `TypingPreview`, `OathRecorder`), `progress/` (`StatTile`, `MonthCalendar`), `arc/` (`ArcJourney`, `RankCard`, `SettingsRow`), `campaign/` (`Column`), `dayCard/` (`DayCard`, fixed palettes so a shared card looks the same on every phone). Also outside the kit: `StartupError` (database recovery screen).
+These are specific to one screen, so they live with it: `today/` (`TaskRow`, `WorkoutSheet`, `StampOverlay`, `SelfieTile`, `SealDayCard`: stays once every order holds so the day card is always one tap away; `TruceBanner`: while a Truce can still save the campaign; `TodoTile`: the to-do summary), `orders/` (`AddOrderSheet`: name, unit, minimum, full goal; errors inline, closes only once saved), `tasks/` (`TaskItemRow`: a checkbox row with a remove button, simpler than an order row on purpose; `CarryOverCard`: carry over or drop, one by one or all; `AddTaskSheet`: stays open after each save for quick entry), `onboarding/` (`FlowLayout`, `QuoteCarousel`, `RiverLines`, `TypingPreview`, `OathRecorder`), `progress/` (`StatTile`, `MonthCalendar`), `arc/` (`ArcJourney`, `RankCard`, `SettingsRow`, `RetreatSheet`: confirm button stays disabled until RETREAT is typed; "Hold the line" cancels), `campaign/` (`Column`), `dayCard/` (`DayCard`, fixed palettes so a shared card looks the same on every phone). Also outside the kit: `StartupError` (database recovery screen).

@@ -10,6 +10,7 @@ import {
   toDayRecords,
 } from '../sealing';
 import { createTestDatabase } from '../testing/testDatabase';
+import { getTruceReserve } from '../truces';
 
 // Monday 12 October 2026 starts the week.
 const ARC = { startDay: '2026-10-12', lengthDays: 30 };
@@ -42,26 +43,31 @@ describe('sealFinishedDays', () => {
     expect(getDayLog(db, '2026-10-12')).toBeUndefined();
   });
 
-  it('seals past days, uses the week Truce on the first miss only, and pays denarii', () => {
+  it('seals past days, leaves misses as missed, and pays denarii', () => {
     const db = createTestDatabase();
     logDay(db, '2026-10-12', CONQUERED);
     logDay(db, '2026-10-13', HELD);
-    // 14th and 15th: nothing done.
+    // 14th and 15th: nothing done. No Truce is taken without the user calling it.
     sealFinishedDays(db, ARC, DEFAULT_ORDER_TARGETS, '2026-10-16');
 
-    expect(results(db, '2026-10-15')).toEqual(['conquered', 'held', 'truce', 'missed']);
-    expect(getDayLog(db, '2026-10-14')?.truceUsed).toBe(true);
-    expect(getDayLog(db, '2026-10-15')?.truceUsed).toBe(false);
+    expect(results(db, '2026-10-15')).toEqual(['conquered', 'held', 'missed', 'missed']);
+    expect(getDayLog(db, '2026-10-14')?.truceUsed).toBe(false);
     expect(ledgerTotal(db)).toBe(15);
   });
 
-  it('gives a new Truce in a new week', () => {
+  it('earns a Truce every 7 days of campaign, once per day', () => {
     const db = createTestDatabase();
-    // Sunday 18 missed (takes week 1's Truce), Monday 19 missed (takes week 2's).
-    sealFinishedDays(db, ARC, DEFAULT_ORDER_TARGETS, '2026-10-20');
-    const days = results(db, '2026-10-19');
-    expect(days.slice(0, 1)).toEqual(['truce']);
-    expect(days.slice(-1)).toEqual(['truce']);
+    for (let day = 12; day <= 31; day += 1) logDay(db, `2026-10-${day}`, HELD);
+    logDay(db, '2026-11-01', HELD);
+    logDay(db, '2026-11-02', HELD);
+    // Days 7 and 14 of the campaign are 18 and 25 October.
+    sealFinishedDays(db, ARC, DEFAULT_ORDER_TARGETS, '2026-10-26');
+    expect(getTruceReserve(db)).toBe(2);
+    // Day 21 (1 November) earns a third.
+    sealFinishedDays(db, ARC, DEFAULT_ORDER_TARGETS, '2026-11-09');
+    expect(getTruceReserve(db)).toBe(3);
+    sealFinishedDays(db, ARC, DEFAULT_ORDER_TARGETS, '2026-11-09');
+    expect(getTruceReserve(db)).toBe(3);
   });
 
   it('never pays twice or re-seals a day', () => {

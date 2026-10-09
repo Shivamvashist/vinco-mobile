@@ -29,6 +29,20 @@
       "when": 1791521514848,
       "tag": "0003_day_weight",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1791536263606,
+      "tag": "0004_truces",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1791537778414,
+      "tag": "0005_orders_and_tasks",
+      "breakpoints": true
     }
   ]
 }

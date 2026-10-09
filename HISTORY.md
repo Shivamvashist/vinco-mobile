@@ -8,11 +8,11 @@ The memory of this project. Any AI model or developer joining should read this, 
 
 **Phase:** Early Access (tracker only, all on the phone, no backend). Closed-test build due **12 Oct 2026**, Early Access **2 Nov 2026**.
 
-**Done:** Steps 1 to 5 and 7 to 11, plus Step 13's day card. Every prototype screen in Early Access scope exists on real data except the to-do list and step one (Step 12).
+**Done:** Steps 1 to 5 and 7 to 11, plus Step 13's day card, own orders and the to-do list (daily and day tasks, carry-over), user-called Truces, "Sound the retreat" (journey reset), a persistent "Seal the day" card and dev mode. Every prototype screen in Early Access scope exists on real data except the to-do list and step one (Step 12).
 
 **Next:** Step 12 (local nudges with a three-a-day cap, bedtime and the sleep chart, to-do list with carry-over, step one card), then Step 13 decorations and Step 14 hardening. Step 6 (first Play build) is blocked on the questions below.
 
-**What runs today:** first launch opens onboarding (Rubicon, arc length, orders, tone, oath recording, first selfie with the DAY I stamp); finishing creates the arc in SQLite and opens Today, which shows "DAY I OF LX", the tuned orders (tap to add, long-press to undo, workout sheet, VINCO stamp once a day) and saves everything. Vidi shows stats, the arc calendar and timelapse progress. Vici shows the journey, rank, denarii and working settings (tone, appearance, sounds, vibration, Truce, oath playback from Day X). A broken campaign opens the "campaign lost" screen once, leading to Resurgo. Dev: long-press Vici for the theme lab and kit gallery.
+**What runs today:** first launch opens onboarding (Rubicon, arc length, orders, tone, oath recording, first selfie with the DAY I stamp); finishing creates the arc in SQLite and opens Today, which shows "DAY I OF LX", the tuned orders (tap to add, long-press to undo, workout sheet, VINCO stamp once a day) and saves everything. Vidi shows stats, the arc calendar and timelapse progress. Today lists Vinco's four orders and the user's own (one tap: minimum, then full goal), an "Add an order" button, and a to-do tile that opens the to-do list (every-day tasks, today, tomorrow, carry over or drop). Vici has "Your orders" (stand an order down: it counts today, gone tomorrow). Once every order holds, a "Seal the day" card stays on Today (the stamp can be dismissed without losing the day card). Vici shows the journey, rank, denarii and working settings (tone, appearance, sounds, vibration, Truces in reserve, oath playback from Day X, "Sound the retreat"). A broken campaign opens the "campaign lost" screen once: if yesterday was missed and there was a campaign to save, it offers a Truce (from the reserve, or bought with denarii), otherwise Resurgo; Today keeps a Truce banner until the day ends. Dev builds: a "Dev mode" switch in Vici shows dev tools (simulated next day, hold or conquer today, theme lab, reset everything); long-pressing Vici still opens the theme lab.
 
 ### Architecture
 
@@ -48,6 +48,13 @@ The memory of this project. Any AI model or developer joining should read this, 
 | 9 Oct | Custom tab bar instead of styling the default one                                                                               | The prototype's two-line Latin/plain labels don't fit the default label slot cleanly        |
 | 9 Oct | Default tone before onboarding: Centurion                                                                                       | The app's core voice ("orders", "soldier"); onboarding sets the real choice                 |
 | 9 Oct | Theme lab opened by long-pressing the Vici tab, dev only                                                                        | Keeps dev tools out of real screens                                                         |
+| 9 Oct | Three kinds of to-do: orders (decide the day, min and full goal), daily tasks, day tasks (never affect sealing)                 | Developer's structure; spec in docs/ORDERS-AND-TASKS.md                                     |
+| 9 Oct | Own orders: one tap per level (minimum, then full), max 4, start today, stand down from tomorrow                                | Keeps the core job one tap; removing an order can never rescue the day in progress          |
+| 9 Oct | Day results stored at sealing (`day_logs.result`)                                                                               | Changing orders must never rewrite history                                                  |
+| 9 Oct | Truces called by the user; earned (1 at arc start, 1 per 7-day campaign, max 3) or bought (50 denarii) when needed              | Developer's decision. A Truce is a choice and a reward, not a silent weekly pass            |
+| 9 Oct | A Truce covers only the missed run ending yesterday, one Truce per missed day                                                   | Simple rule ("before the next day ends"); never rewrites history past sealed days           |
+| 9 Oct | Journey reset wipes records, selfies and oath; keeps preferences. Confirmed by typing RETREAT                                   | Developer's request; typed word stops an accidental wipe                                    |
+| 9 Oct | Dev mode: a persisted day offset in `useDevStore`, read by `useToday` (dev builds only), only ever moves forward                | Tests history and sealing on a real phone; going back would leave sealed future days        |
 
 ### Questions for the developer (parked while working)
 
@@ -57,9 +64,13 @@ Answer when convenient; work continues with the safe default shown.
 2. **App icon and splash art.** Default: Expo template images remain; Step 6 can't ship without real ones.
 3. **Onboarding order:** built as the prototype's five steps (arc, orders with wake time, tone, oath, selfie). Bedtime moves to Step 12 (wind-down nudge) and step one to a Today card (Step 12). Change if you prefer otherwise.
 4. **Default tone before onboarding.** Default: Centurion.
-5. **Week start for the Truce** (Monday or Sunday). Built with Monday.
-6. **Truce: automatic or chosen?** Built automatic: a missed day takes the week's free Truce, so nobody loses a campaign for not pressing a button. The prototype's "Use this week's Truce instead" button implies a manual choice. Say if you want manual.
+5. **Truce numbers.** Built: one Truce when an arc begins, one per 7 days of campaign, at most 3 held, 50 denarii to buy, and the Truce must be called before the day after the miss ends. All in `TRUCES` (`src/features/campaign/truces.ts`). Say if you want different numbers or a longer window.
+6. **Truces as decorations.** "Collected as achievements" is built as earning through campaign weeks. When decorations arrive (Step 13), some could also grant a Truce. Say which.
 7. **Rank thresholds and denarii amounts** are the plan's first guesses, kept in one config each (`src/features/campaign/ranks.ts`, `denarii.ts`).
+8. **Dev mode in test builds.** Built for dev builds only (`IS_DEV_MODE_AVAILABLE = __DEV__`). Say if closed testers should see it too.
+9. **Own orders: limits and onboarding.** Built: at most 4 own orders, logged in two levels (minimum, full goal), added from Today or "Your orders", not in onboarding yet. Say if you want them on the onboarding orders step, a different limit, or exact amounts instead of two levels.
+10. **Task limits.** 10 daily tasks, 20 per day, 60-character titles; day tasks can be planned for today or tomorrow only. Say if you want a date picker for further ahead.
+11. **Campaign-lost tone line.** The product rule says slip screens stay neutral, but the prototype gives this screen a tone line. Kept the tone line (the Roast one aims at the phone, not the person). Say if it should be neutral.
 
 ### Open decisions (longer term)
 
@@ -72,12 +83,33 @@ Answer when convenient; work continues with the safe default shown.
 ### Noticed, not done
 
 - Template leftovers not used by the app: `assets/images/react-logo*.png`, `expo-badge*.png`, `expo-logo.png`, `logo-glow.png`, `tutorial-web.png`, `tabIcons/`; packages `@expo/ui`, `expo-glass-effect`, `expo-symbols`, `expo-web-browser`, `expo-device`. Remove when convenient (`expo-device` may be useful later).
+- `docs/v1-reference/` (the plan HTML) still describes the weekly Truce; it's a reference snapshot, left as is. PLAN.md is updated.
 - `npm audit` reports 30 advisories in the dependency tree (mostly dev tooling). Review before the production build.
 - `README.md` is now a short project readme.
 
 ---
 
 ## Milestone log
+
+### 9 Oct 2026: Orders and tasks
+
+- Spec first: [docs/ORDERS-AND-TASKS.md](docs/ORDERS-AND-TASKS.md) (three kinds, rules, screens, data).
+- Migration `0005_orders_and_tasks`: `custom_orders`, `custom_order_logs`, `tasks`, `task_completions`, `day_logs.result`.
+- Logic: `src/features/orders/customOrders.ts` (limits, validation, levels), `src/features/tasks/` (daily vs once, limits, carry-over, summary). `getDayResult` takes own-order statuses.
+- Database: `src/db/customOrders.ts` (add, stand down, logs), `src/db/dayStanding.ts` (`getDayStanding`: the one place that decides "held", used by the stamp and sealing), `src/db/tasks.ts` (add, tick, remove, carry over or drop). Sealing stores each day's result; older sealed days are still computed. Child rows are deleted explicitly (foreign keys are off in the app's SQLite).
+- Hooks: `useTodayOrders` includes own orders (`customOrders`, `totalCount`, `addOneCustom`, `undoOneCustom`), `useCampaign` judges today with own orders, `useTasks`, `useOwnOrderActions`.
+- UI: own order rows and "Add an order" on Today, ring and progress line out of the real total, `TodoTile`, routes `/tasks` and `/orders`, `AddOrderSheet`, `TaskItemRow`, `CarryOverCard`, `AddTaskSheet`, "Your orders" in Vici, own orders on the day card (compact rows above five).
+- Verified: 308 tests (validation, levels, stamp only when own orders hold, stand down, history unchanged after stand down, add, tick, remove, carry over and drop), no console warnings; Android bundle builds with the migration.
+
+### 9 Oct 2026: Truces by choice, retreat, seal card, dev mode, Roast rewrite
+
+- **Truces reworked** (developer's rule): no automatic weekly Truce. Missed days stay missed until the user calls a Truce. New table `truces` (migration `0004_truces`, which also grants the starting Truce to an arc already in progress), `src/features/campaign/truces.ts` (`TRUCES`, `planTrucePayment`, `findTruceableDays`, `getTruceOffer`, `earnsTruce`), `src/db/truces.ts` (`callTruce` in one transaction, double-tap safe; `grantTruce` capped). Sealing earns a Truce every 7 days of campaign; `createArc` grants one. Denarii ledger takes `truce_bought` (negative). `findLatestLoss` now measures from the start of a missed run. The loss notice only reopens for a later break.
+- **Campaign lost** offers "Save the campaign" with a Truce (reserve first, then denarii) or Rise again; a Truce leads to "The line holds". Today shows `TruceBanner` while the offer lasts. Chips and Vici show Truces in reserve (tap for how to earn them).
+- **Seal the day**: `SealDayCard` stays on Today once all four orders hold, so the day card is never lost by dismissing the stamp.
+- **Sound the retreat** (Vici): `RetreatSheet` with a typed RETREAT; `useResetJourney` wipes the database (`clearJourney`), selfies and oath (`deleteAllMedia`), the onboarding draft and notices, then replaces to the Rubicon. Button gained a `danger` variant (wax seal).
+- **Dev mode** (dev builds): `useDevStore` (persisted), `useToday` applies the day offset, `src/dev/DevPanel.tsx` and `src/dev/devActions.ts` (`fillDayOrders`), reset everything also resets preferences and the clock.
+- **Copy**: Roast lines rewritten to be properly unhinged (aimed at the phone, the scroll and the excuse; each ends with a way forward). Latin phrases shortened and quoted ("Alea iacta est.", "Perfer et obdura.", "Resurgo").
+- Verified: 281 tests (Truce call, Truce banner, price refusal, retreat with wrong and right word, dev next day and reset, seal card after the stamp), no console warnings; Android bundle builds with the migration.
 
 ### 9 Oct 2026: Day card (Step 13, part)
 

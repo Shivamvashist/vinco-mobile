@@ -10,8 +10,9 @@
 import { sql } from 'drizzle-orm';
 import { index, integer, primaryKey, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
-import type { LedgerReason } from '@/features/campaign';
+import type { DayResult, LedgerReason, TruceReason } from '@/features/campaign';
 import type { OrderKind } from '@/features/orders';
+import type { TaskRepeat } from '@/features/tasks';
 
 /** A 30, 60 or 90 day campaign. One is active at a time. */
 export const arcs = sqliteTable(
@@ -77,12 +78,18 @@ export const dayLogs = sqliteTable('day_logs', {
   weightKg: real('weight_kg'),
   /** When the day was sealed (Step 9). */
   sealedAt: text('sealed_at'),
+  /**
+   * The result stored when the day was sealed, so changing orders later never rewrites it.
+   * Null before sealing (and for days sealed before this column existed: computed instead).
+   */
+  result: text('result').$type<Exclude<DayResult, 'truce'>>(),
+  /** True once the user called a Truce on this missed day. */
   truceUsed: integer('truce_used', { mode: 'boolean' }).notNull().default(false),
 });
 
 /**
- * Denarii earned, one row per award. (day, reason) is unique, so sealing a day twice
- * can never pay twice. Earned only: nothing here is ever bought.
+ * Denarii, one row per award or spend. (day, reason) is unique, so sealing a day twice
+ * can never pay twice. Earned in the app only: never bought with real money.
  */
 export const ledger = sqliteTable(
   'ledger',
@@ -95,8 +102,96 @@ export const ledger = sqliteTable(
   (table) => [primaryKey({ columns: [table.day, table.reason] })],
 );
 
+/**
+ * Truces in and out, one row per change: +1 when granted, earned or bought, -1 when spent.
+ * The reserve is the sum. (day, reason) is unique, so nothing is granted or spent twice.
+ */
+export const truces = sqliteTable(
+  'truces',
+  {
+    day: text('day').notNull(),
+    reason: text('reason').$type<TruceReason>().notNull(),
+    amount: integer('amount').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.day, table.reason] })],
+);
+
+/** The user's own orders. Active from first_day to last_day (null while active). */
+export const customOrders = sqliteTable(
+  'custom_orders',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    arcId: integer('arc_id')
+      .notNull()
+      .references(() => arcs.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    unit: text('unit').notNull().default(''),
+    min: integer('min').notNull(),
+    full: integer('full').notNull(),
+    firstDay: text('first_day').notNull(),
+    lastDay: text('last_day'),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [index('custom_orders_arc_idx').on(table.arcId)],
+);
+
+/** How far an own order got on a day. One row per order per day. */
+export const customOrderLogs = sqliteTable(
+  'custom_order_logs',
+  {
+    orderId: integer('order_id')
+      .notNull()
+      .references(() => customOrders.id, { onDelete: 'cascade' }),
+    day: text('day').notNull(),
+    amount: integer('amount').notNull().default(0),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.orderId, table.day] }),
+    index('custom_order_logs_day_idx').on(table.day),
+  ],
+);
+
+/** The to-do list: daily tasks (every day to last_day) and day tasks (one day). Never affect sealing. */
+export const tasks = sqliteTable(
+  'tasks',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    title: text('title').notNull(),
+    repeat: text('repeat').$type<TaskRepeat>().notNull(),
+    /** once: the task's day. daily: the first day it shows. */
+    day: text('day').notNull(),
+    /** daily: the last day it shows. */
+    lastDay: text('last_day'),
+    /** once: the day it was first planned for, if carried over. */
+    carriedFrom: text('carried_from'),
+    isDropped: integer('is_dropped', { mode: 'boolean' }).notNull().default(false),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [index('tasks_day_idx').on(table.day)],
+);
+
+/** A task ticked on a day. One row per task per day. */
+export const taskCompletions = sqliteTable(
+  'task_completions',
+  {
+    taskId: integer('task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    day: text('day').notNull(),
+    doneAt: text('done_at').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.taskId, table.day] })],
+);
+
 export type ArcRow = typeof arcs.$inferSelect;
 export type ArcOrderRow = typeof arcOrders.$inferSelect;
 export type OrderLogRow = typeof orderLogs.$inferSelect;
 export type DayLogRow = typeof dayLogs.$inferSelect;
 export type LedgerRow = typeof ledger.$inferSelect;
+export type TruceRow = typeof truces.$inferSelect;
+export type CustomOrderRow = typeof customOrders.$inferSelect;
+export type CustomOrderLogRow = typeof customOrderLogs.$inferSelect;
+export type TaskRow = typeof tasks.$inferSelect;
+export type TaskCompletionRow = typeof taskCompletions.$inferSelect;

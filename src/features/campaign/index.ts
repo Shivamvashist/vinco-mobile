@@ -1,4 +1,5 @@
 export {
+  applyTruce,
   countCompletedDays,
   type CampaignLoss,
   countsAsCompleted,
@@ -9,9 +10,18 @@ export {
   getBestCampaign,
   getCurrentCampaign,
   getDayResult,
-  isTruceAvailable,
+  isSealedResult,
   keepsCampaign,
-  weekStartOf,
 } from './campaign';
 export { DENARII, getDayAwards, type LedgerAward, type LedgerReason } from './denarii';
 export { CAESAR, CAESAR_ARC_LENGTH, getRankStatus, type Rank, RANKS, type RankStatus } from './ranks';
+export {
+  earnsTruce,
+  findTruceableDays,
+  getTruceOffer,
+  planTrucePayment,
+  type TruceOffer,
+  type TrucePayment,
+  type TruceReason,
+  TRUCES,
+} from './truces';

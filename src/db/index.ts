@@ -1,5 +1,5 @@
 /**
- * The phone's database: records the user creates (arcs, order logs, day logs).
+ * The phone's database: records the user creates (arcs, order logs, day logs, denarii, Truces).
  * Screens read with Drizzle live queries; writes go through the functions here.
  * Nothing here is copied into Zustand.
  */
@@ -22,7 +22,44 @@ export {
   toOrderAmounts,
   toWorkoutNote,
 } from './orderLogs';
-export type { ArcOrderRow, ArcRow, DayLogRow, LedgerRow, OrderLogRow } from './schema';
+export {
+  addCustomOrder,
+  CustomOrderError,
+  getCustomOrderAmount,
+  getCustomOrdersWithAmounts,
+  saveCustomOrderAmount,
+  selectCustomOrderLogsBetween,
+  selectCustomOrders,
+  selectCustomOrdersOn,
+  standDownCustomOrder,
+  toCustomAmounts,
+  toCustomOrder,
+} from './customOrders';
+export { getDayStanding } from './dayStanding';
+export { clearJourney } from './reset';
+export type {
+  ArcOrderRow,
+  ArcRow,
+  CustomOrderLogRow,
+  CustomOrderRow,
+  DayLogRow,
+  LedgerRow,
+  OrderLogRow,
+  TaskCompletionRow,
+  TaskRow,
+  TruceRow,
+} from './schema';
+export {
+  addTask,
+  removeTask,
+  resolveCarryOver,
+  selectTaskCompletionsBetween,
+  selectTasksAround,
+  setTaskDone,
+  TaskSaveError,
+  toCompletionSet,
+  toTask,
+} from './tasks';
 export {
   sealFinishedDays,
   selectDayLogsBetween,
@@ -30,4 +67,12 @@ export {
   selectOrderLogsBetween,
   toDayRecords,
 } from './sealing';
+export {
+  callTruce,
+  getDenariiBalance,
+  getTruceReserve,
+  grantTruce,
+  selectTruces,
+  TruceError,
+} from './truces';
 export { useDatabaseMigrations } from './useDatabaseMigrations';

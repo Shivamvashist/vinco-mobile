@@ -2,7 +2,10 @@ import type { DayKey } from '@/lib/dates';
 
 import type { DayResult } from './campaign';
 
-/** Earned only, never bought. Amounts from the product plan; tune with Early Access data. */
+/**
+ * Earned by holding the line, never bought with real money. Spent on Truces (a negative row).
+ * Amounts from the product plan; tune with Early Access data.
+ */
 export const DENARII = {
   dayHeld: 5,
   dayConquered: 10,
@@ -10,7 +13,7 @@ export const DENARII = {
   campaignWeek: 25,
 } as const;
 
-export type LedgerReason = 'day_held' | 'day_conquered' | 'campaign_week';
+export type LedgerReason = 'day_held' | 'day_conquered' | 'campaign_week' | 'truce_bought';
 
 export type LedgerAward = { day: DayKey; reason: LedgerReason; amount: number };
 

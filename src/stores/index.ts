@@ -15,3 +15,11 @@ export {
   useOnboardingStore,
 } from './onboardingStore';
 export { type NoticesStore, sanitizeNotices, useNoticesStore } from './noticesStore';
+export {
+  type DevStore,
+  IS_DEV_MODE_AVAILABLE,
+  MAX_DAY_OFFSET,
+  sanitizeDevState,
+  selectDayOffset,
+  useDevStore,
+} from './devStore';

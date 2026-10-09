@@ -73,6 +73,7 @@ describe('day logs', () => {
       selfiePath: null,
       weightKg: null,
       sealedAt: null,
+      result: null,
       truceUsed: false,
     });
   });

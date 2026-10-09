@@ -10,6 +10,8 @@ import { DEFAULT_PREFERENCES, sanitizePreferences, type Preferences } from './pr
 type PreferencesActions = {
   setTone: (tone: Tone) => void;
   updateThemePreferences: (patch: Partial<ThemePreferences>) => void;
+  /** Back to the defaults (dev reset only: a journey reset keeps preferences). */
+  reset: () => void;
 };
 
 export type PreferencesStore = Preferences & PreferencesActions;
@@ -27,6 +29,7 @@ export const usePreferencesStore = create<PreferencesStore>()(
       ...DEFAULT_PREFERENCES,
       setTone: (tone) => set({ tone }),
       updateThemePreferences: (patch) => set(sanitizePreferences(patch)),
+      reset: () => set(DEFAULT_PREFERENCES),
     }),
     {
       name: 'vinco.preferences',

@@ -10,8 +10,6 @@ import {
   getDayAwards,
   getDayResult,
   getRankStatus,
-  isTruceAvailable,
-  weekStartOf,
 } from '..';
 
 const held = { water: 1, wake: 1, meal: 1, workout: 15 };
@@ -34,20 +32,6 @@ describe('getDayResult', () => {
     expect(getDayResult(partial, DEFAULT_ORDER_TARGETS, false)).toBe('missed');
     expect(getDayResult(partial, DEFAULT_ORDER_TARGETS, true)).toBe('truce');
     expect(getDayResult(held, DEFAULT_ORDER_TARGETS, true)).toBe('held');
-  });
-});
-
-describe('weeks and Truces', () => {
-  it('starts weeks on Monday', () => {
-    expect(weekStartOf('2026-10-12')).toBe('2026-10-12'); // Monday
-    expect(weekStartOf('2026-10-18')).toBe('2026-10-12'); // Sunday
-    expect(weekStartOf('2026-10-19')).toBe('2026-10-19'); // next Monday
-  });
-
-  it('allows one Truce per Monday-to-Sunday week', () => {
-    expect(isTruceAvailable([], '2026-10-14')).toBe(true);
-    expect(isTruceAvailable(['2026-10-12'], '2026-10-18')).toBe(false);
-    expect(isTruceAvailable(['2026-10-18'], '2026-10-19')).toBe(true);
   });
 });
 
@@ -137,12 +121,25 @@ describe('findLatestLoss', () => {
 
   it('finds the latest break and the campaign it ended', () => {
     const records = run('2026-10-10', ['held', 'missed', 'held', 'truce', 'held', 'missed']);
-    expect(findLatestLoss(records)).toEqual({ day: '2026-10-15', campaignBefore: 3 });
+    expect(findLatestLoss(records)).toEqual({
+      day: '2026-10-15',
+      firstMissedDay: '2026-10-15',
+      campaignBefore: 3,
+    });
   });
 
-  it('reports a zero campaign for back-to-back misses', () => {
+  it('measures the campaign from the start of a run of misses', () => {
+    expect(findLatestLoss(run('2026-10-10', ['held', 'held', 'missed', 'missed']))).toEqual({
+      day: '2026-10-13',
+      firstMissedDay: '2026-10-12',
+      campaignBefore: 2,
+    });
+  });
+
+  it('reports a zero campaign when nothing came before the misses', () => {
     expect(findLatestLoss(run('2026-10-10', ['missed', 'missed']))).toEqual({
       day: '2026-10-11',
+      firstMissedDay: '2026-10-10',
       campaignBefore: 0,
     });
   });

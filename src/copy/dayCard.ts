@@ -25,6 +25,8 @@ export const dayCardCopy = {
   shareFailed: "The card couldn't be shared. Try again.",
   seeProgress: 'See your progress',
   /** What a screen reader says for the whole card. */
-  cardLabel: (dayRoman: string, lengthRoman: string, held: number): string =>
-    `Day card: day ${dayRoman} of ${lengthRoman}, ${held} of 4 orders held`,
+  cardLabel: (dayRoman: string, lengthRoman: string, held: number, total: number): string =>
+    `Day card: day ${dayRoman} of ${lengthRoman}, ${held} of ${total} orders held`,
+  /** An own order's value on the card: "30 pages". */
+  customValue: (amount: number, unit: string): string => (unit ? `${amount} ${unit}` : String(amount)),
 } as const;
