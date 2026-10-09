@@ -18,14 +18,15 @@ import { type AppDatabase, nowIso } from './database';
 import { getDayStanding } from './dayStanding';
 import { toOrderAmounts } from './orderLogs';
 import { type DayLogRow, dayLogs, ledger, type OrderLogRow, orderLogs } from './schema';
-import { grantTruce } from './truces';
+import { grantTruce, refundTruce } from './truces';
 
 /** The arc to seal. Without an id, only Vinco's four orders count (own orders belong to an arc). */
 type ArcRange = { id?: number; startDay: DayKey; lengthDays: number };
 
 /**
  * Seals every finished day of the arc that isn't sealed yet: today's past days, including
- * days the app wasn't opened. Each day's result (own orders included) is stored, so later
+ * days the app wasn't opened. A sick-day Truce turns a miss into a Truce day, and is given
+ * back if the day was held anyway. Each day's result (own orders included) is stored, so later
  * changes to orders never rewrite it. A missed day stays missed: Truces are called by the user
  * (callTruce). Awards denarii once per day and reason, and a Truce for every week of
  * campaign while the reserve has room. Safe to run any number of times.
@@ -69,21 +70,28 @@ export function sealFinishedDays(
         continue;
       }
 
+      // The orders decide the stored result. A sick-day Truce (called before the day ended)
+      // turns a miss into a Truce day; if the day was held anyway, the Truce comes back.
       const result = getDayStanding(tx, arc.id ?? null, day, targets);
-      const campaignAfter = getCurrentCampaign(records, day, keepsCampaign(result));
-      records.push({ day, result });
+      const hasSickDayTruce = log?.truceUsed === true;
+      const recordResult = applyTruce(result, hasSickDayTruce);
+      const campaignAfter = getCurrentCampaign(records, day, keepsCampaign(recordResult));
+      records.push({ day, result: recordResult });
 
       tx.insert(dayLogs)
         .values({ day, sealedAt, result })
         .onConflictDoUpdate({ target: dayLogs.day, set: { sealedAt, result } })
         .run();
-      for (const award of getDayAwards(day, result, campaignAfter)) {
+      if (hasSickDayTruce && result !== 'missed') refundTruce(tx, day, now);
+      for (const award of getDayAwards(day, recordResult, campaignAfter)) {
         tx.insert(ledger)
           .values({ ...award, createdAt: sealedAt })
           .onConflictDoNothing()
           .run();
       }
-      if (keepsCampaign(result) && earnsTruce(campaignAfter)) grantTruce(tx, day, 'campaign_week', now);
+      if (keepsCampaign(recordResult) && earnsTruce(campaignAfter)) {
+        grantTruce(tx, day, 'campaign_week', now);
+      }
     }
   });
 }

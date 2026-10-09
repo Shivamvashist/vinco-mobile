@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
@@ -17,7 +17,7 @@ import { useActiveArc } from '@/hooks/useActiveArc';
 import { useCampaign } from '@/hooks/useCampaign';
 import { useToday } from '@/hooks/useToday';
 import { toRoman } from '@/lib/toRoman';
-import { useNoticesStore, usePreferencesStore } from '@/stores';
+import { usePreferencesStore } from '@/stores';
 import { createStyles, useFeedback, useReduceMotion } from '@/theme';
 
 /** Room for the column, from the prototype. */
@@ -37,20 +37,13 @@ export default function CampaignLostScreen() {
   const today = useToday();
   const reduceMotion = useReduceMotion();
   const tone = usePreferencesStore((state) => state.tone);
-  const acknowledgeLoss = useNoticesStore((state) => state.acknowledgeLoss);
   const { arc, targets } = useActiveArc();
   const campaign = useCampaign(arc, targets, today);
   const loss = findLatestLoss(campaign.records);
-  const lossDay = loss?.day ?? null;
   const [outcome, setOutcome] = useState<Outcome>({ kind: 'lost' });
   const [toast, setToast] = useState<string | null>(null);
   const hideToast = useCallback(() => setToast(null), []);
   const offer = outcome.kind === 'lost' ? campaign.truceOffer : null;
-
-  // Seen once is enough: never shown again for this break, whatever the user taps.
-  useEffect(() => {
-    if (lossDay) acknowledgeLoss(lossDay);
-  }, [lossDay, acknowledgeLoss]);
 
   const leave = () => {
     if (router.canGoBack()) router.back();

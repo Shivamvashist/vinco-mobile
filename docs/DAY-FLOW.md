@@ -17,9 +17,13 @@ Until wake-up is logged, Today opens on one card: the **dawn card**.
   - Sleep is wake time minus bedtime. A bedtime later than the wake time means the night before.
   - Anything under 1 hour or over 16 hours is refused with "Check the times".
   - A wake time in the future is refused.
+- **Feeling sick today** (a quiet button on the dawn card) opens a sheet: a sick-day Truce for today, and exactly what it costs (one from the reserve, or denarii, or not affordable). Calling it replaces the dawn card with a calm "Rest and recover" card. The orders stay open: log anything you manage. Hold every order and the Truce comes back at midnight. "I'm feeling better" takes it back the same day (the Truce, and any denarii paid, return). Neutral in every tone.
 - **After waking:** the wake-up row shows "Up at 6:34 · 7 h 20 m sleep". Tapping it reopens the sheet to correct the times; a long press undoes wake-up (back to the dawn card).
 
 ## 2. The orders (Today)
+
+- One quiet line under the heading: "Tap to log. Press and hold to take one back."
+- **The VINCO stamp lands only when the day is conquered** (every order at its full goal). A day held at the minimum gets the "Line held" seal card instead, matching how the calendar records it.
 
 - **Extra amounts count.** Hitting the full goal is not a ceiling. Water, meals and workout can go past it (5 L on a 4 L goal), up to a sane cap (water 10 L, meals 8, workout 300 min). Over the goal reads "5 L · conquered, 1 over".
 - **Water and meals:** one tap adds one step, past the goal too. Long press removes one.
@@ -47,6 +51,12 @@ Two tiles under the orders, stacked in one "Proof" section (full width reads bet
 - The weight tile opens a small sheet: one number field (kg, 30 to 250, comma or dot), prefilled with today's value if logged, "Save" and "Not now".
 - The selfie flow still offers the same field after the photo; both write the same day's weight.
 - Weight stays neutral in every tone: no jokes, no judgement, trends over weeks.
+
+## 3b. The timelapse
+
+- A full-screen player shows the selfies one after another, oldest first, about a third of a second each. It plays on open and stops on the last frame ("Play again"). Arrows step frame by frame (pausing). A label shows the day ("Day XII · 14 October") and a progress bar with "12 / 48".
+- **This campaign** (`/timelapse?scope=arc`): from Today ("Watch your campaign" in Proof, once there are two selfies) and from Vidi's timelapse card.
+- **Every selfie ever** (`/timelapse?scope=all`): from Vici ("All your proof"), across every arc, from the first selfie to the latest. Vici is the place for the whole journey; Today and Vidi stay on the current campaign.
 
 ## 4. Vidi: the Commentarii (logs)
 

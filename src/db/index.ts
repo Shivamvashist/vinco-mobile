@@ -19,6 +19,7 @@ export {
   selectLatestBedtime,
   selectLatestWeight,
   selectRecentSelfies,
+  selectSelfiesBetween,
   selectWeightsBetween,
   updateDayLog,
 } from './dayLogs';
@@ -76,7 +77,9 @@ export {
   toDayRecords,
 } from './sealing';
 export {
+  callSickDay,
   callTruce,
+  cancelSickDay,
   getDenariiBalance,
   getTruceReserve,
   grantTruce,

@@ -7,7 +7,7 @@ import { createPhoneStorage } from './phoneStorage';
 
 /** One-time screens already shown, so they never show twice. */
 type NoticesState = {
-  /** The missed day whose "campaign lost" screen was shown. */
+  /** The break (first missed day of its run) whose "campaign lost" screen was shown. */
   acknowledgedLossDay: DayKey | null;
 };
 

@@ -1,5 +1,7 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 
+import { getDayLog, updateDayLog } from './dayLogs';
+
 import { planTrucePayment, type TrucePayment, type TruceReason, TRUCES } from '@/features/campaign';
 import type { DayKey } from '@/lib/dates';
 
@@ -98,4 +100,56 @@ export function callTruce(db: AppDatabase, days: readonly DayKey[], now: Date = 
     });
     return payment;
   });
+}
+
+/**
+ * A sick day: calls a Truce for today, before the day is over, so the campaign is safe even
+ * if no order is done. Paid like any Truce (reserve first, then denarii). Calling it twice
+ * does nothing. Throws TruceError('cannot_afford'), or ('nothing_to_cover') once sealed.
+ * If every order is held anyway, sealing gives the Truce back (see sealFinishedDays).
+ */
+export function callSickDay(db: AppDatabase, day: DayKey, now: Date = new Date()): TrucePayment | null {
+  return db.transaction((tx) => {
+    const log = getDayLog(tx, day);
+    if (log?.sealedAt) throw new TruceError('nothing_to_cover');
+    if (log?.truceUsed) return null;
+    const payment = planTrucePayment(1, getTruceReserve(tx), getDenariiBalance(tx));
+    if (!payment.canAfford) throw new TruceError('cannot_afford');
+    const createdAt = nowIso(now);
+    if (payment.toBuy > 0) {
+      tx.insert(truces).values({ day, reason: 'bought', amount: 1, createdAt }).run();
+      tx.insert(ledger)
+        .values({ day, reason: 'truce_bought', amount: -TRUCES.priceDenarii, createdAt })
+        .run();
+    }
+    tx.insert(truces).values({ day, reason: 'spent', amount: -1, createdAt }).run();
+    updateDayLog(tx, day, { truceUsed: true });
+    return payment;
+  });
+}
+
+/**
+ * "I'm feeling better": takes back today's sick-day Truce before the day is sealed, as if it
+ * was never called (the Truce, and any denarii paid, come back). Does nothing once sealed.
+ */
+export function cancelSickDay(db: AppDatabase, day: DayKey): void {
+  db.transaction((tx) => {
+    const log = getDayLog(tx, day);
+    if (!log?.truceUsed || log.sealedAt) return;
+    tx.delete(truces)
+      .where(and(eq(truces.day, day), inArray(truces.reason, ['spent', 'bought'])))
+      .run();
+    tx.delete(ledger)
+      .where(and(eq(ledger.day, day), eq(ledger.reason, 'truce_bought')))
+      .run();
+    updateDayLog(tx, day, { truceUsed: false });
+  });
+}
+
+/** Gives back a sick-day Truce for a day that was held anyway. Once per day. */
+export function refundTruce(db: AppDatabase, day: DayKey, now: Date = new Date()): void {
+  db.insert(truces)
+    .values({ day, reason: 'refunded', amount: 1, createdAt: nowIso(now) })
+    .onConflictDoNothing()
+    .run();
 }

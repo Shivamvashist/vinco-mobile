@@ -17,8 +17,11 @@ export const TRUCES = {
   priceDenarii: 50,
 } as const;
 
-/** Why a Truce was added (+1) or taken (-1). One row per day and reason. */
-export type TruceReason = 'arc_start' | 'campaign_week' | 'bought' | 'spent';
+/**
+ * Why a Truce was added (+1) or taken (-1). One row per day and reason.
+ * refunded: a sick-day Truce comes back when the day was held anyway.
+ */
+export type TruceReason = 'arc_start' | 'campaign_week' | 'bought' | 'spent' | 'refunded';
 
 export type TrucePayment = {
   /** Truces taken from the reserve. */

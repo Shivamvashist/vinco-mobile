@@ -24,6 +24,7 @@ Read this before every task. Then read [HISTORY.md](../HISTORY.md) for the curre
 7. **Plan UI before building** against the prototype (CONVENTIONS section 7). No generic components.
 8. **Follow the naming and export conventions** (CONVENTIONS sections 2 and 3). Lint enforces most of them.
 9. **Check the Expo SDK 57 docs** before using an Expo or React Native API (see [AGENTS.md](../AGENTS.md)). Install with `npx expo install <pkg>`.
+10. **Keep files small.** Aim for under 250 lines per file. Up to 500 is fine when a file genuinely needs it; past 500, split by responsibility unless there is truly no clean split (CONVENTIONS section 5).
 
 ## What Vinco is
 
@@ -94,7 +95,7 @@ Dark (Basalt) by default, light (Marble) available, both from the one Vinco core
 
 - **Display font** (Marcellus) for big moments only; **body** (Figtree) for everything else.
 - **Roman numerals are decoration only:** a small "DAY XII OF LX" above a big "12."
-- **Signature moment:** the VINCO stamp slams onto the day when all orders hold, with the `stamp` sound and a heavy haptic. Everything else is quick and quiet.
+- **Signature moment:** the VINCO stamp slams onto the day when it is **conquered** (every order at its full goal), with the `stamp` sound and a heavy haptic. A day held at the minimum gets the quieter "Line held" seal card, never the stamp. Everything else is quick and quiet.
 
 ### Vocabulary (Roman name and plain label)
 
@@ -104,6 +105,7 @@ Cross the Rubicon (Begin your arc), Campaign (days in a row), Hold the line (min
 
 - **Orders decide the day; tasks plan it** ([docs/ORDERS-AND-TASKS.md](../docs/ORDERS-AND-TASKS.md)). Orders are Vinco's four plus up to 4 of the user's own; every order has a minimum and a full goal, and every order must hold its minimum for the day to be held. Daily tasks and day tasks never affect sealing.
 - **Sealed days never change.** A day's result is stored when sealed; adding or standing down orders never rewrites history.
+- **Sick day:** from the dawn card, "Feeling sick today" calls a Truce for today in advance. The orders stay open; if every order is held anyway, the Truce comes back at midnight. "I'm feeling better" takes it back the same day.
 - **Truces are called by the user**, never applied automatically. A missed day breaks the campaign unless the user calls a Truce before the next day ends. Truces are earned (one when an arc begins, one every 7 days of campaign, at most 3 held) or bought with denarii at the moment of need.
 - **Three tones:** Philosopher (calm Stoic), Centurion (firm coach), Roast me (unhinged friend: properly savage about the phone, the scroll and the excuse, never vulgar). Every notification and empty state is written all three ways.
 - **Humour rule:** roast the habit, the phone and the excuse, never the person. Selfie, weight and slip screens stay neutral in every tone. Every sarcastic line ends with a way forward.

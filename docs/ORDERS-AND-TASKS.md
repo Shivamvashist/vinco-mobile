@@ -17,9 +17,9 @@ In one sentence: **orders decide the day; tasks help plan it.**
 ### The rule
 
 - Every order has a **minimum** ("Hold the line") and a **full goal** ("Conquer").
-- The day is **held** when every order is at least at its minimum. The campaign continues, denarii are paid, the VINCO stamp lands.
-- The day is **conquered** when every order is at its full goal.
-- If any order is below its minimum at midnight, the day is **missed** (a Truce can still save the campaign, see the Truce rules in CLAUDE.md).
+- The day is **held** when every order is at least at its minimum. The campaign continues, denarii are paid, and the "Line held" seal card appears.
+- The day is **conquered** when every order is at its full goal. Only then does the VINCO stamp land.
+- If any order is below its minimum at midnight, the day is **missed** (a Truce can still save the campaign, see the Truce rules in CLAUDE.md). A sick-day Truce called in advance covers the day the same way, and comes back if the day is held anyway.
 - Doing part of an order (the minimum, not the full goal) never fails the day. That is the point of the minimum.
 
 ### Vinco's four
@@ -31,7 +31,7 @@ Water, wake-up, a protein meal, a workout. Tuned in onboarding. They can't be re
 - **Added** from Today ("Add an order", under the orders) or from Vici, "Your orders".
 - **Fields:** a name ("Read"), a unit ("pages"), a minimum (10) and a full goal (30). Whole numbers from 1 to 9999; the full goal is at least the minimum. A yes-or-no order uses the same number for both ("No sugar": 1 day, 1 day).
 - **Logging on Today:** one tap moves it up a level (not started, then minimum held, then conquered). A long press moves it back down a level. Same gestures as Vinco's four, and one tap is enough, so the core job stays fast.
-- **Starts today.** Adding an order makes today harder, never easier. If the stamp already landed today and a new order is added, today is open again until the new order holds (the stamp doesn't land twice).
+- **Starts today.** Adding an order makes today harder, never easier. If the stamp already landed today and a new order is added, today is open again until the new order is done (the stamp doesn't land twice).
 - **Standing an order down** (Vici, "Your orders"): it still counts today and is gone from tomorrow. Removing an order can never rescue the day in progress. An order added and stood down on the same day is removed entirely.
 - **At most 4 own orders** (8 in all), so Today stays one screen of orders.
 - **Past days never change.** A day's result is stored when the day is sealed, so adding or standing down orders never rewrites history.

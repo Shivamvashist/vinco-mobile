@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 
+import { router } from 'expo-router';
+
+import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Commentarii } from '@/components/progress/Commentarii';
 import { type CalendarDay, MonthCalendar } from '@/components/progress/MonthCalendar';
@@ -153,7 +156,7 @@ function ArcCalendar({ arc, today, campaign }: ArcCalendarProps) {
   );
 }
 
-/** Selfies collected toward the first timelapse. */
+/** Selfies collected toward the first timelapse, and a way to play them once there are two. */
 function TimelapseCard({ selfies }: { selfies: number }) {
   const styles = useStyles();
   const copy = progressCopy.timelapse;
@@ -168,6 +171,16 @@ function TimelapseCard({ selfies }: { selfies: number }) {
         <ProgressBar value={selfies / TIMELAPSE_SELFIES} size="thick" accessibilityLabel={copy.title} />
       </View>
       <Txt variant="caption">{isReady ? copy.ready : copy.unlocks(toRoman(TIMELAPSE_SELFIES))}</Txt>
+      {selfies >= 2 ? (
+        <View style={styles.timelapsePlay}>
+          <Button
+            label={copy.play}
+            variant="secondary"
+            size="compact"
+            onPress={() => router.push({ pathname: '/timelapse', params: { scope: 'arc' } })}
+          />
+        </View>
+      ) : null}
     </Card>
   );
 }
@@ -193,4 +206,5 @@ const useStyles = createStyles((theme) => ({
   segments: { marginTop: theme.space.lg },
   timelapseHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   timelapseBar: { marginVertical: theme.space.sm },
+  timelapsePlay: { marginTop: theme.space.md },
 }));

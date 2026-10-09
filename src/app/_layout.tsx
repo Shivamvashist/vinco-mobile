@@ -71,6 +71,7 @@ function RootNavigator() {
       >
         <Stack.Screen name="campaign-lost" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="day-card" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
+        <Stack.Screen name="timelapse" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen
           name="selfie"
           options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}

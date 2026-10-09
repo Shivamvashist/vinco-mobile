@@ -56,6 +56,34 @@ export const proofCopy = {
     cancel: 'Not now',
   },
 
+  /** The timelapse player and its entry points. Neutral: it shows change, never judges it. */
+  reel: {
+    titles: { arc: 'This campaign', all: 'Every selfie' },
+    frameLabel: (dayRoman: string, date: string): string => `Day ${dayRoman} · ${date}`,
+    counter: (index: number, total: number): string => `${index} / ${total}`,
+    play: 'Play',
+    pause: 'Pause',
+    replay: 'Play again',
+    previous: 'Previous selfie',
+    next: 'Next selfie',
+    close: 'Close',
+    tooFew: 'A timelapse needs at least two selfies. Take one each day and it builds itself.',
+    /** What a screen reader says for the frame on screen. */
+    frameAccessibility: (date: string, index: number, total: number): string =>
+      `Selfie from ${date}, ${index} of ${total}`,
+    arcTile: {
+      title: 'Watch your campaign',
+      detail: (frames: number): string => `${frames} selfies, one after another`,
+    },
+    allCard: {
+      title: 'All your proof',
+      detail: (frames: number, since: string): string =>
+        `${frames} ${frames === 1 ? 'selfie' : 'selfies'} since ${since}, across every arc`,
+      play: 'Play every selfie',
+      empty: 'Your selfies from every arc will gather here.',
+    },
+  },
+
   /** Kilograms as shown: one decimal at most, no trailing zero. */
   kg: (value: number): string => `${Number(value.toFixed(1))}`,
 } as const;

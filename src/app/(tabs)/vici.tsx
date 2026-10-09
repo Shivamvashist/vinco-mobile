@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
+import { AllProofCard } from '@/components/arc/AllProofCard';
 import { ArcJourney } from '@/components/arc/ArcJourney';
 import { RankCard } from '@/components/arc/RankCard';
 import { RetreatSheet } from '@/components/arc/RetreatSheet';
@@ -24,6 +25,7 @@ import { useActiveArc } from '@/hooks/useActiveArc';
 import { useCampaign } from '@/hooks/useCampaign';
 import { useOathPlayer } from '@/hooks/useOathPlayer';
 import { useResetJourney } from '@/hooks/useResetJourney';
+import { useSelfieReel } from '@/hooks/useSelfieReel';
 import { useToday } from '@/hooks/useToday';
 import { toRoman } from '@/lib/toRoman';
 import { IS_DEV_MODE_AVAILABLE, useDevStore, usePreferencesStore } from '@/stores';
@@ -45,6 +47,9 @@ export default function ViciScreen() {
   const campaign = useCampaign(arc, targets, today);
   const oath = useOathPlayer(arc?.oathPath ?? null);
   const resetJourney = useResetJourney();
+  // Vici looks across every arc; Today and Vidi look at this campaign only.
+  const allProof = useSelfieReel('all', arc, today);
+  const firstSelfie = allProof.frames[0];
   const isDevModeOn = useDevStore((state) => state.isDevModeOn);
   const setDevModeOn = useDevStore((state) => state.setDevModeOn);
   const [openSheet, setOpenSheet] = useState<OpenSheet>(null);
@@ -101,6 +106,13 @@ export default function ViciScreen() {
             </View>
             <View style={styles.section}>
               <RankCard rank={campaign.rank} denarii={campaign.denarii} />
+            </View>
+            <View style={styles.section}>
+              <AllProofCard
+                frames={allProof.frames.length}
+                since={firstSelfie ? commonCopy.fullDateLabel(firstSelfie.day) : null}
+                onPlay={() => router.push({ pathname: '/timelapse', params: { scope: 'all' } })}
+              />
             </View>
           </>
         ) : isLoaded ? (

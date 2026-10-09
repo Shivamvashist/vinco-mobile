@@ -5,9 +5,17 @@ import { createArc } from '../arcs';
 import { getDayLog, updateDayLog } from '../dayLogs';
 import { saveOrderAmount } from '../orderLogs';
 import { clearJourney } from '../reset';
-import { sealFinishedDays, selectDayLogsBetween } from '../sealing';
+import { sealFinishedDays, selectDayLogsBetween, selectOrderLogsBetween, toDayRecords } from '../sealing';
 import { createTestDatabase } from '../testing/testDatabase';
-import { callTruce, getDenariiBalance, getTruceReserve, grantTruce, TruceError } from '../truces';
+import {
+  callSickDay,
+  callTruce,
+  cancelSickDay,
+  getDenariiBalance,
+  getTruceReserve,
+  grantTruce,
+  TruceError,
+} from '../truces';
 
 const ARC = { startDay: '2026-10-12', lengthDays: 30 };
 const HELD: OrderAmounts = { water: 1, wake: 1, meal: 1, workout: 15 };
@@ -109,5 +117,75 @@ describe('clearJourney', () => {
     expect(getTruceReserve(db)).toBe(0);
     expect(getDenariiBalance(db)).toBe(0);
     expect(selectDayLogsBetween(db, '2000-01-01', '2100-01-01').all()).toEqual([]);
+  });
+});
+
+describe('sick day', () => {
+  const ARC_WITH_ID = (id: number) => ({ id, ...ARC });
+
+  function resultOf(db: ReturnType<typeof createTestDatabase>, day: string) {
+    return toDayRecords(
+      selectDayLogsBetween(db, day, day).all(),
+      selectOrderLogsBetween(db, day, day).all(),
+      DEFAULT_ORDER_TARGETS,
+    )[0]?.result;
+  }
+
+  it('keeps the campaign through a day of rest, using the Truce', () => {
+    const db = createTestDatabase();
+    startArc(db);
+    callSickDay(db, '2026-10-12');
+    callSickDay(db, '2026-10-12');
+    expect(getTruceReserve(db)).toBe(0);
+    sealFinishedDays(db, ARC_WITH_ID(1), DEFAULT_ORDER_TARGETS, '2026-10-13');
+    expect(resultOf(db, '2026-10-12')).toBe('truce');
+    expect(getTruceReserve(db)).toBe(0);
+  });
+
+  it('gives the Truce back when every order was held anyway', () => {
+    const db = createTestDatabase();
+    startArc(db);
+    callSickDay(db, '2026-10-12');
+    logDay(db, '2026-10-12', HELD);
+    sealFinishedDays(db, ARC_WITH_ID(1), DEFAULT_ORDER_TARGETS, '2026-10-13');
+    expect(resultOf(db, '2026-10-12')).toBe('held');
+    expect(getTruceReserve(db)).toBe(1);
+    // Sealing again never refunds twice.
+    sealFinishedDays(db, ARC_WITH_ID(1), DEFAULT_ORDER_TARGETS, '2026-10-13');
+    expect(getTruceReserve(db)).toBe(1);
+  });
+
+  it('can be cancelled the same day, with denarii paid returned', () => {
+    const db = createTestDatabase();
+    for (let day = 12; day <= 18; day += 1) logDay(db, `2026-10-${day}`, HELD);
+    sealFinishedDays(db, ARC, DEFAULT_ORDER_TARGETS, '2026-10-19');
+    // 7 held days: 35 + 25 = 60 denarii, and one Truce earned on day 7.
+    expect(getDenariiBalance(db)).toBe(60);
+
+    // The reserve covers the 19th; the 20th has to be bought.
+    callSickDay(db, '2026-10-19');
+    expect(callSickDay(db, '2026-10-20')).toMatchObject({ toBuy: 1, cost: TRUCES.priceDenarii });
+    expect(getDenariiBalance(db)).toBe(60 - TRUCES.priceDenarii);
+
+    cancelSickDay(db, '2026-10-20');
+    expect(getDenariiBalance(db)).toBe(60);
+    expect(getDayLog(db, '2026-10-20')?.truceUsed).toBe(false);
+    cancelSickDay(db, '2026-10-19');
+    expect(getTruceReserve(db)).toBe(1);
+  });
+
+  it('buys the Truce with denarii when the reserve is empty, and refuses when short', () => {
+    const db = createTestDatabase();
+    logDay(db, '2026-10-12', HELD);
+    sealFinishedDays(db, ARC, DEFAULT_ORDER_TARGETS, '2026-10-13');
+    expect(() => callSickDay(db, '2026-10-13')).toThrow(TruceError);
+    expect(getDayLog(db, '2026-10-13')?.truceUsed ?? false).toBe(false);
+  });
+
+  it('cannot be called on a day already sealed', () => {
+    const db = createTestDatabase();
+    startArc(db);
+    sealFinishedDays(db, ARC_WITH_ID(1), DEFAULT_ORDER_TARGETS, '2026-10-13');
+    expect(() => callSickDay(db, '2026-10-12')).toThrow(TruceError);
   });
 });

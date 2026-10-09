@@ -16,6 +16,7 @@ Related: [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md) for theme usage, [v1-docs/BUILD-ST
 6. **Check edge cases and errors** on every change (see section 6), and run `npm run check` before calling anything done.
 7. **Plan UI before building it** (see section 7). No generic placeholder components.
 8. **Check the Expo docs for SDK 57** before using any Expo or React Native API (see [AGENTS.md](../AGENTS.md)). Install with `npx expo install`.
+9. **Keep files small.** No single file grows large unless there is no other option (see section 5, "File size").
 
 ---
 
@@ -157,6 +158,17 @@ jest.setup.ts          fakes for native modules, so any module can be imported i
 - Functional components and hooks only. The React Compiler is on, so don't add `useMemo`/`useCallback` by reflex; add them where identity matters (context values, effect dependencies).
 - Effects clean up after themselves (timers, listeners, audio players).
 - Text always through `Txt`, screens always through `Screen`, styles always through `createStyles`. See DESIGN-SYSTEM.md.
+
+### File size
+
+A file should do one job and fit on a couple of screens. **Aim for under 250 lines. Up to 500 is fine** when a file genuinely needs it (a busy screen, a component with several states). **Past 500, split** before adding more.
+
+- **Routes** (`src/app/`) stay thin: read state, wire handlers, lay out sections. Each section that grows (a card, a sheet, a list) moves to `src/components/<screen>/`.
+- **Components:** one component per file. Sub-parts used only inside it can stay in the file while small; once the file passes 500 lines, they move out.
+- **Logic:** pure helpers go to `src/features/<name>/` or `src/lib/`; data access to `src/db/`; long hooks split by concern (reading versus writing).
+- **Copy:** one file per area; split an area into a folder (`copy/today/`) before it gets long.
+- **Exceptions, only when there is no clean split:** generated files (migrations, snapshots), data tables (sound recipes, icon paths), and test files (split by area when convenient).
+- Splitting an existing file is refactoring: do it when that file is part of the task, or as its own task. Otherwise note it in HISTORY.md under "Noticed, not done".
 
 ---
 

@@ -11,6 +11,17 @@ beforeEach(() => {
   mockToday = '2026-10-17';
 });
 
+/** Every order at its full goal (default targets: 4 L, up, 2 meals, 40 min). */
+function conquerAll(result: { current: ReturnType<typeof useTodayOrders> }) {
+  act(() => {
+    for (let i = 0; i < 4; i += 1) result.current.addOne('water');
+    result.current.addOne('wake');
+    result.current.addOne('meal');
+    result.current.addOne('meal');
+    result.current.logWorkout(40, '');
+  });
+}
+
 function holdAllFour(result: { current: ReturnType<typeof useTodayOrders> }) {
   act(() => {
     result.current.addOne('water');
@@ -101,9 +112,16 @@ describe('useTodayOrders', () => {
     expect(result.current.wokeAt).toBeNull();
   });
 
-  it('shows the stamp once when all four are held, and not again after undo and redo', () => {
+  it('never stamps a day only held at the minimum', () => {
     const { result } = renderHook(() => useTodayOrders());
     holdAllFour(result);
+    expect(result.current.heldCount).toBe(4);
+    expect(result.current.isStampVisible).toBe(false);
+  });
+
+  it('stamps once when every order is conquered, and not again after undo and redo', () => {
+    const { result } = renderHook(() => useTodayOrders());
+    conquerAll(result);
     expect(result.current.isStampVisible).toBe(true);
 
     act(() => result.current.dismissStamp());
@@ -144,7 +162,7 @@ describe('useTodayOrders', () => {
 
   it('does not replay the stamp after a restart on a day it already showed', () => {
     const first = renderHook(() => useTodayOrders());
-    holdAllFour(first.result);
+    conquerAll(first.result);
     expect(first.result.current.isStampVisible).toBe(true);
     first.unmount();
 

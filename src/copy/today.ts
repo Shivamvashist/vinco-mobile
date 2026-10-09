@@ -38,6 +38,8 @@ const PROGRESS_LINES = [
 export const todayCopy = {
   eyebrow: `${tabsCopy.veni.latin} · ${tabsCopy.veni.meaning}`,
   ordersSection: 'Your orders',
+  /** One quiet line under the orders heading: how to log and how to take a step back. */
+  ordersHint: 'Tap to log. Press and hold to take one back.',
   /** "Day XII of LX" (shown in caps). */
   arcEyebrow: (dayRoman: string, lengthRoman: string): string => `Day ${dayRoman} of ${lengthRoman}`,
   arcFinishedEyebrow: 'Arc complete',
@@ -139,6 +141,30 @@ export const todayCopy = {
     waiting: "Your orders open once you're up.",
   },
 
+  /** A sick day: a Truce called in advance. Neutral in every tone (it's a health moment). */
+  sickDay: {
+    dawnAction: 'Feeling sick today',
+    sheetTitle: 'Feeling sick?',
+    sheetBody:
+      'Call a Truce for today and rest. Your campaign stays safe even if you do nothing. Hold every order anyway and the Truce comes back at midnight.',
+    fromReserve: (reserve: number): string =>
+      `Uses 1 of your ${reserve} ${reserve === 1 ? 'Truce' : 'Truces'}.`,
+    bought: (cost: number, denarii: number): string =>
+      `No Truces left: this one costs ${cost} denarii (you have ${denarii}).`,
+    cannotAfford: (cost: number, denarii: number): string =>
+      `No Truces left, and one costs ${cost} denarii (you have ${denarii}). Rest anyway, and hold the minimum if you can.`,
+    confirm: 'Call a sick-day Truce',
+    cancel: "I'll push through",
+    failed: "The Truce couldn't be called. Nothing was spent. Try again.",
+    cardEyebrow: 'Sick day · Truce called',
+    cardTitle: 'Rest and recover',
+    cardBody:
+      'Your campaign is safe today. Log anything you manage. Hold every order and the Truce comes back at midnight.',
+    better: "I'm feeling better",
+    betterHint: 'Takes the Truce back',
+    chip: 'Sick day',
+  },
+
   /** The wake sheet: when you woke, when you slept. */
   wakeSheet: {
     title: 'Report for duty',
@@ -209,7 +235,7 @@ export const todayCopy = {
     stampText: 'VINCO',
     title: 'Day conquered',
     titleWithDay: (romanDay: string): string => `Day ${romanDay} conquered`,
-    subtitle: 'Every order held. Tomorrow, the same line holds.',
+    subtitle: 'Every order at its full goal. Tomorrow, the same line holds.',
     seal: 'Seal the day',
     back: 'Back to Today',
   },

@@ -69,6 +69,8 @@ export type TodayOrders = {
   wokeAt: Date | null;
   /** When the user went to sleep before today's wake-up, if logged. */
   sleptAt: Date | null;
+  /** A sick-day Truce was called for today. */
+  isSickDay: boolean;
   workoutNote: string;
   isStampVisible: boolean;
   /** True when the last change could not be saved. Cleared by the next successful save. */
@@ -143,8 +145,10 @@ export function useTodayOrders(
     try {
       const result = db.transaction((tx) => {
         const saved = save(tx);
+        // The VINCO stamp is for a conquered day only (every order at its full goal), once a day.
+        // A day held at the minimum gets the "Line held" seal card, never the conquest stamp.
         const shouldStamp =
-          !getDayLog(tx, today)?.stampedAt && getDayStanding(tx, arcId, today, targets) !== 'missed';
+          !getDayLog(tx, today)?.stampedAt && getDayStanding(tx, arcId, today, targets) === 'conquered';
         updateDayLog(tx, today, {
           ...saved.dayPatch,
           ...(shouldStamp ? { stampedAt: nowIso() } : {}),
@@ -201,6 +205,7 @@ export function useTodayOrders(
     totalCount: ORDER_KINDS.length + customOrders.length,
     wokeAt: wokeAt && !Number.isNaN(wokeAt.getTime()) ? wokeAt : null,
     sleptAt: sleptAt && !Number.isNaN(sleptAt.getTime()) ? sleptAt : null,
+    isSickDay: dayLog.data[0]?.truceUsed === true,
     workoutNote: toWorkoutNote(orderLogs.data),
     isStampVisible: stampVisibleDay === today,
     hasSaveError,

@@ -86,12 +86,22 @@ Answer when convenient; work continues with the safe default shown.
 - `docs/v1-reference/` (the plan HTML) still describes the weekly Truce; it's a reference snapshot, left as is. PLAN.md is updated.
 - `assets/images/android-icon-background.png` is no longer referenced (the adaptive icon uses a background colour). Delete with the other template leftovers.
 - Thud-based cues (stamp, cross, seal) put most energy at 40 to 140 Hz, which phone speakers barely play. Kept as the prototype has it; lifting the brass layers or adding an octave-up layer would make the stamp fuller on a phone. Ask the developer.
+- **File size:** every source file is under the 500-line ceiling (largest: `veni.tsx`, 498). Leave as is for now (developer, 9 Oct). Split `veni.tsx` before it grows further. `src/__tests__/routes.test.tsx` (974) can be split by area when convenient.
 - `npm audit` reports 30 advisories in the dependency tree (mostly dev tooling). Review before the production build.
 - `README.md` is now a short project readme.
 
 ---
 
 ## Milestone log
+
+### 9 Oct 2026: Loss notice fix, sick day, stamp on conquest, timelapse
+
+- **Fix: the campaign-lost screen kept coming back.** Each extra missed day in a run counted as a new break, and the notice was only marked as seen once the screen mounted (a re-render in between could open it twice). Now a break is named by the first day of its run of misses (`findLatestLoss().firstMissedDay`) and `useLossNotice` acknowledges it at the moment it opens the screen. The screen no longer acknowledges anything itself. Regression test: a run of misses across two days shows once.
+- **Sick day:** "Feeling sick today" on the dawn card. `callSickDay` (reserve first, then denarii; refused when unaffordable or sealed; idempotent), `cancelSickDay` (same day, refunds the Truce and any denarii), and at sealing a sick-day day that was held gets its Truce back (`refundTruce`, reason `refunded`), a missed one becomes a Truce day. UI: `SickDaySheet` (exact cost), `SickDayCard` ("I'm feeling better"), chip "Sick day"; orders are not gated on a sick day.
+- **The VINCO stamp only on a conquered day** (every order at its full goal). Held days get the "Line held" seal card, matching the calendar.
+- **Hint:** "Tap to log. Press and hold to take one back." under the orders heading.
+- **Timelapse:** `/timelapse` (full-screen, dark), `useSelfieReel(scope)`, `selectSelfiesBetween`. Arc scope from Today (`TimelapseTile`) and Vidi's timelapse card; every arc from Vici (`AllProofCard`). New icons: play, pause, replay.
+- Verified: 349 tests, no console warnings, Android bundle builds.
 
 ### 9 Oct 2026: Polish: sounds, selfie, dawn and sleep, proof, Commentarii
 

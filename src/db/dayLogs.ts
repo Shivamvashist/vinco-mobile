@@ -46,6 +46,15 @@ export function selectWeightsBetween(db: AppDatabase, from: DayKey, to: DayKey) 
     .orderBy(asc(dayLogs.day));
 }
 
+/** The query for every selfie between two days, oldest first: the timelapse frames. */
+export function selectSelfiesBetween(db: AppDatabase, from: DayKey, to: DayKey) {
+  return db
+    .select({ day: dayLogs.day, selfiePath: dayLogs.selfiePath })
+    .from(dayLogs)
+    .where(and(isNotNull(dayLogs.selfiePath), gte(dayLogs.day, from), lte(dayLogs.day, to)))
+    .orderBy(asc(dayLogs.day));
+}
+
 /** The query for the latest day with a bedtime, before a day. Pass to useLiveQuery. */
 export function selectLatestBedtime(db: AppDatabase, before: DayKey) {
   return db

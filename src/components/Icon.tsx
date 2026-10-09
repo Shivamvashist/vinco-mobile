@@ -26,6 +26,9 @@ const ICON_PATHS = {
   scale:
     'M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zM8 10a4 4 0 0 1 8 0M12 10l1.5-2',
   moon: 'M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z',
+  play: 'M8 5.5v13l10.5-6.5z',
+  pause: 'M8.5 5.5v13M15.5 5.5v13',
+  replay: 'M4 12a8 8 0 1 0 2.5-5.8M4 4v4h4',
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

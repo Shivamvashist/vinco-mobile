@@ -40,7 +40,8 @@ export const progressCopy = {
     title: 'Timelapse',
     count: (selfies: number, needed: number): string => `${Math.min(selfies, needed)} of ${needed} selfies`,
     unlocks: (dayRoman: string): string => `Your first timelapse unlocks on Day ${dayRoman}.`,
-    ready: 'Enough selfies for your first timelapse. Making it arrives in an update.',
+    ready: 'Enough selfies for your first full timelapse. Saving it as a video arrives in an update.',
+    play: 'Play the timelapse',
   },
 
   /** The segmented control under the stats. */

@@ -13,13 +13,15 @@ export type DawnCardProps = {
   /** The planned wake time, already formatted ("6:30 am"), or null if none. */
   plannedTime: string | null;
   onRise: () => void;
+  /** Opens the sick-day sheet. Omitted when there is no arc to protect. */
+  onFeelingSick?: () => void;
 };
 
 /**
- * The first thing on Today until wake-up is logged: one greeting, one button.
- * "I'm up" opens the wake sheet; the orders wait below until then.
+ * The first thing on Today until wake-up is logged: one greeting, one button, and a quiet
+ * way out for a sick day. "I'm up" opens the wake sheet; the orders wait below until then.
  */
-export function DawnCard({ hour, plannedTime, onRise }: DawnCardProps) {
+export function DawnCard({ hour, plannedTime, onRise, onFeelingSick }: DawnCardProps) {
   const styles = useStyles();
   const copy = todayCopy.dawn;
   return (
@@ -40,6 +42,9 @@ export function DawnCard({ hour, plannedTime, onRise }: DawnCardProps) {
       ) : null}
       <View style={styles.action}>
         <Button label={copy.action} cue="tap" onPress={onRise} />
+        {onFeelingSick ? (
+          <Button label={todayCopy.sickDay.dawnAction} variant="ghost" cue="tap" onPress={onFeelingSick} />
+        ) : null}
       </View>
     </View>
   );
@@ -65,5 +70,5 @@ const useStyles = createStyles((theme) => ({
   },
   eyebrow: { marginTop: theme.space.md, marginBottom: theme.space.xs },
   planned: { marginTop: theme.space.xs },
-  action: { alignSelf: 'stretch', marginTop: theme.space.xl },
+  action: { alignSelf: 'stretch', marginTop: theme.space.xl, gap: theme.space.xs },
 }));

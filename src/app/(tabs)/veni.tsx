@@ -5,6 +5,7 @@ import { View } from 'react-native';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { AddOrderSheet } from '@/components/orders/AddOrderSheet';
+import { TimelapseTile } from '@/components/proof/TimelapseTile';
 import { WeightSheet } from '@/components/proof/WeightSheet';
 import { WeightTile } from '@/components/proof/WeightTile';
 import { StatChip } from '@/components/StatChip';
@@ -14,6 +15,8 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionHeader } from '@/components/SectionHeader';
 import { DawnCard } from '@/components/today/DawnCard';
 import { SealDayCard } from '@/components/today/SealDayCard';
+import { SickDayCard } from '@/components/today/SickDayCard';
+import { SickDaySheet } from '@/components/today/SickDaySheet';
 import { SelfieTile } from '@/components/today/SelfieTile';
 import { StampOverlay } from '@/components/today/StampOverlay';
 import { TaskRow } from '@/components/today/TaskRow';
@@ -26,6 +29,7 @@ import { ToneLine } from '@/components/ToneLine';
 import { Txt } from '@/components/Txt';
 import { commonCopy, pickTone, todayCopy } from '@/copy';
 import { arcEndDay, getArcPosition } from '@/features/arc';
+import { planTrucePayment } from '@/features/campaign';
 import {
   CUSTOM_ORDER_LIMITS,
   maxAmountFor,
@@ -38,6 +42,8 @@ import { useActiveArc } from '@/hooks/useActiveArc';
 import { useCampaign } from '@/hooks/useCampaign';
 import { useDailySelfie } from '@/hooks/useDailySelfie';
 import { useLatestBedtime } from '@/hooks/useLatestBedtime';
+import { useSelfieReel } from '@/hooks/useSelfieReel';
+import { useSickDay } from '@/hooks/useSickDay';
 import { useOwnOrderActions } from '@/hooks/useOwnOrderActions';
 import { useTasks } from '@/hooks/useTasks';
 import { type TodayOrders, useTodayOrders } from '@/hooks/useTodayOrders';
@@ -76,6 +82,10 @@ export default function VeniScreen() {
   const [isAddOrderOpen, setIsAddOrderOpen] = useState(false);
   const [isWakeSheetOpen, setIsWakeSheetOpen] = useState(false);
   const [isWeightSheetOpen, setIsWeightSheetOpen] = useState(false);
+  const [isSickSheetOpen, setIsSickSheetOpen] = useState(false);
+  const [sickError, setSickError] = useState<string | null>(null);
+  const sickDay = useSickDay(orders.today);
+  const reel = useSelfieReel('arc', activeArc.arc, orders.today);
   const { today, targets, statuses, heldCount, totalCount } = orders;
   const activeOwnOrders = orders.customOrders.filter((item) => item.order.lastDay == null).length;
   const canAddOrder =
@@ -87,7 +97,8 @@ export default function VeniScreen() {
   const isLoaded = orders.isLoaded && activeArc.isLoaded;
   // Until wake-up is logged, the day opens on the dawn card and the orders wait.
   const isAwake = orders.amounts.wake > 0;
-  const isDawn = activeArc.arc != null && isLoaded && !isAwake;
+  // A sick day skips the dawn: the orders stay open in case the user manages them anyway.
+  const isDawn = activeArc.arc != null && isLoaded && !isAwake && !orders.isSickDay;
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   // The dev clock can run ahead: then "now" isn't on today and there is no future check.
@@ -149,6 +160,17 @@ export default function VeniScreen() {
     orders.logWakeUp(wokeAt, sleptAt);
   };
 
+  const handleSickConfirm = () => {
+    const problem = sickDay.call();
+    if (problem === null) {
+      setSickError(null);
+      setIsSickSheetOpen(false);
+      return;
+    }
+    play('denied');
+    setSickError(problem === 'cannotAfford' ? null : todayCopy.sickDay.failed);
+  };
+
   const handleWorkoutSave = (minutes: number, note: string) => {
     setIsWorkoutSheetOpen(false);
     playForStatus(orders.logWorkout(minutes, note));
@@ -173,7 +195,12 @@ export default function VeniScreen() {
         {activeArc.arc && campaign.isLoaded ? (
           <View style={styles.chips}>
             <StatChip icon="flame" label={todayCopy.chips.campaign(campaign.campaign)} />
-            <StatChip label={todayCopy.chips.truces(campaign.truceReserve)} emphasis="muted" />
+            <StatChip
+              label={
+                orders.isSickDay ? todayCopy.sickDay.chip : todayCopy.chips.truces(campaign.truceReserve)
+              }
+              emphasis="muted"
+            />
             {campaign.rank.current ? <StatChip label={campaign.rank.current.name} emphasis="muted" /> : null}
           </View>
         ) : null}
@@ -196,6 +223,19 @@ export default function VeniScreen() {
               hour={now.getHours()}
               plannedTime={plannedWakeMinutes != null ? formatClockMinutes(plannedWakeMinutes) : null}
               onRise={() => setIsWakeSheetOpen(true)}
+              onFeelingSick={() => {
+                setSickError(null);
+                setIsSickSheetOpen(true);
+              }}
+            />
+          </View>
+        ) : null}
+        {activeArc.arc && isLoaded && orders.isSickDay ? (
+          <View style={styles.notice}>
+            <SickDayCard
+              onFeelingBetter={() => {
+                if (!sickDay.cancel()) play('denied');
+              }}
             />
           </View>
         ) : null}
@@ -204,6 +244,10 @@ export default function VeniScreen() {
         {isDawn ? (
           <Txt variant="caption" style={styles.waiting}>
             {todayCopy.dawn.waiting}
+          </Txt>
+        ) : isLoaded ? (
+          <Txt variant="micro" color="textMuted" style={styles.waiting}>
+            {todayCopy.ordersHint}
           </Txt>
         ) : null}
         {orders.hasSaveError ? (
@@ -281,6 +325,12 @@ export default function VeniScreen() {
                 latest={selfie.latestWeight}
                 onPress={() => setIsWeightSheetOpen(true)}
               />
+              {reel.frames.length >= 2 ? (
+                <TimelapseTile
+                  frames={reel.frames.length}
+                  onPress={() => router.push({ pathname: '/timelapse', params: { scope: 'arc' } })}
+                />
+              ) : null}
             </View>
           </>
         ) : null}
@@ -309,6 +359,16 @@ export default function VeniScreen() {
         initialBedtimeMinutes={sleptMinutes ?? latestBedtime}
         nowMinutes={isRealToday ? nowMinutes : null}
         onSave={handleWakeSave}
+      />
+
+      <SickDaySheet
+        visible={isSickSheetOpen}
+        onClose={() => setIsSickSheetOpen(false)}
+        payment={planTrucePayment(1, campaign.truceReserve, campaign.denarii)}
+        reserve={campaign.truceReserve}
+        denarii={campaign.denarii}
+        error={sickError}
+        onConfirm={handleSickConfirm}
       />
 
       <WeightSheet

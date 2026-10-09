@@ -72,7 +72,7 @@ export const dayLogs = sqliteTable('day_logs', {
   wokeAt: text('woke_at'),
   /** When the user went to sleep the night before (or after midnight), from the wake sheet. */
   sleptAt: text('slept_at'),
-  /** When the VINCO stamp was shown. It shows once per day. */
+  /** When the VINCO stamp was shown: once per day, when the day is conquered. */
   stampedAt: text('stamped_at'),
   /** The day's selfie in the app's private folder. Never uploaded. */
   selfiePath: text('selfie_path'),
