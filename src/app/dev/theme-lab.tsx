@@ -11,6 +11,7 @@ import { Screen } from '@/components/Screen';
 import { Txt } from '@/components/Txt';
 import { commonCopy } from '@/copy';
 import { TONES } from '@/features/tone';
+import { KitGallery } from '@/dev/KitGallery';
 import { usePreferencesStore } from '@/stores';
 import {
   createStyles,
@@ -133,6 +134,10 @@ function ThemeLabContent() {
             <Chip key={cue} label={cue} onPress={() => play(cue)} />
           ))}
         </View>
+      </Section>
+
+      <Section title="UI kit">
+        <KitGallery />
       </Section>
 
       <Section title="Type scale">

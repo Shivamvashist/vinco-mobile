@@ -23,6 +23,7 @@ export const basalt: ColorScheme = {
     accent: '#D2AC55', // laurel gold
     accentPressed: '#E4C477',
     accentSoft: 'rgba(210,172,85,0.12)',
+    accentFill: 'rgba(210,172,85,0.25)',
     accentTint: 'rgba(210,172,85,0.08)',
     accentBorder: 'rgba(210,172,85,0.45)',
     onAccent: '#1D1A17',

@@ -18,7 +18,7 @@ describe('commonCopy', () => {
 });
 
 describe('tone lines', () => {
-  const allToneLines = [todayCopy.emptyLine, progressCopy.emptyLine, arcCopy.emptyLine];
+  const allToneLines = [...todayCopy.progressLines, progressCopy.emptyLine, arcCopy.emptyLine];
 
   it('have a non-empty line for every tone', () => {
     for (const lines of allToneLines) {
@@ -37,5 +37,24 @@ describe('tabs', () => {
 
   it('builds accessibility labels', () => {
     expect(tabAccessibilityLabel('vidi')).toBe('Vidi, Progress');
+  });
+});
+
+describe('todayCopy.progressLine', () => {
+  it('picks the line by orders held, for any number', () => {
+    expect(todayCopy.progressLine(0)).toBe(todayCopy.progressLines[0]);
+    expect(todayCopy.progressLine(1)).toBe(todayCopy.progressLines[0]);
+    expect(todayCopy.progressLine(2)).toBe(todayCopy.progressLines[1]);
+    expect(todayCopy.progressLine(3)).toBe(todayCopy.progressLines[2]);
+    expect(todayCopy.progressLine(4)).toBe(todayCopy.progressLines[3]);
+    expect(todayCopy.progressLine(-1)).toBe(todayCopy.progressLines[0]);
+    expect(todayCopy.progressLine(9)).toBe(todayCopy.progressLines[3]);
+  });
+
+  it('words water and meal lines for each status', () => {
+    expect(todayCopy.orders.water.line(0, 4, 'none')).toBe('0 of 4 L');
+    expect(todayCopy.orders.water.line(2.5, 4, 'min')).toBe('2.5 of 4 L · minimum held');
+    expect(todayCopy.orders.water.line(4, 4, 'full')).toBe('4 of 4 L · conquered');
+    expect(todayCopy.orders.meal.line(1, 1, 'full')).toBe('1 of 1 meal · conquered');
   });
 });

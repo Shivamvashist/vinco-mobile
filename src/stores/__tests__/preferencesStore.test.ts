@@ -1,7 +1,8 @@
 import { Storage } from 'expo-sqlite/kv-store';
 
 import type * as PreferencesStoreModule from '../preferencesStore';
-import type { PreferencesStore } from '../preferencesStore';
+
+type PreferencesStore = PreferencesStoreModule.PreferencesStore;
 
 const STORAGE_KEY = 'vinco.preferences';
 

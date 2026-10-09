@@ -1,10 +1,17 @@
 import {
   addDays,
   dayOfArc,
+  eachDay,
+  formatClockMinutes,
+  formatClockTime,
+  parseClockMinutes,
+  toClockString,
   daysBetween,
   daysLeftInYear,
+  monthGrid,
   msUntilNextLocalMidnight,
   parseDayKey,
+  shiftMonth,
   toDayKey,
   weekdayIndex,
 } from '../dates';
@@ -96,5 +103,85 @@ describe('msUntilNextLocalMidnight', () => {
 
   it('rejects an invalid Date', () => {
     expect(() => msUntilNextLocalMidnight(new Date(NaN))).toThrow('Invalid Date');
+  });
+});
+
+describe('formatClockTime', () => {
+  it.each([
+    [new Date(2026, 9, 17, 6, 34), '6:34 am'],
+    [new Date(2026, 9, 17, 0, 5), '12:05 am'],
+    [new Date(2026, 9, 17, 12, 0), '12:00 pm'],
+    [new Date(2026, 9, 17, 23, 59), '11:59 pm'],
+  ])('%p reads %p', (date, expected) => {
+    expect(formatClockTime(date)).toBe(expected);
+  });
+
+  it('rejects an invalid Date', () => {
+    expect(() => formatClockTime(new Date(NaN))).toThrow('Invalid Date');
+  });
+});
+
+describe('clock minutes', () => {
+  it('parses valid 24-hour times and rejects the rest', () => {
+    expect(parseClockMinutes('06:30')).toBe(390);
+    expect(parseClockMinutes('00:00')).toBe(0);
+    expect(parseClockMinutes('23:59')).toBe(1439);
+    expect(parseClockMinutes('24:00')).toBeNull();
+    expect(parseClockMinutes('6:30')).toBeNull();
+    expect(parseClockMinutes('06:60')).toBeNull();
+    expect(parseClockMinutes('')).toBeNull();
+  });
+
+  it('formats minutes back, wrapping around the day', () => {
+    expect(toClockString(390)).toBe('06:30');
+    expect(toClockString(1440)).toBe('00:00');
+    expect(toClockString(-15)).toBe('23:45');
+  });
+
+  it('reads minutes in 12-hour form', () => {
+    expect(formatClockMinutes(390)).toBe('6:30 am');
+    expect(formatClockMinutes(12 * 60)).toBe('12:00 pm');
+  });
+});
+
+describe('eachDay', () => {
+  it('lists every day inclusive, across a month end', () => {
+    expect(eachDay('2026-10-30', '2026-11-02')).toEqual([
+      '2026-10-30',
+      '2026-10-31',
+      '2026-11-01',
+      '2026-11-02',
+    ]);
+    expect(eachDay('2026-10-17', '2026-10-17')).toEqual(['2026-10-17']);
+  });
+
+  it('is empty when the range is backwards', () => {
+    expect(eachDay('2026-10-17', '2026-10-16')).toEqual([]);
+  });
+});
+
+describe('monthGrid', () => {
+  it('lays out October 2026 Monday first (1 October is a Thursday)', () => {
+    const grid = monthGrid(2026, 10);
+    expect(grid[0]).toEqual([null, null, null, '2026-10-01', '2026-10-02', '2026-10-03', '2026-10-04']);
+    expect(grid.flat().filter(Boolean)).toHaveLength(31);
+    expect(grid.every((row) => row.length === 7)).toBe(true);
+  });
+
+  it('handles February in a leap year and a month starting on Monday', () => {
+    expect(monthGrid(2028, 2).flat().filter(Boolean)).toHaveLength(29);
+    expect(monthGrid(2026, 6)[0]?.[0]).toBe('2026-06-01');
+  });
+
+  it('rejects an impossible month', () => {
+    expect(() => monthGrid(2026, 13)).toThrow('Invalid day key');
+  });
+});
+
+describe('shiftMonth', () => {
+  it('moves across year ends both ways', () => {
+    expect(shiftMonth(2026, 12, 1)).toEqual({ year: 2027, month: 1 });
+    expect(shiftMonth(2027, 1, -1)).toEqual({ year: 2026, month: 12 });
+    expect(shiftMonth(2026, 10, 0)).toEqual({ year: 2026, month: 10 });
   });
 });

@@ -1,4 +1,5 @@
 import { contrastRatio } from '../contrast';
+import { DAY_CARD_STYLES } from '../palettes/dayCards';
 import { THEMES } from '../themes/registry';
 import type { ColorPalette, FeedbackCue, SchemeName } from '../types';
 
@@ -74,3 +75,14 @@ describe.each(THEMES.map((theme) => [theme.id, theme] as const))('theme "%s"', (
     }
   });
 });
+
+describe.each(DAY_CARD_STYLES.map((style) => [style.name, style] as const))(
+  'day card "%s"',
+  (_name, style) => {
+    it('keeps text and accent readable on the card', () => {
+      expect(contrastRatio(style.foreground, style.background)).toBeGreaterThanOrEqual(7);
+      expect(contrastRatio(style.accent, style.background)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(style.onAccent, style.accent)).toBeGreaterThanOrEqual(4.5);
+    });
+  },
+);

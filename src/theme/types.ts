@@ -38,6 +38,8 @@ export type ColorPalette = {
   accentPressed: string;
   /** Icon tiles, minimum-held fills. */
   accentSoft: string;
+  /** Minimum held: fill inside the status circle. */
+  accentFill: string;
   /** Background of a selected card. */
   accentTint: string;
   /** Border of a row at full goal. */

@@ -71,7 +71,7 @@ const useStyles = createStyles((theme) => ({
 - No hex or `rgb()` outside `src/theme/` (lint).
 - No raw `<Text>`; use `Txt` (lint).
 - Import from `@/theme`, never from files inside it (lint).
-- No raw spacing or radius numbers; use the nearest token. Component-specific sizes go in `layout`.
+- No raw spacing or radius numbers; use the nearest token. Sizes shared by several components go in `layout`; a one-off illustration size (the oath's record button) is a named constant at the top of its component.
 - Pick font weight by family (`theme.fonts.bodySemiBold`), never `fontWeight`: Android ignores it for custom fonts.
 - Touch targets at least `layout.minTouchTarget` (44).
 
@@ -96,6 +96,7 @@ Components ask for a **role**, not a colour. Roles are named for what they do, s
 | `accent`                     | `#D2AC55`            | `#7A5C14`      | Laurel gold. Wins, full goal, primary buttons |
 | `accentPressed`              | `#E4C477`            | `#634A0F`      | Pressed primary                               |
 | `accentSoft`                 | gold 12%             | gold 12%       | Icon tiles, minimum-held fill                 |
+| `accentFill`                 | gold 25%             | gold 22%       | Status circle at minimum held                 |
 | `accentTint`                 | gold 8%              | gold 8%        | Selected card background                      |
 | `accentBorder`               | gold 45%             | gold 45%       | Row at full goal                              |
 | `onAccent`                   | `#1D1A17`            | `#FBF8F2`      | Text on accent                                |
@@ -147,7 +148,8 @@ Each variant caps how far the phone's font-size setting can enlarge it, so huge 
 
 - **space**: `xxs 2, xs 4, sm 8, md 12, lg 16, xl 20, xxl 24, xxxl 32, huge 48, giant 64`
 - **radius**: `xs 4, sm 10, md 16 (cards), lg 24 (sheets), pill 999`
-- **layout**: `screenGutter 20, flowGutter 24, cardPadding 14, minTouchTarget 44, buttonHeight 56, buttonHeightCompact 48, tabBarHeight 76, iconSize 22, iconSizeSmall 16`
+- **layout**: `screenGutter 20, flowGutter 24, cardPadding 14, minTouchTarget 44, buttonHeight 56, buttonHeightCompact 48, tabBarHeight 76, iconSize 22, iconSizeSmall 16, buttonHeightLarge 64, chipHeight 30, choiceChipHeight 36, statusCircleSize 30, ringSize 64, ringStrokeWidth 5, barHeightThin / Regular / Thick 3 / 5 / 6, sheetPadding 22`
+- **Animating:** `withTiming(value, themeTiming('base'))` or `themeEasing('standard')` from `@/theme`. Check `useReduceMotion()` first; when true, set the final value directly.
 - **motion**: durations `instant 100, fast 200, base 350, slow 500, slower 800` ms; easing `standard (0.2, 0.8, 0.2, 1)`; `stagger 60` ms. Quick and quiet everywhere; the stamp is the one big moment. Respect the phone's reduce-motion setting.
 
 ---

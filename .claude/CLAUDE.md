@@ -118,4 +118,5 @@ npx expo install <pkg>    # add an Expo/RN package
 npm run check             # typecheck + lint + em-dash scan + tests (before every checkpoint)
 npm run format            # Prettier
 npm run sounds            # regenerate UI sounds after editing scripts/generate-sounds.mjs
+npm run db:generate       # create a migration after editing src/db/schema.ts
 ```

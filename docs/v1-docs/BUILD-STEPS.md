@@ -2,7 +2,7 @@
 
 From an empty folder to Early Access on **2 November 2026**. Each step lists its goal, the work, how it's checked, and what to learn along the way. Tick boxes as you finish.
 
-**Status:** Steps 1 to 3 done. Next: Step 4 (core UI kit).
+**Status:** Steps 1 to 5 and 7 to 11 done; Step 13's day card done. Step 6 (Play build) waits on the developer's decisions. Next: Step 12 (nudges, to-do, step one, bedtime) and Step 13's decorations.
 
 **Every step ends with a checkpoint:**
 
@@ -99,59 +99,48 @@ From an empty folder to Early Access on **2 November 2026**. Each step lists its
 
 ---
 
-## Step 4: Core UI kit (planned, then built)
+## Step 4: Core UI kit ✅
 
-**Goal:** the components the Early Access screens need, each specced against the prototype before it's built (CONVENTIONS section 7), each shown in every state in the theme lab.
+**Goal:** the components the Early Access screens need, each specced against the prototype before it was built, each shown in every state in the theme lab.
 
-- [ ] Install `react-native-svg` (icons, laurel, rings) with `npx expo install`
-- [ ] **Icons:** one `Icon` component with the prototype's line icons (water, sunrise, bowl, dumbbell, flame, camera, list, lock, back, close, mic, check, flip). 1.8 stroke, `currentColor`
-- [ ] **Brand marks:** `Laurel` (the wreath SVG), `VincoStamp` (porphyry bordered wordmark)
-- [ ] **Button:** primary (accent pill), secondary (outlined), ghost; 56 and 48 heights; pressed, disabled, loading; plays a cue
-- [ ] **IconButton:** 44 by 44 hit area (back, close)
-- [ ] **Card:** surface, sunk, raised; optional border; padding `cardPadding`
-- [ ] **Chip:** stat chip ("Campaign 11"), filter chip (selectable)
-- [ ] **SectionHeader:** overline text with spacing
-- [ ] **ProgressBar:** continuous and segmented (water's 4 segments, onboarding I of V)
-- [ ] **ProgressRing:** orders done out of 4, animated
-- [ ] **StatusCircle:** empty, minimum (soft fill), full (check), with the pop animation
-- [ ] **OptionCard:** selectable card for arc length and tone
-- [ ] **Stepper:** - value + with limits and step size
-- [ ] **SegmentedControl:** Calendar / Reels / Sleep style
-- [ ] **BottomSheet:** scrim, slide-up, close on scrim tap and back button
-- [ ] **Toast:** inverse pill, auto-hide
-- [ ] Reduced motion: every animation has a still fallback
+- [x] Specs written first: [docs/UI-KIT.md](../UI-KIT.md)
+- [x] `react-native-svg` installed
+- [x] **Icon** (15 prototype line icons), **Laurel**, **StampMark**
+- [x] **Button** (primary, secondary, ghost; 56, 48, 64 with sublabel; disabled, loading; 500 ms double-tap guard), **IconButton**
+- [x] **StatChip**, **ChoiceChip**, **SectionHeader**
+- [x] **ProgressBar** (continuous and segmented, animated, clamped), **ProgressRing** (animated SVG arc), **StatusCircle** (none, min, full; pops on change only)
+- [x] **OptionCard** (radio semantics, pop on select), **Stepper** (rounding, limits with `denied`, TalkBack adjustable), **BottomSheet** (animated in and out, back button, keyboard, modal for screen readers)
+- [x] `useReduceMotion()` from `@/theme`: one listener for the phone's reduce-motion setting; every animation honours it
+- [x] `themeEasing` / `themeTiming` map motion tokens to Reanimated
+- [x] Dev kit gallery (`src/dev/KitGallery.tsx`) inside the theme lab, interactive
+- [x] Render tests mount the real app and the full theme lab
 
-**Done when:** every component appears in the theme lab in all states, in both schemes, at the largest font size, with no overlap.
-
-> **Learn:** `Pressable` is React Native's button; `react-native-reanimated` runs animations on the UI thread so they stay smooth.
+**Done when:** every component appears in the theme lab in all states, in both schemes, at the largest font size, with no overlap. (Code and render tests done; the visual pass on the phone is the developer's check.)
 
 ---
 
-## Step 5: Today screen (local state)
+## Step 5: Today screen (local state) ✅
 
-**Goal:** tick the four orders on Veni, see minimum versus full goal, and get the VINCO stamp. React state only, no database yet.
+**Goal:** tick the four orders on Veni, see minimum versus full goal, and get the VINCO stamp. In memory for now; Step 7 saves it.
 
-### 5.1 Logic first: `src/features/orders/`
+### 5.1 Logic: `src/features/orders/`
 
-- [ ] Types: `OrderKind` (`water`, `wake`, `meal`, `workout`), `OrderTarget` (min, full, unit, step), `OrderProgress`
-- [ ] `getOrderStatus(progress, target)` returns `'none' | 'min' | 'full'`
-- [ ] `addProgress(progress, target)` caps at full, ignores taps past full
-- [ ] `countOrdersHeld(day)`, `areAllOrdersHeld(day)`
-- [ ] Tests: zero, exact minimum, exact full, past full, half-litre steps
+- [x] `ORDER_KINDS`, `OrderTarget` (min, full, step), `DEFAULT_ORDER_TARGETS` (water 1/4 L, wake 1, meals 1/2, workout 15/40 min)
+- [x] `getOrderStatus`, `addStep` (caps at full), `removeStep` (floors at 0), `clampAmount`, `countOrdersHeld`, `areAllOrdersHeld`, `areAllOrdersConquered`; tested
+- [x] `useTodayOrders` hook: rapid taps never lost, stamp once per day (even after undo and redo), wake time recorded, workout note trimmed to 80, fresh day at midnight; tested
 
 ### 5.2 UI
 
-- [ ] Header: eyebrow "DAY XII OF LX", weekday title, days left in the year, ProgressRing
-- [ ] Chips: campaign, Truce status, rank
-- [ ] Tone line that changes with progress (copy in three tones)
-- [ ] `TaskRow`: StatusCircle, name, sub-line, water's 4-segment bar, inline action ("+1 L", "+1", "Log")
-- [ ] Wake-up shown as done (Aurora alarm is a 1.0 feature; Early Access uses a normal reminder)
-- [ ] Workout: tap opens a sheet with a typed note now (voice note in Step 8 with the oath recorder)
-- [ ] Step one card (template text for now), selfie tile, to-do tile (placeholders until Steps 10 and 12)
-- [ ] Cues: `tap` on each tap, `win` at full goal, `stamp` when all four reach the minimum
-- [ ] The VINCO stamp overlay: slam animation, falling laurel leaves, "Seal the day" and "Back to Today"; shown once per day
-
-**Done when:** tapping through all four orders on the phone triggers the stamp once, with sound and haptic, and nothing double-fires on fast taps.
+- [x] Header with weekday, days left in the year and the animated orders ring
+- [x] Tone line that follows progress (three tones, four stages)
+- [x] `TaskRow` (`src/components/today/`): status circle, line, water segments, inline action; **tap adds, long-press undoes**
+- [x] Wake-up: "I'm up" records the real time (no fake "done": Aurora is 1.0)
+- [x] `WorkoutSheet`: Hold the line (15 min) or Conquer (40 min), optional typed note (voice arrives with the Step 8 recorder)
+- [x] `StampOverlay`: slam, falling laurel leaves, rising text, `stamp` sound and heavy haptic on impact; static with reduced motion
+- [x] Cues: `tap` progress, `win` full goal, `stepDown` undo, `denied` when a tap can't do anything
+- [x] Not shown until real data exists: campaign, Truce and rank chips (Step 9), step one (Step 12), selfie and to-do tiles (Steps 10, 12)
+- [x] `TextField` added to the kit (workout note; later weight and step one)
+- [x] Render tests drive the real UI: tap and undo water, log a workout through the sheet, all four held shows the stamp
 
 ---
 
@@ -174,68 +163,79 @@ From an empty folder to Early Access on **2 November 2026**. Each step lists its
 
 ---
 
-## Step 7: Local database
+## Step 7: Local database ✅
 
 **Goal:** progress survives closing the app.
 
-- [ ] `npx expo install expo-sqlite`
-- [ ] `src/db/`: schema for `arcs`, `tasks`, `task_logs`, `day_logs`, `todos`, `step_one`, `ledger`, `settings`
-- [ ] Migrations: a version number in the database, each migration runs once, in a transaction
-- [ ] Repository functions per table; features call them, screens never touch SQL
-- [ ] Today screen reads and writes through `src/features/` and `src/db/`
-- [ ] Drizzle ORM (`drizzle-orm`, `drizzle-kit` for migrations), opened with `enableChangeListener: true` so screens use `useLiveQuery`
-- [ ] Records are read with live queries in screens and hooks; never copied into Zustand
-- [ ] Splash stays up until the database is open and migrated
-- [ ] Edge cases: first launch, failed migration (keep data, show a recovery message), corrupted values (fall back to defaults)
+- [x] `expo-sqlite` + **Drizzle ORM 0.45 (stable)** + `drizzle-kit` 0.31; `babel.config.js` inlines `.sql`, `metro.config.js` adds the `sql` extension, `drizzle.config.ts`
+- [x] Schema (`src/db/schema.ts`): `arcs`, `arc_orders`, `order_logs` (day + kind), `day_logs` (wake time, stamp shown, sealed, Truce). Ledger arrives in Step 9, to-dos and step one in Step 12, each as its own migration
+- [x] Migrations generated with `npm run db:generate` into `src/db/migrations/`, run at start-up by `useDatabaseMigrations`; the splash waits for them
+- [x] Repository functions take the database as a parameter (`orderLogs.ts`, `dayLogs.ts`), so they run on the phone and in tests unchanged
+- [x] `useTodayOrders` reads with Drizzle live queries and writes one transaction per tap (fresh read first, so rapid taps never race); the stamp-shown flag is stored per day, so a restart never replays it
+- [x] Edge cases: failed migration shows a calm recovery screen (`StartupError`) and keeps data; a failed save shows a notice on Today and keeps the last good value; rows render only after the first read, so nothing pops on open
+- [x] Tests run real SQL: an in-memory better-sqlite3 database with the real migrations (`src/db/testing/testDatabase.ts`), cleared before every test; repository, hook (including app restart) and screen tests
+- [ ] Theme preferences are in the Zustand store (persisted), not SQLite: decided in Step 3
 
-> **Learn:** SQLite is a real database in a file on the phone. For Early Access the phone is the source of truth; the server comes in 1.0.
+> **Learn:** SQLite is a real database in a file on the phone. A migration is a numbered SQL change applied once, in order, so every phone ends up with the same tables, whatever version it updated from.
 
 ---
 
-## Step 8: Onboarding
+## Step 8: Onboarding ✅
 
 **Goal:** a new user goes from Cross the Rubicon to Day I in under two minutes.
 
-- [ ] Rubicon screen: rotating Stoic quotes (tap to skip), flowing river line, pulsing primary button, `cross` cue
-- [ ] Arc length: 30, 60, 90 as OptionCards, "Most chosen" on 60, end date and tone-free quip
-- [ ] Your orders: four locked orders, minimum fixed, full goal adjustable with Steppers within limits
-- [ ] Wake and sleep times (plan item missing from the prototype's I of V indicator: decide its place)
-- [ ] Step one (optional): goal and a first 15-minute step from templates
-- [ ] Tone picker with the live typing preview in two scenes
-- [ ] The oath: 20-second recording with `expo-audio` (microphone permission asked here, with a reason), wax-seal animation, "Skip for now"
-- [ ] First selfie with `expo-camera`, saved to the app's private folder, DAY I stamp, `seal` cue
-- [ ] `src/app/index.tsx`: onboarding until finished, then Veni
-- [ ] Edge cases: back navigation keeps choices, app killed mid-onboarding resumes, permission denied paths
+- [x] Rubicon: rotating Stoic quotes (tap to skip, still with reduced motion), flowing river, two-line button with the `cross` cue
+- [x] I of V, arc length: 30 / 60 / 90 option cards, "Most chosen" on 60, today and the real end date, a quip per choice
+- [x] II of V, orders: four locked orders; fixed minimums beside steppers for full goals (water 2 to 5 L in halves, meals 1 to 3, workout 20 to 90 min) and the wake-up time (4:00 to 9:00 in 15 min)
+- [x] III of V, tone: two scenes, a live typing preview, three tone cards; the choice is saved straight to preferences
+- [x] IV of V, oath: microphone asked on tap, 20 s limit, live waveform from the mic level, wax seal, record again (old file deleted), Settings link if refused, skip
+- [x] V of V, selfie: front camera (kept dark in light mode), face outline, DAY I stamp slam with the `seal` cue, Horace quote; camera permission paths; start without a selfie
+- [x] Draft in a persisted Zustand store (validated on restore); reopening the app resumes at the last step; Back works without history
+- [x] Finishing writes the arc, its four orders and the first selfie in one transaction, clears the draft, opens Today with no way back into onboarding; a failed save keeps the draft and says so
+- [x] `src/app/index.tsx`: active arc goes to Today; otherwise onboarding at the last step
+- [x] Today reads the arc: tuned targets, "DAY XII OF LX", "Day XII conquered"
+- [x] Migration `0001`: `arcs.wake_time`, `arcs.oath_path`, `day_logs.selfie_path`
+- [x] Media saved in the app's private folder (`src/media/`), never uploaded
+- [x] Render test drives the whole flow; resume and skip-onboarding cases tested
+- [ ] Bedtime: asked in Step 12 with the wind-down nudge that uses it
+- [ ] Step one: a card on Today in Step 12
 
 ---
 
-## Step 9: Campaign engine
+## Step 9: Campaign engine ✅
 
 **Goal:** the rules that make a streak trustworthy, as pure functions with tests.
 
-- [ ] Day seals at local midnight; catch-up sealing for days the app wasn't opened
-- [ ] Campaign counting: minimum keeps it alive, full goal earns the laurel
-- [ ] One free Truce per week (decide the week start), auto-applied or offered on a miss
-- [ ] Resurgo within 24 hours of a broken campaign
-- [ ] Ranks by days completed (thresholds in one config, to tune with Early Access data)
-- [ ] Denarii earned into the local ledger (5 minimum, 10 full, 25 per 7 days of campaign)
-- [ ] Tests: time zone change, daylight saving, clock moved back, missed several days, Truce on week boundary
+- [x] `src/features/campaign/`: day results (conquered, held, truce, missed), current and best campaign, completed days, Resurgo days, weeks starting Monday, one Truce per week
+- [x] Ranks by completed days (Tiro 1, Miles 4, Optio 10, Centurion 20, Tribune 35, Legate 50, Consul 60; Caesar only for finishing a 90-day arc), thresholds in one config
+- [x] Denarii: 5 held, 10 conquered, +25 every 7 days of campaign; `ledger` table keyed by (day, reason) so nothing is paid twice (migration `0002`)
+- [x] Sealing (`src/db/sealing.ts`): seals every finished, unsealed day of the arc in one transaction, including days the app was closed; a missed day takes the week's Truce automatically if free; never re-seals; stops at the arc's end
+- [x] `useSealFinishedDays` runs on open and at midnight (tabs layout); `useCampaign` computes everything live from the rows
+- [x] Today shows "Campaign N", Truce status and rank once real data exists
+- [x] Tests: engine (week boundaries, gaps, breaks, rank edges, bonus), sealing on real SQL (catch-up, Truce per week, idempotent, arc end, clock before arc), and a render test from rows to chips
 
 ---
 
-## Step 10: Proof and Vidi
+## Step 10: Proof and Vidi ✅ (sleep chart waits for bedtime, Step 12)
 
-- [ ] Daily selfie with yesterday's ghost outline and opacity slider, 3-second timer, `shutter` cue; optional weight
-- [ ] Selfie strip and timelapse progress (12 of 30)
-- [ ] Vidi tab: stats row, calendar (conquered, line held, Truce), sleep chart from wake and bed times
-- [ ] Camera screens wrapped in `SchemeOverride scheme="dark"`
+- [x] Stat row: campaign, full-goal days (conquered over days so far), days to go
+- [x] Arc calendar, Monday first: conquered, line held, Truce, missed, today ringed, future dimmed; month navigation limited to the arc; every cell labelled for screen readers (`monthGrid`, `shiftMonth` tested)
+- [x] Timelapse progress from real saved selfies (30 needed, `TIMELAPSE_SELFIES`)
+- [x] Empty state in the user's tone before onboarding
+- [x] Left out on purpose: the Calendar / Reels / Sleep switcher (Reels is 1.0; sleep needs bedtime from Step 12)
+- [x] Daily selfie (`/selfie`, kept dark): yesterday's real photo as the ghost (Off / Faint / Strong), flip camera, retake, "Day XII saved" with timelapse frames, recent strip, optional weight in kg (validated, comma decimals accepted; migration `0003`); Today tile shows taken or not
+- [x] `SelfieCapture` shared by onboarding (with the DAY I stamp) and the daily selfie (with the ghost)
+- [ ] Sleep chart (with bedtime, Step 12)
 
-## Step 11: Vici and settings
+## Step 11: Vici and settings ✅
 
-- [ ] Arc progress with Roman milestones, rank card with progress to next rank
-- [ ] Settings: tone, colour mode, sound, haptics, oath status, Truce this week
-- [ ] Oath playback on Day 10
-- [ ] Campaign lost screen: broken column, tone line, "Rise again" (`rise` cue) or "Use this week's Truce" (`truce` cue)
+- [x] Arc name, dates and "Day XII of LX"; journey line with Roman milestones (`getArcMilestones`) and today's marker
+- [x] Rank card: medallion, meaning, days to next rank with progress, denarii earned
+- [x] Settings: tone and appearance (sheets), sounds and vibration (switches), Truce this week, the oath (sealed until Day X, then Listen; plays even on silent because the user asked, then restores UI audio)
+- [x] Campaign lost screen (`/campaign-lost`): shown once per break (`findLatestLoss`, `useNoticesStore`), toppling column, tone line, "Rise again" to the comeback ("Day I, again") with the `rise` cue
+- [x] Render tests: arc and rank from sealed days, settings sheets and switches, the loss flow shown exactly once
+
+---
 
 ## Step 12: Nudges, to-do, step one
 
@@ -246,7 +246,7 @@ From an empty folder to Early Access on **2 November 2026**. Each step lists its
 
 ## Step 13: Day card and honours
 
-- [ ] Day card in three styles (Basalt, Marble, Porphyry), share to story, `confirm` cue
+- [x] Day card (`/day-card`, opened by "Seal the day"): laurel, DAY XII OF LX, the day number, today's real order values, campaign and rank, in three styles (`DAY_CARD_STYLES` in the theme; Marble's gold deepened for contrast); "Share to story" captures the card (`react-native-view-shot`) and opens the share sheet (`expo-sharing`), with toasts for done, unavailable and failed. The prototype's reel count is left out (1.0)
 - [ ] Starting decorations; denarii shown on Vici (earning only, no shop in Early Access)
 
 ## Step 14: Hardening and release

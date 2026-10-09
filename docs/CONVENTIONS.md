@@ -86,17 +86,26 @@ src/
     _layout.tsx        fonts, splash, store-fed ThemeProvider, status bar
     index.tsx          entry redirect
     (tabs)/            Veni, Vidi, Vici and their custom tab bar layout
-    onboarding/        Rubicon to Day I            (Step 8)
+    onboarding/        Rubicon, arc, orders, tone, oath, selfie
     dev/               dev-only screens (theme lab: long-press the Vici tab)
   components/          shared UI, one component per file, no barrel
     navigation/        TabBar
+    today/             TaskRow, WorkoutSheet, StampOverlay, SelfieTile
+    onboarding/        FlowLayout, QuoteCarousel, RiverLines, TypingPreview, OathRecorder
+    progress/          StatTile, MonthCalendar
+    arc/               ArcJourney, RankCard, SettingsRow
+    campaign/          Column
+    dayCard/           DayCard
   theme/               design system: tokens, palettes, themes, feedback (see DESIGN-SYSTEM.md)
   copy/                ALL user-facing text, one file per area, three tones where it varies
   features/<name>/     product logic as pure functions, each folder with an index.ts (tone; later orders, campaign...)
   stores/              Zustand app/UI state, persisted to the phone (preferences; later onboarding, overlays)
   db/                  SQLite + Drizzle schema, migrations, queries   (Step 7)
-  hooks/               shared React hooks (useToday)
-  lib/                 small generic pure helpers (dates, toRoman), no barrel: import each file
+  hooks/               shared React hooks (useToday, useTodayOrders, useActiveArc, useCompleteOnboarding)
+  media/               photos and recordings in the app's private folder (never uploaded)
+  lib/                 small generic pure helpers (dates, toRoman, progress), no barrel: import each file
+  dev/                 dev-only UI used by dev routes (kit gallery). Never imported by real screens
+  __tests__/           render tests that boot the real app from src/app
 assets/
   fonts/ images/ sounds/<theme-id>/
 scripts/               dev tools (sound generation, checks)
@@ -111,6 +120,15 @@ jest.setup.ts          fakes for native modules, so any module can be imported i
 - **`src/db/` does storage only.** Features never write SQL.
 - **No hard-coded user-facing sentences in components.** They come from `src/copy/`. Dev-only screens are the only exception.
 - **Components are presentational.** They take data through props; screens read stores and queries and pass values down.
+
+**Database rules**
+
+- Change the schema in `src/db/schema.ts`, then `npm run db:generate`. Never edit generated files in `src/db/migrations/`.
+- Repository functions take `db: AppDatabase` as their first argument and are synchronous. They do storage only; rules live in `src/features/`.
+- A user action that writes more than one row runs in `db.transaction`, reading fresh values inside it.
+- Don't store what can be derived (an order's status, a campaign length). Store the facts it comes from.
+- Screens read with `useLiveQuery`, wait for `updatedAt` before rendering rows, and show a calm message if a write fails.
+- Tests use `createTestDatabase()` (real SQLite in memory with the real migrations), cleared before each test.
 
 **Where state lives**
 
@@ -170,7 +188,9 @@ Run through this for every change. Write a test for each case that lives in pure
 - Anything essential (saving a tick, sealing a day) surfaces an error the user can act on and keeps their data.
 - Never swallow an error silently in essential paths. Never show a raw error message to the user.
 
-**Before calling it done:** `npm run check` passes, and the change has been tried on the phone in Expo Go.
+**Before calling it done:** `npm run check` passes (including the render tests, which mount every route), and the change has been tried on the phone in Expo Go.
+
+**Motion:** read `useReduceMotion()` from `@/theme` (never Reanimated's hook) and jump to the end state when it is true. Never animate on first render unless the design calls for an entrance.
 
 ---
 

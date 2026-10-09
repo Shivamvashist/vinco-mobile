@@ -7,7 +7,7 @@ const EM_DASH = String.fromCharCode(0x2014);
 const COLOR_LITERAL = '/^(#[0-9a-fA-F]{3,8}|rgba?\\(|hsla?\\()/';
 
 module.exports = defineConfig([
-  globalIgnores(['dist/*', '.expo/*', 'android/*', 'ios/*', 'docs/v1-reference/*']),
+  globalIgnores(['dist/*', '.expo/*', 'android/*', 'ios/*', 'docs/v1-reference/*', 'src/db/migrations/*']),
   expoConfig,
   eslintPluginPrettierRecommended,
 
@@ -110,6 +110,12 @@ module.exports = defineConfig([
       ],
       'no-restricted-imports': 'off',
     },
+  },
+
+  // Declaration files describe modules whose shape is a default export (such as .sql imports).
+  {
+    files: ['**/*.d.ts'],
+    rules: { 'import/no-default-export': 'off' },
   },
 
   // Expo Router needs a default export from every route file.

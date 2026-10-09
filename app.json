@@ -33,8 +33,22 @@
           "imageWidth": 76
         }
       ],
-      "expo-audio",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Vinco records your oath and workout notes. Recordings stay on this phone.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Vinco takes your daily selfie. Photos stay on this phone and are never uploaded.",
+          "recordAudioAndroid": false
+        }
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,

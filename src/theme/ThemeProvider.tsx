@@ -3,6 +3,7 @@ import { createContext, use, useCallback, useEffect, useMemo, useRef, type React
 import { useColorScheme } from 'react-native';
 
 import { playHaptic } from './feedback/playHaptic';
+import { ReduceMotionProvider } from './ReduceMotionProvider';
 import { configureUiAudio, createSoundBank, type SoundBank } from './feedback/soundBank';
 import { buildTheme, resolveSchemeName } from './resolveTheme';
 import { getThemeDefinition, THEMES } from './themes/registry';
@@ -66,7 +67,7 @@ export function ThemeProvider({ children, preferences, onPreferencesChange }: Th
           soundEnabled={preferences.soundEnabled}
           hapticsEnabled={preferences.hapticsEnabled}
         >
-          {children}
+          <ReduceMotionProvider>{children}</ReduceMotionProvider>
         </FeedbackProvider>
       </ThemeContext>
     </ThemeControlsContext>

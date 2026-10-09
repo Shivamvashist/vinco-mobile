@@ -24,6 +24,7 @@ export const marble: ColorScheme = {
     accent: '#7A5C14',
     accentPressed: '#634A0F',
     accentSoft: 'rgba(122,92,20,0.12)',
+    accentFill: 'rgba(122,92,20,0.22)',
     accentTint: 'rgba(122,92,20,0.08)',
     accentBorder: 'rgba(122,92,20,0.45)',
     onAccent: '#FBF8F2',

@@ -6,3 +6,4 @@ ios/
 package-lock.json
 docs/v1-reference/
 assets/
+src/db/migrations/
