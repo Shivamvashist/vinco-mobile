@@ -3,7 +3,7 @@
  * They write through the normal repository functions, so the app sees ordinary records.
  */
 import { type AppDatabase, getDayLog, nowIso, saveOrderAmount, updateDayLog } from '@/db';
-import { ORDER_KINDS, type OrderTargets } from '@/features/orders';
+import { orderKindsIn, type OrderTargets } from '@/features/orders';
 import type { DayKey } from '@/lib/dates';
 
 /**
@@ -17,9 +17,9 @@ export function fillDayOrders(
   level: 'hold' | 'conquer',
 ): void {
   db.transaction((tx) => {
-    for (const kind of ORDER_KINDS) {
+    for (const kind of orderKindsIn(targets)) {
       const target = targets[kind];
-      saveOrderAmount(tx, day, kind, level === 'conquer' ? target.full : target.min);
+      if (target) saveOrderAmount(tx, day, kind, level === 'conquer' ? target.full : target.min);
     }
     const log = getDayLog(tx, day);
     const now = nowIso();

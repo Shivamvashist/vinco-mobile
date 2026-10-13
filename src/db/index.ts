@@ -4,12 +4,14 @@
  * Nothing here is copied into Zustand.
  */
 export {
+  addArcOrder,
   createArc,
   endActiveArc,
   getActiveArc,
   type NewArc,
   selectActiveArc,
   selectAllArcs,
+  removeArcOrder,
   selectArcOrders,
   setArcWakeTime,
   startNextArc,
@@ -26,6 +28,7 @@ export {
   selectRecentSelfies,
   selectSelfiesBetween,
   selectWeightsBetween,
+  selectCaloriesBetween,
   updateDayLog,
 } from './dayLogs';
 export {

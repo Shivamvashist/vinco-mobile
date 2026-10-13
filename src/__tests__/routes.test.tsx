@@ -33,6 +33,7 @@ import {
   sealFinishedDays,
   updateDayLog,
   selectArcOrders,
+  selectCustomOrdersOn,
   toOrderTargets,
 } from '@/db';
 import { FEATURES } from '@/config/features';
@@ -46,9 +47,9 @@ beforeEach(resetAppState);
 describe('app routes', () => {
   beforeEach(startArc);
 
-  it('opens on Veni with the arc day and the progress line', async () => {
+  it('opens on Veni with the arc day and the user menu', async () => {
     const app = renderRouter(APP_DIR, { initialUrl: '/' });
-    expect(await screen.findByText(todayCopy.progressLines[0].centurion)).toBeTruthy();
+    expect(await screen.findByLabelText(todayCopy.menuLabel)).toBeTruthy();
     expect(screen.getByText(todayCopy.arcEyebrow('I', 'LX'))).toBeTruthy();
     expect(app.getPathname()).toBe('/veni');
   });
@@ -71,11 +72,10 @@ describe('app routes', () => {
     expect(screen.getByLabelText(tabAccessibilityLabel('veni'))).not.toBeSelected();
   });
 
-  it('re-renders tone lines when the tone changes', async () => {
+  it('has three tabs: the settings live in the user menu', async () => {
     renderRouter(APP_DIR, { initialUrl: '/veni' });
-    await screen.findByText(todayCopy.progressLines[0].centurion);
-    act(() => usePreferencesStore.getState().setTone('roast'));
-    expect(await screen.findByText(todayCopy.progressLines[0].roast)).toBeTruthy();
+    await screen.findByLabelText(tabAccessibilityLabel('veni'));
+    expect(screen.getAllByRole('tab')).toHaveLength(3);
   });
 
   it('renders the theme lab in development, in light mode too', async () => {
@@ -124,11 +124,9 @@ describe('Today', () => {
     expect(await screen.findByText(todayCopy.wakeSheet.editTitle)).toBeTruthy();
   });
 
-  it('logs body weight from the proof tile', async () => {
+  it('logs body weight from the quick logs', async () => {
     renderRouter(APP_DIR, { initialUrl: '/veni' });
-    fireEvent.press(
-      await screen.findByLabelText(`${proofCopy.weightTile.title}, ${proofCopy.weightTile.notLogged}`),
-    );
+    fireEvent.press(await screen.findByLabelText(todayCopy.quickLogs.weight));
     const field = await screen.findByLabelText(proofCopy.weightSheet.label);
     fireEvent.changeText(field, '12');
     fireEvent.press(screen.getByLabelText(proofCopy.weightSheet.save));
@@ -136,10 +134,35 @@ describe('Today', () => {
     fireEvent.changeText(field, '72,5');
     act(() => jest.advanceTimersByTime(600));
     fireEvent.press(screen.getByLabelText(proofCopy.weightSheet.save));
-    expect(
-      await screen.findByLabelText(`${proofCopy.weightTile.title}, ${proofCopy.weightTile.today('72.5')}`),
-    ).toBeTruthy();
+    expect(await screen.findByLabelText(todayCopy.quickLogs.weightDone('72.5'))).toBeTruthy();
     expect(getDayLog(db, toDayKey(new Date()))?.weightKg).toBe(72.5);
+  });
+
+  it('logs calories from the quick logs, with quick additions', async () => {
+    renderRouter(APP_DIR, { initialUrl: '/veni' });
+    fireEvent.press(await screen.findByLabelText(todayCopy.quickLogs.calories));
+    const sheet = proofCopy.caloriesSheet;
+    fireEvent.changeText(await screen.findByLabelText(sheet.label), '1,500');
+    fireEvent.press(screen.getByLabelText(sheet.addLabel(250)));
+    act(() => jest.advanceTimersByTime(600));
+    fireEvent.press(screen.getByLabelText(sheet.save));
+    expect(await screen.findByLabelText(todayCopy.quickLogs.caloriesDone('1,750'))).toBeTruthy();
+    expect(getDayLog(db, toDayKey(new Date()))?.calories).toBe(1750);
+  });
+
+  it('moves a finished order to the bottom of the list', async () => {
+    renderRouter(APP_DIR, { initialUrl: '/veni' });
+    await screen.findByLabelText(new RegExp(`^${water.name},`));
+    const order = () =>
+      screen
+        .getAllByRole('button')
+        .map((row) => String(row.props.accessibilityLabel ?? '').split(',')[0] ?? '')
+        .filter((name) => ['Water', 'Wake-up', 'Protein meal', 'Workout'].includes(name));
+    expect(order()).toEqual(['Water', 'Protein meal', 'Workout', 'Wake-up']);
+    fireEvent.press(screen.getByLabelText(new RegExp(`^${todayCopy.orders.meal.name},`)));
+    fireEvent.press(screen.getByLabelText(new RegExp(`^${todayCopy.orders.meal.name},`)));
+    await screen.findByText(todayCopy.orders.meal.line(2, 2, 'full'));
+    expect(order()).toEqual(['Water', 'Workout', 'Wake-up', 'Protein meal']);
   });
 
   it('adds water on tap and undoes on long press', async () => {
@@ -290,14 +313,12 @@ describe('Timelapse', () => {
     }
   }
 
-  it('plays this campaign from Today, frame by frame, then offers to play again', async () => {
+  it('plays this campaign from Vidi, frame by frame, then offers to play again', async () => {
     startHeldArc(2);
     markAwake();
     seedSelfies(3);
-    renderRouter(APP_DIR, { initialUrl: '/veni' });
-    fireEvent.press(
-      await screen.findByLabelText(`${proofCopy.reel.arcTile.title}, ${proofCopy.reel.arcTile.detail(3)}`),
-    );
+    renderRouter(APP_DIR, { initialUrl: '/vidi' });
+    fireEvent.press(await screen.findByLabelText(progressCopy.timelapse.play));
     expect(await screen.findByText(proofCopy.reel.counter(1, 3))).toBeTruthy();
     act(() => jest.advanceTimersByTime(400));
     expect(await screen.findByText(proofCopy.reel.counter(2, 3))).toBeTruthy();
@@ -358,7 +379,11 @@ describe('Onboarding', () => {
     };
 
     fireEvent.press(await screen.findByLabelText(new RegExp(`^${onboardingCopy.rubicon.cross}`)));
+    // Your orders: go for a ready-made campaign instead.
+    await screen.findByText(onboardingCopy.plan.title);
+    press(onboardingCopy.plan.campaign);
     // Arc: choose 30 days.
+    await screen.findByText(onboardingCopy.arc.title);
     press(new RegExp(`^${onboardingCopy.arc.options[30].name}`));
     press(onboardingCopy.continue);
     // Orders: water up half a litre.
@@ -382,10 +407,46 @@ describe('Onboarding', () => {
     expect(usePreferencesStore.getState().tone).toBe('roast');
     const arc = getActiveArc(db);
     expect(arc?.lengthDays).toBe(30);
-    expect(toOrderTargets(selectArcOrders(db, arc?.id ?? -1).all()).water.full).toBe(4.5);
+    expect(toOrderTargets(selectArcOrders(db, arc?.id ?? -1).all()).water?.full).toBe(4.5);
     expect(useOnboardingStore.getState().lastStep).toBeNull();
     // Back from Today must not return into onboarding.
     expect(router.canGoBack()).toBe(false);
+  });
+
+  it('builds your own plan: suggested water and an own order, no campaign', async () => {
+    renderRouter(APP_DIR, { initialUrl: '/onboarding' });
+    const press = (label: string | RegExp) => {
+      act(() => jest.advanceTimersByTime(600)); // past the button double-tap guard
+      fireEvent.press(screen.getByLabelText(label));
+    };
+    const plan = onboardingCopy.plan;
+
+    fireEvent.press(await screen.findByLabelText(new RegExp(`^${onboardingCopy.rubicon.cross}`)));
+    await screen.findByText(plan.title);
+    expect(screen.getByLabelText(onboardingCopy.stepAccessibilityLabel(1, 4))).toBeTruthy();
+    press(new RegExp(`^${plan.water.name},`));
+    press(plan.addOwn);
+    fireEvent.changeText(await screen.findByLabelText(ordersCopy.add.nameLabel), 'Read');
+    fireEvent.changeText(screen.getByLabelText(ordersCopy.add.unitLabel), 'pages');
+    fireEvent.changeText(screen.getByLabelText(ordersCopy.add.countLabel), '10');
+    press(ordersCopy.add.save);
+    expect(await screen.findByText(plan.ownLine(10, 'pages'))).toBeTruthy();
+    press(plan.continue(2));
+    await screen.findByText(onboardingCopy.tone.title);
+    press(onboardingCopy.continue);
+    await screen.findByText(onboardingCopy.oath.title);
+    press(onboardingCopy.oath.skip);
+    await screen.findByText(onboardingCopy.selfie.title);
+    press(onboardingCopy.selfie.skip);
+
+    expect(await screen.findByText(todayCopy.ludusEyebrow('I'))).toBeTruthy();
+    const arc = getActiveArc(db)!;
+    expect(arc.kind).toBe('ludus');
+    expect(Object.keys(toOrderTargets(selectArcOrders(db, arc.id).all(), arc.kind))).toEqual(['water']);
+    // Before wake-up the rows wait behind the dawn card; the own order is saved with the arc.
+    expect(selectCustomOrdersOn(db, arc.id, toDayKey(new Date())).all()).toMatchObject([
+      { name: 'Read', unit: 'pages', min: 10, full: 10 },
+    ]);
   });
 });
 
@@ -409,7 +470,6 @@ describe('Campaign', () => {
 
     renderRouter(APP_DIR, { initialUrl: '/veni' });
     expect(await screen.findByText(todayCopy.chips.campaign(2))).toBeTruthy();
-    expect(screen.getByText('Tiro')).toBeTruthy();
     expect(screen.getByText(todayCopy.arcEyebrow('III', 'LX'))).toBeTruthy();
   });
 });
@@ -584,6 +644,7 @@ describe('Own orders', () => {
   afterEach(() => jest.restoreAllMocks());
 
   const READ = { name: 'Read', unit: 'pages', min: 10, full: 30 };
+  const GLASSES = { name: 'Water glasses', unit: 'glass', min: 3, full: 3 };
   const custom = todayCopy.customOrder;
 
   /** Every one of Vinco's four held at the minimum, straight in the database. */
@@ -594,44 +655,63 @@ describe('Own orders', () => {
     saveOrderAmount(db, today, 'workout', 15);
   }
 
-  it('adds an order from Today, refusing a full goal below the minimum', async () => {
+  it('adds an order from Today with a name, a unit and how many, refusing a bad count', async () => {
     startArc();
     markAwake();
     renderRouter(APP_DIR, { initialUrl: '/veni' });
     fireEvent.press(await screen.findByLabelText(todayCopy.addOrder));
-    fireEvent.changeText(await screen.findByLabelText(ordersCopy.add.nameLabel), 'Read');
-    fireEvent.changeText(screen.getByLabelText(ordersCopy.add.unitLabel), 'pages');
-    fireEvent.changeText(screen.getByLabelText(ordersCopy.add.minLabel), '30');
-    fireEvent.changeText(screen.getByLabelText(ordersCopy.add.fullLabel), '10');
+    fireEvent.changeText(await screen.findByLabelText(ordersCopy.add.nameLabel), 'Drink water');
+    fireEvent.changeText(screen.getByLabelText(ordersCopy.add.unitLabel), 'glass');
+    fireEvent.changeText(screen.getByLabelText(ordersCopy.add.countLabel), 'twelve');
     fireEvent.press(screen.getByLabelText(ordersCopy.add.save));
-    expect(await screen.findByText(ordersCopy.add.errors.fullBelowMin)).toBeTruthy();
+    expect(await screen.findByText(ordersCopy.add.errors.goalInvalid)).toBeTruthy();
 
-    fireEvent.changeText(screen.getByLabelText(ordersCopy.add.minLabel), '10');
-    fireEvent.changeText(screen.getByLabelText(ordersCopy.add.fullLabel), '30');
+    fireEvent.changeText(screen.getByLabelText(ordersCopy.add.countLabel), '12');
+    expect(screen.getByText(ordersCopy.add.preview(12, 'glass'))).toBeTruthy();
     act(() => jest.advanceTimersByTime(600));
     fireEvent.press(screen.getByLabelText(ordersCopy.add.save));
-    expect(await screen.findByLabelText(`Read, ${custom.line(0, 10, 30, 'pages', 'none')}`)).toBeTruthy();
-    expect(screen.getByLabelText(todayCopy.ringLabel(1, 5))).toBeTruthy();
+    expect(
+      await screen.findByLabelText(`Drink water, ${custom.line(0, 12, 12, 'glass', 'none')}`),
+    ).toBeTruthy();
+    expect(screen.getByText(todayCopy.ordersCount(1, 5))).toBeTruthy();
+  });
+
+  it('counts a small order up one per tap, and types a big one in', async () => {
+    startArc();
+    markAwake();
+    const arc = getActiveArc(db)!;
+    addCustomOrder(db, arc.id, GLASSES, toDayKey(new Date()));
+    addCustomOrder(db, arc.id, { name: 'Steps', unit: 'steps', min: 8000, full: 8000 }, toDayKey(new Date()));
+    renderRouter(APP_DIR, { initialUrl: '/veni' });
+
+    fireEvent.press(await screen.findByLabelText(`Water glasses, ${custom.line(0, 3, 3, 'glass', 'none')}`));
+    expect(await screen.findByText(custom.line(1, 3, 3, 'glass', 'none'))).toBeTruthy();
+    fireEvent(screen.getByLabelText(`Water glasses, ${custom.line(1, 3, 3, 'glass', 'none')}`), 'longPress');
+    expect(await screen.findByText(custom.line(0, 3, 3, 'glass', 'none'))).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText(`Steps, ${custom.line(0, 8000, 8000, 'steps', 'none')}`));
+    fireEvent.changeText(await screen.findByLabelText(ordersCopy.amount.label('steps')), '9000');
+    fireEvent.press(screen.getByLabelText(ordersCopy.amount.save));
+    expect(await screen.findByText(custom.line(8000, 8000, 8000, 'steps', 'full'))).toBeTruthy();
   });
 
   it('holds the day only once the own order holds too', async () => {
     startArc();
     markAwake();
     const arc = getActiveArc(db)!;
-    addCustomOrder(db, arc.id, READ, toDayKey(new Date()));
+    addCustomOrder(db, arc.id, GLASSES, toDayKey(new Date()));
     holdVincoFour();
     renderRouter(APP_DIR, { initialUrl: '/veni' });
 
-    const row = await screen.findByLabelText(`Read, ${custom.line(0, 10, 30, 'pages', 'none')}`);
-    expect(screen.getByLabelText(todayCopy.ringLabel(4, 5))).toBeTruthy();
+    const row = await screen.findByLabelText(`Water glasses, ${custom.line(0, 3, 3, 'glass', 'none')}`);
     expect(screen.queryByText(todayCopy.sealCard.heldTitle)).toBeNull();
 
-    fireEvent.press(row);
-    expect(await screen.findByText(custom.line(10, 10, 30, 'pages', 'min'))).toBeTruthy();
+    for (let tap = 0; tap < 3; tap += 1) {
+      fireEvent.press(screen.getByLabelText(new RegExp('^Water glasses, ')));
+    }
+    expect(await screen.findByText(custom.line(3, 3, 3, 'glass', 'full'))).toBeTruthy();
+    expect(row).toBeTruthy();
     expect(await screen.findByText(todayCopy.sealCard.heldTitle)).toBeTruthy();
-
-    fireEvent(screen.getByLabelText(`Read, ${custom.line(10, 10, 30, 'pages', 'min')}`), 'longPress');
-    expect(await screen.findByText(custom.line(0, 10, 30, 'pages', 'none'))).toBeTruthy();
   });
 
   it('stands an order down from the orders screen: counts today, gone tomorrow', async () => {
@@ -648,12 +728,10 @@ describe('Own orders', () => {
 });
 
 describe('Daily selfie', () => {
-  it('takes the daily selfie from the Today tile and saves the weight', async () => {
+  it('takes the daily selfie from the quick logs and saves the weight', async () => {
     startArc();
     renderRouter(APP_DIR, { initialUrl: '/veni' });
-    fireEvent.press(
-      await screen.findByLabelText(`${proofCopy.todayTile.title}, ${proofCopy.todayTile.notTaken}`),
-    );
+    fireEvent.press(await screen.findByLabelText(todayCopy.quickLogs.selfie));
     fireEvent.press(await screen.findByLabelText(proofCopy.camera.takeSelfie));
     // The check: the shot waits for "Looks right" before it is saved.
     expect(await screen.findByText(proofCopy.camera.reviewQuestionFirst)).toBeTruthy();
@@ -669,9 +747,8 @@ describe('Daily selfie', () => {
     fireEvent.changeText(screen.getByLabelText(proofCopy.daily.weightLabel), '72,5');
     act(() => jest.advanceTimersByTime(600));
     fireEvent.press(screen.getByLabelText(proofCopy.daily.done));
-    expect(
-      await screen.findByLabelText(`${proofCopy.todayTile.title}, ${proofCopy.todayTile.taken}`),
-    ).toBeTruthy();
+    expect(await screen.findByLabelText(todayCopy.quickLogs.selfieDone)).toBeTruthy();
+    expect(await screen.findByLabelText(todayCopy.quickLogs.weightDone('72.5'))).toBeTruthy();
     expect(getDayLog(db, toDayKey(new Date()))?.weightKg).toBe(72.5);
   });
 });

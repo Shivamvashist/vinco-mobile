@@ -87,17 +87,20 @@ src/
     _layout.tsx        fonts, splash, store-fed ThemeProvider, status bar
     index.tsx          entry redirect
     (tabs)/            Veni, Vidi, Vici and their custom tab bar layout
-    onboarding/        Rubicon, arc, orders, tone, oath, selfie
+    settings.tsx       stack screens opened from the user menu (also permissions, plan, guard, aurora, forum)
+    onboarding/        Rubicon, plan (your daily orders), arc, orders, tone, oath, selfie
     dev/               dev-only screens (theme lab: long-press the Vici tab)
   components/          shared UI, one component per file, no barrel
     navigation/        TabBar
-    today/             TaskRow, WorkoutSheet, StampOverlay, SelfieTile, SealDayCard, TruceBanner, TodoTile
-    orders/            AddOrderSheet
-    proof/             WeightTile, WeightSheet
-    tasks/             TaskItemRow, CarryOverCard, AddTaskSheet
+    menu/              UserMenu (the user button on Today)
+    today/             OrderList, TaskRow, QuickLogs, WorkoutSheet, StampOverlay, SealDayCard, TruceBanner, TodayTodo
+    orders/            AddOrderSheet, OrderAmountSheet, PlanOrderCard
+    proof/             WeightSheet, CaloriesSheet
+    tasks/             TaskItemRow, TaskSheet, TaskSheets
     onboarding/        FlowLayout, QuoteCarousel, RiverLines, TypingPreview, OathRecorder
-    progress/          StatTile, MonthCalendar, WeekBarChart, WeightChart, Commentarii
-    arc/               ArcJourney, RankCard, SettingsRow, RetreatSheet
+    progress/          StatTile, MonthCalendar, WeekBarChart, BodyChart, Commentarii, DaySummarySheet
+    arc/               ArcJourney, RankCard, RetreatSheet
+    settings/          SettingsGroup, SettingsRow and the settings sheets
     campaign/          Column
     dayCard/           DayCard
   theme/               design system: tokens, palettes, themes, feedback (see DESIGN-SYSTEM.md)

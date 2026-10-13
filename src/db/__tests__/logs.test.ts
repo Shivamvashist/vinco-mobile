@@ -67,6 +67,7 @@ describe('day logs', () => {
     updateDayLog(db, DAY, { wokeAt: '2026-10-17T01:04:00.000Z' });
     updateDayLog(db, DAY, { stampedAt: '2026-10-17T15:00:00.000Z' });
     expect(getDayLog(db, DAY)).toEqual({
+      calories: null,
       day: DAY,
       wokeAt: '2026-10-17T01:04:00.000Z',
       sleptAt: null,

@@ -33,19 +33,6 @@ export const proofCopy = {
     done: 'Done',
   },
 
-  todayTile: {
-    title: "Today's selfie",
-    notTaken: 'Take it now: 10 seconds, stays on this phone',
-    taken: 'Taken. See you tomorrow.',
-  },
-
-  weightTile: {
-    title: 'Body weight',
-    notLogged: 'Log it: kilograms, any time today',
-    last: (kg: string, dayLabel: string): string => `Last: ${kg} kg on ${dayLabel}`,
-    today: (kg: string): string => `${kg} kg today`,
-  },
-
   weightSheet: {
     title: 'Body weight',
     body: 'Weigh at the same time each day for a fair trend. Only weekly averages matter.',
@@ -55,6 +42,22 @@ export const proofCopy = {
     clear: 'Clear today',
     cancel: 'Not now',
   },
+
+  caloriesSheet: {
+    title: 'Calories',
+    body: 'Optional. Your total for today, in kcal. It shows beside your weight in Vidi.',
+    label: 'Calories today (kcal)',
+    placeholder: 'e.g. 1850',
+    add: (kcal: number): string => `+${kcal}`,
+    addLabel: (kcal: number): string => `Add ${kcal} kcal`,
+    invalid: 'Enter a whole number up to 10000.',
+    save: 'Save calories',
+    clear: 'Clear today',
+    cancel: 'Not now',
+  },
+
+  /** Calories as shown: "1,850". */
+  kcal: (value: number): string => Math.round(value).toLocaleString('en-IN'),
 
   /** The timelapse player and its entry points. Neutral: it shows change, never judges it. */
   reel: {
@@ -73,11 +76,6 @@ export const proofCopy = {
     /** What a screen reader says for the frame on screen. */
     frameAccessibility: (date: string, index: number, total: number): string =>
       `Selfie from ${date}, ${index} of ${total}`,
-    arcTile: {
-      title: 'Watch your campaign',
-      ludusTitle: 'Watch your training',
-      detail: (frames: number): string => `${frames} selfies, one after another`,
-    },
     allCard: {
       title: 'All your proof',
       detail: (frames: number, since: string): string =>

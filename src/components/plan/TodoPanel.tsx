@@ -8,7 +8,6 @@ import { createStyles } from '@/theme';
 import { Button } from '../Button';
 import { Card } from '../Card';
 import { SectionHeader } from '../SectionHeader';
-import { CarryOverCard } from '../tasks/CarryOverCard';
 import { TaskItemRow } from '../tasks/TaskItemRow';
 import { ToneLine } from '../ToneLine';
 import { Txt } from '../Txt';
@@ -20,14 +19,13 @@ export type TodoPanelProps = {
 };
 
 /**
- * The whole to-do list: carry-over, every day, today, tomorrow. Tap to tick, the cross to
+ * The whole to-do list: every day, today (unfinished ones from earlier days included), tomorrow. Tap to tick, the cross to
  * remove, press and hold to edit (rename, how often, make it an order). Never affects sealing.
  */
 export function TodoPanel({ tasks, onAdd, onEdit }: TodoPanelProps) {
   const styles = useStyles();
   const tone = usePreferencesStore((state) => state.tone);
-  const isEmpty =
-    tasks.daily.length + tasks.todayTasks.length + tasks.tomorrowTasks.length + tasks.carryOver.length === 0;
+  const isEmpty = tasks.daily.length + tasks.todayTasks.length + tasks.tomorrowTasks.length === 0;
 
   const renderItems = (items: readonly TaskItem[], kind: 'daily' | 'today' | 'tomorrow') =>
     items.map((item) => (
@@ -66,12 +64,6 @@ export function TodoPanel({ tasks, onAdd, onEdit }: TodoPanelProps) {
             {tasksCopy.saveError}
           </Txt>
         </Card>
-      ) : null}
-
-      {tasks.carryOver.length > 0 ? (
-        <View style={styles.block}>
-          <CarryOverCard tasks={tasks.carryOver} today={tasks.today} onResolve={tasks.resolve} />
-        </View>
       ) : null}
 
       {tasks.isLoaded && isEmpty ? (

@@ -25,9 +25,31 @@ export const onboardingCopy = {
     crossSublabel: 'Begin your arc',
   },
 
+  /** Step I for everyone: the user's own daily orders, or a ready-made campaign. */
+  plan: {
+    title: 'Your daily orders',
+    subtitle: 'An order is done every day, no matter what. Pick a few you will never skip.',
+    suggestedSection: 'Suggested by Vinco',
+    water: { name: 'Water', line: 'A litre at a time, up to 4 L a day' },
+    workout: { name: 'Workout', line: '15 minutes holds it, 40 conquers it' },
+    add: 'Add',
+    added: 'Added',
+    ownSection: 'Your own',
+    ownEmpty: 'Reading, steps, study: anything you count. Give it a unit and how many a day.',
+    addOwn: 'Add your own order',
+    ownLine: (count: number, unit: string): string => `${count}${unit ? ` ${unit}` : ''} a day`,
+    removeOwn: (name: string): string => `Remove ${name}`,
+    noneYet: 'No orders yet? That is fine. Add them from Today whenever you are ready.',
+    continue: (count: number): string =>
+      count === 0 ? 'Continue' : `Continue with ${count} ${plural(count, 'order', 'orders')}`,
+    campaign: 'Choose a ready-made campaign',
+    campaignHint: "30, 60 or 90 days with Vinco's four orders, and a streak to protect",
+  },
+
   arc: {
     title: 'How long is your campaign?',
-    subtitle: 'It starts today. Pick a length, or pick free training with no streak at all.',
+    subtitle:
+      "Vinco's four orders, every day, starting today. Miss one and the campaign falls, unless you call a Truce.",
     options: {
       30: {
         name: 'First campaign',
@@ -45,14 +67,6 @@ export const onboardingCopy = {
         quip: 'Bold. The Senate has been notified.',
       },
     } satisfies Record<ArcLength, { name: string; description: string; quip: string }>,
-    /** The open plan: no length, no streak (stored as the 'ludus' arc kind). */
-    ludus: {
-      name: 'Free training',
-      description: 'No streak, no fall. Same orders, at your own pace.',
-      quip: 'Same orders, no pressure. Start a campaign whenever you are ready.',
-      summary: (todayLabel: string): string =>
-        `Day I is today, ${todayLabel}. No end date, and a missed day is just a day off.`,
-    },
     mostChosen: 'Most chosen',
     summary: (todayLabel: string, endLabel: string): string =>
       `Day I is today, ${todayLabel}. Your arc ends ${endLabel}.`,
@@ -62,8 +76,6 @@ export const onboardingCopy = {
     title: 'Your orders',
     subtitle:
       'Four non-negotiables, every day. Tune the numbers; the orders stay. Hitting the minimum keeps your campaign alive.',
-    subtitleLudus:
-      'Four non-negotiables, every day. Tune the numbers; the orders stay. Hitting the minimum holds the day.',
     holdLabel: 'Hold the line',
     conquerLabel: 'Conquer',
     requiredLabel: 'Required order',
@@ -129,7 +141,7 @@ export const onboardingCopy = {
 
   oath: {
     title: 'Take the oath',
-    body: 'Why are you doing this? Say it out loud, in your own voice. Vinco plays it back on Day X, the day most people quit.',
+    body: 'Where do you see yourself in three months? Say it out loud, in your own voice. Listen back twice a day when you need it.',
     prompts: (arcLength: number): string[] => [
       'Who are you doing this for?',
       `What does Day ${arcLength} you look like?`,
@@ -143,8 +155,8 @@ export const onboardingCopy = {
     stopRecording: 'Stop recording',
     sealedTitle: 'Oath sealed',
     sealedDetail: (seconds: number): string =>
-      `0:${String(seconds).padStart(2, '0')} recorded. It opens on Day X.`,
-    sealedResumed: 'Recorded. It opens on Day X.',
+      `0:${String(seconds).padStart(2, '0')} recorded. Listen to it from your menu, twice a day.`,
+    sealedResumed: 'Recorded. Listen to it from your menu, twice a day.',
     recordAgain: 'Record again',
     skip: 'Skip for now',
     permissionDenied:

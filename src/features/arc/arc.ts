@@ -21,8 +21,8 @@ export const ARC_LENGTHS = [30, 60, 90] as const;
 
 export type ArcLength = (typeof ARC_LENGTHS)[number];
 
-/** The oath opens on Day X: the day most people quit. */
-export const OATH_PLAYBACK_DAY = 10;
+/** The oath can be heard from Day I, this many times a day (morning and night). Since 13 Oct. */
+export const OATH_PLAYS_PER_DAY = 2;
 
 /**
  * Roman milestones along an arc's journey line: Day I, then every ten days, then the last day.

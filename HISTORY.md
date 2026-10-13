@@ -4,15 +4,17 @@ The memory of this project. Any AI model or developer joining should read this, 
 
 ---
 
-## Snapshot (as of 10 Oct 2026)
+## Snapshot (as of 14 Oct 2026)
 
 **Phase:** Early Access (tracker only, all on the phone, no backend). Closed-test build due **12 Oct 2026**, Early Access **2 Nov 2026**.
 
-**Done:** Steps 1 to 5 and 7 to 11, most of 12 and 13, and **Wave 2** ([docs/WAVE-2.md](docs/WAVE-2.md)): the Ludus (open training), own orders and to-dos switched on with one "How often?" sheet, the Forum and the Aerarium on the local ledger, a fourth tab (Castra, Settings), Vici rebuilt (record, treasury, decorations, past arcs, what next), quieter tab sound with the seal and stamp always on, layouts that fit every phone, the guard levels and Aurora in preview with native bridges, and the backend plan ([docs/BACKEND-PLAN.md](docs/BACKEND-PLAN.md)).
+**Done:** Steps 1 to 5 and 7 to 11, most of 12 and 13, and **Wave 2** ([docs/docs-v1.0.0/WAVE-2.md](docs/docs-v1.0.0/WAVE-2.md), archived): the Ludus (open training), own orders and to-dos switched on with one "How often?" sheet, the Forum and the Aerarium on the local ledger, a fourth tab (Castra, Settings), Vici rebuilt (record, treasury, decorations, past arcs, what next), quieter tab sound with the seal and stamp always on, layouts that fit every phone, the guard levels and Aurora in preview with native bridges, and the backend plan ([docs/BACKEND-PLAN.md](docs/BACKEND-PLAN.md)).
 
-**Next:** the native parts (development build, Aurora then the Vigil: [docs/GUARDIANS.md](docs/GUARDIANS.md)), local nudges with the three-a-day cap and step one (Step 12), hardening (Step 14). Step 6 (first Play build) is blocked on the Play account. Before any backend: UUIDs, `updated_at`, `deleted_at` and an outbox on the synced tables (BACKEND-PLAN section 8).
+**Wave 3 (13 to 14 Oct, [docs/TASKS-2026-10-13.md](docs/TASKS-2026-10-13.md)):** onboarding starts from your own orders (free training) with a ready-made campaign as the second choice; a clean Today (user menu, quick logs for selfie, weight and calories, done orders sink, a run nudge in free training); Settings, permissions and the oath (twice a day) in the user menu, three tabs; to-dos carry over by themselves; Vidi's weight chart gains calories, and every calendar day opens a summary; sizes follow the phone's width; sounds off by default.
 
-**What runs today:** first launch opens onboarding (Rubicon; a 30, 60 or 90 day campaign or the Ludus; orders with wake time; tone; oath; first selfie with the DAY I stamp). Four tabs: **Veni** (dawn card and wake sheet, orders with own orders, seal card and VINCO stamp on a conquered day, proof, the to-do inline, chips including the purse), **Vidi** (stats, calendar, Commentarii), **Vici** (the arc or the Ludus, rank, record, treasury, decorations, every selfie, past arcs, moving between a campaign and the Ludus), **Castra** (tone, appearance, sounds, vibration, selfie outline, orders and to-dos, wake-up time, guard level, Aurora, oath, version, the retreat, dev mode). Other screens: `/forum`, `/plan`, `/guard`, `/aurora`, `/selfie`, `/timelapse`, `/day-card`, `/campaign-lost`. A broken campaign opens the campaign-lost screen once; the Ludus never does.
+**Next:** try Wave 3 on the phone; local reminders with `expo-notifications`; the native parts (development build, Aurora then the Vigil: [docs/GUARDIANS.md](docs/GUARDIANS.md)), local nudges with the three-a-day cap and step one (Step 12), hardening (Step 14). Step 6 (first Play build) is blocked on the Play account. Before any backend: UUIDs, `updated_at`, `deleted_at` and an outbox on the synced tables (BACKEND-PLAN section 8).
+
+**What runs today:** first launch opens onboarding (Rubicon; **your daily orders**: suggested water and workout plus your own, then tone, oath, first selfie; or "Choose a ready-made campaign": 30, 60 or 90 days, Vinco's four tuned, then the same steps). Three tabs: **Veni** (user button and menu, chips, quick logs, dawn card and wake sheet, orders with done ones sinking, a water suggestion when there are none, seal card and VINCO stamp on a conquered day, the to-do), **Vidi** (stats, calendar with a day summary on tap, Commentarii with weight and calories), **Vici** (the arc or free training, rank, record, treasury, decorations, every selfie, past arcs). Stack screens: `/settings` (Castra), `/permissions`, `/forum`, `/plan`, `/guard`, `/aurora`, `/selfie`, `/timelapse`, `/day-card`, `/campaign-lost`. A broken campaign opens the campaign-lost screen once; the Ludus never does.
 
 ### Architecture
 
@@ -87,6 +89,8 @@ Answer when convenient; work continues with the safe default shown.
 
 ### Noticed, not done
 
+- `app/(tabs)/veni.tsx` is about 485 lines after Wave 3 (under the 500 limit). If it grows, move the quick-log list and the no-orders card into their own components.
+- `useSealFinishedDays` runs in the tab layout. Screens over the tabs (Settings) keep it running, but a direct link into a stack screen would not seal until the tabs mount.
 - Template leftovers not used by the app: `assets/images/react-logo*.png`, `expo-badge*.png`, `expo-logo.png`, `logo-glow.png`, `tutorial-web.png`, `tabIcons/`; packages `@expo/ui`, `expo-glass-effect`, `expo-symbols`, `expo-web-browser`, `expo-device`. Remove when convenient (`expo-device` may be useful later).
 - `docs/v1-reference/` (the plan HTML) still describes the weekly Truce; it's a reference snapshot, left as is. PLAN.md is updated.
 - `assets/images/android-icon-background.png` is no longer referenced (the adaptive icon uses a background colour). Delete with the other template leftovers.
@@ -101,6 +105,25 @@ Answer when convenient; work continues with the safe default shown.
 ---
 
 ## Milestone log
+
+### 14 Oct 2026: docs brought up to Wave 3
+
+- Archived the finished Wave 2 plan to `docs/docs-v1.0.0/WAVE-2.md` (with a note on what Wave 3 changed); links updated.
+- Updated DAY-FLOW (Today layout, quick logs, own order counting, day summary, body chart, sounds), ORDERS-AND-TASKS (orders per arc, own order form, limit 6, auto carry-over, user menu), UI-KIT (Wave 3 components, scaled sizes), DESIGN-SYSTEM (trimmed type and layout, width scaling, sounds off, essential cues), CONVENTIONS (folder tree), GUARDIANS (menu path), BUILD-STEPS (status, Wave 3), and a "changed since" note atop v1-docs/PLAN.md.
+
+### 13 to 14 Oct 2026: Wave 3, orders-first onboarding and a clean Today
+
+- **Onboarding:** `/onboarding/plan` comes first (suggested water and workout, own orders with name, unit and how many; zero is allowed). Continue starts free training with exactly those orders; "Choose a ready-made campaign" goes to the length and Vinco's four. Step numbers follow the path (IV or VI steps). The oath asks about three months without a campaign.
+- **Orders per arc:** `OrderTargets` is now partial; an arc has only the Vinco orders it has rows for (a campaign keeps all four). `orderKindsIn`, `targetFor`, `addArcOrder`, `removeArcOrder` (free training only). A day with no orders never holds. Wake-up is still logged (sleep) without being an order.
+- **Own orders:** name, unit, how many, saved with min = full. A tap adds one (up to 20), a hold takes one back; bigger goals open `OrderAmountSheet`. Limit 6. Older orders with a lower minimum still work.
+- **Today:** rebuilt around `ScreenHeader` with the user button, chips (campaign or run, denarii), `QuickLogs` (selfie, weight, calories: loud until done, then a small checked circle), `OrderList` (done orders sink with a slide, count in the heading), a water suggestion in free training with no orders, the run nudge. Removed: the tone quote line, the progress ring, the proof tiles (timelapse plays from Vidi), the rank chip.
+- **User menu** (`components/menu/UserMenu.tsx`): account preview, Settings, Orders and to-dos, Permissions, Guard, Aurora, Forum, and the oath (twice a day, `useOath`, counted in the notices store). Settings is a stack screen; the Castra tab is gone. New `/permissions` (camera and microphone live, reminders and reel counter later).
+- **To-dos:** undone day tasks move to today on their own (carry-over card and copy removed).
+- **Vidi:** `BodyChart` draws weight and calories on one date axis, each on its own scale, each hideable (saved as `hiddenBodyLines` in preferences). Tapping a calendar day opens `DaySummarySheet` (orders against goals, sleep, weight, calories, selfie, to-dos ticked). Free training shows missed days as days off.
+- **Calories:** `day_logs.calories` (migration 0009), `CaloriesSheet` with +100, +250, +500.
+- **Fit real phones:** `theme/tokens/scale.ts` scales spacing, layout sizes and type to the window width (down to 84%, type less); touch targets and borders never shrink. Base sizes trimmed (buttons 52, rows shorter, title 28) and font-size caps lowered.
+- **Sounds:** off by default for new installs; `recordStop` (the oath locking in) joins the seal and stamp as always-on.
+- Tests: 445 passing (new: arcs per-arc orders, day results with no orders, calories, scale, onboarding own plan, quick logs, done orders sink, own order counting, menu, permissions, free training suggestions and removal, auto carry-over).
 
 ### 13 Oct 2026: backend plan, `vinco-backend` repo laid out
 
@@ -162,7 +185,7 @@ Answer when convenient; work continues with the safe default shown.
 
 ### 10 Oct 2026: Wave 2 (1/9 to 3/9): sounds, fit every phone, Settings tab
 
-- Plan for the whole wave: [docs/WAVE-2.md](docs/WAVE-2.md) (Ludus, to-dos, Forum, Settings and Vici, sounds, responsive, guard levels and Aurora, backend).
+- Plan for the whole wave: [docs/docs-v1.0.0/WAVE-2.md](docs/docs-v1.0.0/WAVE-2.md) (Ludus, to-dos, Forum, Settings and Vici, sounds, responsive, guard levels and Aurora, backend).
 - **Sounds:** new `whisper` tier (-17 dBFS) for the tab whoosh, shorter and narrower. `FeedbackSet.essential` (`seal`, `stamp`) play even with Sounds off; the phone's silent mode still mutes them. Test: `src/theme/__tests__/feedback.test.tsx`.
 - **Fit every phone:** onboarding step II stacks the minimum and the "Conquer" stepper below 420 dp (divided by font scale); stepper values shrink to fit instead of "2...". `SelfieCapture` has `fill` (frame flexes, shutter always visible) and otherwise a frame height from the window (50%, 220 to 420). Onboarding step V (`FlowLayout scroll={false}`) and the daily selfie (before the shot) don't scroll. The timelapse frame flexes. Rule added to CONVENTIONS section 7.
 - **Settings tab:** fourth tab "Castra · Settings" (`(tabs)/settings.tsx`, `settingsCopy`). Groups: You (tone, appearance, sounds with the always-on note, vibration, selfie outline), Your day (wake-up time, new `setArcWakeTime`), Your oath, About (version, dev mode), Journey (Sound the retreat), dev tools. `components/settings/`: `SettingsGroup` (draws the lines between rows), `SettingsRow` (moved from `arc/`, now with `detail`), `ToneSheet`, `AppearanceSheet`, `OutlineSheet`, `WakeTimeSheet`. Vici lost its settings (rebuilt later in this wave).

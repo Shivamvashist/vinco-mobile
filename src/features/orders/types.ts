@@ -19,7 +19,14 @@ export type OrderTarget = {
   step: number;
 };
 
-export type OrderTargets = Record<OrderKind, OrderTarget>;
+/**
+ * The Vinco orders an arc has, with their goals. A campaign has all four; free training has only
+ * the ones the user picked (any of them, or none). A kind missing here doesn't count toward a day.
+ */
+export type OrderTargets = Partial<Record<OrderKind, OrderTarget>>;
+
+/** All four orders' goals: a campaign's, and the defaults. */
+export type AllOrderTargets = Record<OrderKind, OrderTarget>;
 
 /** Today's amount for each order. */
 export type OrderAmounts = Record<OrderKind, number>;

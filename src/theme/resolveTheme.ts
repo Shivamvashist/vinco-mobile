@@ -1,5 +1,6 @@
 import { motion } from './tokens/motion';
 import { radius } from './tokens/radius';
+import { getTypeScale, scaleLayout, scaleSpace, scaleTypeScale } from './tokens/scale';
 import { layout, space } from './tokens/spacing';
 import { createTypeScale } from './tokens/typography';
 import type { ColorMode, SchemeName, Theme, ThemeDefinition } from './types';
@@ -18,8 +19,11 @@ export function resolveSchemeName(colorMode: ColorMode, systemScheme: string | n
   return FALLBACK_SCHEME;
 }
 
-/** Builds the full theme object components read. */
-export function buildTheme(definition: ThemeDefinition, scheme: SchemeName): Theme {
+/**
+ * Builds the full theme object components read.
+ * @param sizeScale from getSizeScale(window width): shrinks spacing, sizes and type on narrow phones
+ */
+export function buildTheme(definition: ThemeDefinition, scheme: SchemeName, sizeScale = 1): Theme {
   const colorScheme = definition.schemes[scheme];
   return {
     id: definition.id,
@@ -28,10 +32,11 @@ export function buildTheme(definition: ThemeDefinition, scheme: SchemeName): The
     colors: colorScheme.colors,
     statusBarStyle: colorScheme.statusBarStyle,
     fonts: definition.fonts.families,
-    type: createTypeScale(definition.fonts.families),
-    space,
+    type: scaleTypeScale(createTypeScale(definition.fonts.families), getTypeScale(sizeScale)),
+    sizeScale,
+    space: scaleSpace(space, sizeScale),
     radius,
-    layout,
+    layout: scaleLayout(layout, sizeScale),
     motion,
   };
 }

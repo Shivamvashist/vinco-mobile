@@ -1,11 +1,10 @@
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 import { tasksCopy } from '@/copy';
 import type { TaskItem, Tasks } from '@/hooks/useTasks';
 import { createStyles, useFeedback } from '@/theme';
 
 import { Button } from '../Button';
-import { Icon } from '../Icon';
 import { SectionHeader } from '../SectionHeader';
 import { TaskItemRow } from '../tasks/TaskItemRow';
 import { Txt } from '../Txt';
@@ -24,8 +23,8 @@ export type TodayTodoProps = {
 const copy = tasksCopy.today;
 
 /**
- * The to-do on Today: every-day tasks, then today's, one tap to tick and a long press to edit.
- * Leftovers from earlier days are one line that opens the full list. Never affects sealing.
+ * The to-do on Today: open tasks first, done ones sink. One tap to tick, a long press to edit.
+ * A day task left undone moves to the next day by itself. Never affects sealing.
  */
 export function TodayTodo({ tasks, onAdd, onEdit, onOpenAll }: TodayTodoProps) {
   const styles = useStyles();
@@ -39,25 +38,7 @@ export function TodayTodo({ tasks, onAdd, onEdit, onOpenAll }: TodayTodoProps) {
     <>
       <SectionHeader title={copy.section} />
       <View style={styles.list}>
-        {tasks.carryOver.length > 0 ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={copy.carryOver(tasks.carryOver.length)}
-            onPress={() => {
-              play('tap');
-              onOpenAll();
-            }}
-            style={({ pressed }) => [styles.carry, pressed && styles.pressed]}
-          >
-            <Icon name="history" color="accent" />
-            <Txt variant="caption" color="text" style={styles.carryText}>
-              {copy.carryOver(tasks.carryOver.length)}
-            </Txt>
-          </Pressable>
-        ) : null}
-        {items.length === 0 && tasks.carryOver.length === 0 ? (
-          <Txt variant="caption">{copy.empty}</Txt>
-        ) : null}
+        {items.length === 0 ? <Txt variant="caption">{copy.empty}</Txt> : null}
         {shown.map((item) => (
           <TaskItemRow
             key={item.task.id}
@@ -98,18 +79,5 @@ export function TodayTodo({ tasks, onAdd, onEdit, onOpenAll }: TodayTodoProps) {
 
 const useStyles = createStyles((theme) => ({
   list: { gap: theme.space.sm },
-  carry: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.space.sm,
-    minHeight: theme.layout.minTouchTarget,
-    paddingHorizontal: theme.layout.cardPadding,
-    borderRadius: theme.radius.md,
-    borderWidth: theme.layout.borderWidth,
-    borderColor: theme.colors.accentBorder,
-    backgroundColor: theme.colors.accentTint,
-  },
-  carryText: { flex: 1 },
-  pressed: { opacity: 0.8 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space.sm },
 }));

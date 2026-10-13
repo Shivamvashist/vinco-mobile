@@ -1,6 +1,8 @@
 # Wave 2: the plan
 
-Seven pieces of work asked for on 10 Oct 2026, planned UX first. Each section says what the user sees, the rules, and where it lives in code. Build order is at the end. Related specs: [ORDERS-AND-TASKS.md](ORDERS-AND-TASKS.md), [GUARDIANS.md](GUARDIANS.md) (Pax, Vigil, Guard, Imperium and Aurora), [BACKEND-PLAN.md](BACKEND-PLAN.md).
+> **Archived 14 Oct 2026.** Built in full on 10 Oct. Wave 3 ([TASKS-2026-10-13.md](../TASKS-2026-10-13.md)) changed parts of it: onboarding now starts from orders (no free training card on the arc step), Settings moved from a fourth tab into the user menu on Today, and to-dos carry over by themselves. Still accurate for the Forum, the Aerarium and the rebuilt Vici.
+
+Seven pieces of work asked for on 10 Oct 2026, planned UX first. Each section says what the user sees, the rules, and where it lives in code. Build order is at the end. Related specs: [ORDERS-AND-TASKS.md](../ORDERS-AND-TASKS.md), [GUARDIANS.md](../GUARDIANS.md) (Pax, Vigil, Guard, Imperium and Aurora), [BACKEND-PLAN.md](../BACKEND-PLAN.md).
 
 ## 1. Free training (the open plan, no streak)
 
@@ -105,7 +107,7 @@ Buying: tap an item, a sheet shows price, balance after and the limits, then **"
 
 ## 7. Guard levels and Aurora (base now, native later)
 
-Full plan in [GUARDIANS.md](GUARDIANS.md). Built now: the types, pure rules, saved settings, the Settings screens (preview state) and the bridge interfaces that native modules will fill later.
+Full plan in [GUARDIANS.md](../GUARDIANS.md). Built now: the types, pure rules, saved settings, the Settings screens (preview state) and the bridge interfaces that native modules will fill later.
 
 ## Build order
 

@@ -9,7 +9,10 @@ import {
   DEFAULT_ORDER_TARGETS,
   EMPTY_ORDER_AMOUNTS,
   getOrderStatus,
+  orderKindsIn,
   removeStep,
+  sortConqueredLast,
+  targetFor,
 } from '..';
 
 const water = DEFAULT_ORDER_TARGETS.water;
@@ -101,5 +104,21 @@ describe('going past the full goal', () => {
     const bigMeals = { min: 1, full: 9, step: 1 };
     expect(maxAmountFor('meal', bigMeals)).toBe(9);
     expect(clampAmount(9, bigMeals, 2)).toBe(9);
+  });
+});
+
+describe('orders an arc has', () => {
+  it('lists only the kinds present, in order, and sorts finished orders last', () => {
+    expect(
+      orderKindsIn({ workout: DEFAULT_ORDER_TARGETS.workout, water: DEFAULT_ORDER_TARGETS.water }),
+    ).toEqual(['water', 'workout']);
+    expect(targetFor({}, 'meal')).toEqual(DEFAULT_ORDER_TARGETS.meal);
+    const rows = [
+      { key: 'a', status: 'full' as const },
+      { key: 'b', status: 'none' as const },
+      { key: 'c', status: 'min' as const },
+      { key: 'd', status: 'full' as const },
+    ];
+    expect(sortConqueredLast(rows).map((row) => row.key)).toEqual(['b', 'c', 'a', 'd']);
   });
 });

@@ -33,6 +33,21 @@ describe('getDayResult', () => {
     expect(getDayResult(partial, DEFAULT_ORDER_TARGETS, true)).toBe('truce');
     expect(getDayResult(held, DEFAULT_ORDER_TARGETS, true)).toBe('held');
   });
+
+  it('counts only the orders the arc has (free training picks its own)', () => {
+    const waterOnly = { water: DEFAULT_ORDER_TARGETS.water };
+    const none = { water: 0, wake: 0, meal: 0, workout: 0 };
+    expect(getDayResult({ ...none, water: 4 }, waterOnly, false)).toBe('conquered');
+    expect(getDayResult({ ...none, water: 1 }, waterOnly, false)).toBe('held');
+    expect(getDayResult(none, waterOnly, false)).toBe('missed');
+    expect(getDayResult(none, waterOnly, false, ['full'])).toBe('missed');
+    expect(getDayResult({ ...none, water: 4 }, waterOnly, false, ['full'])).toBe('conquered');
+  });
+
+  it('never holds a day with no orders at all', () => {
+    expect(getDayResult(conquered, {}, false)).toBe('missed');
+    expect(getDayResult(conquered, {}, false, ['full'])).toBe('conquered');
+  });
 });
 
 describe('campaigns', () => {

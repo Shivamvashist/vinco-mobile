@@ -18,8 +18,8 @@ export default function RubiconScreen() {
   const setLastStep = useOnboardingStore((state) => state.setLastStep);
 
   const handleCross = () => {
-    setLastStep('arc');
-    router.push('/onboarding/arc');
+    setLastStep('plan');
+    router.push('/onboarding/plan');
   };
 
   return (

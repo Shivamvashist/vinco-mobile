@@ -11,7 +11,7 @@ import { Txt } from '@/components/Txt';
 import { onboardingCopy } from '@/copy';
 import { FULL_GOAL_RANGES, WAKE_TIME_RANGE } from '@/features/orders';
 import { formatClockMinutes } from '@/lib/dates';
-import { ONBOARDING_STEPS, useOnboardingStore } from '@/stores';
+import { getStepPosition, useOnboardingStore } from '@/stores';
 import { createStyles, useTheme } from '@/theme';
 
 const copy = onboardingCopy.orders;
@@ -22,7 +22,7 @@ const copy = onboardingCopy.orders;
  */
 const SIDE_BY_SIDE_MIN_WIDTH = 420;
 
-/** Step II: the four orders. Minimums are fixed; full goals and the wake-up time can be tuned. */
+/** Campaign path, step III: Vinco's four orders. Minimums are fixed; full goals and the wake-up time can be tuned. */
 export default function OrdersScreen() {
   const styles = useStyles();
   const fullGoals = useOnboardingStore((state) => state.fullGoals);
@@ -30,17 +30,17 @@ export default function OrdersScreen() {
   const setFullGoal = useOnboardingStore((state) => state.setFullGoal);
   const setWakeMinutes = useOnboardingStore((state) => state.setWakeMinutes);
   const setLastStep = useOnboardingStore((state) => state.setLastStep);
-  const arcKind = useOnboardingStore((state) => state.arcKind);
+  const position = getStepPosition('orders', 'campaign');
 
   useEffect(() => setLastStep('orders'), [setLastStep]);
 
   return (
     <FlowLayout
-      step={2}
-      totalSteps={ONBOARDING_STEPS.length}
+      step={position.step}
+      totalSteps={position.total}
       backHref="/onboarding/arc"
       title={copy.title}
-      subtitle={arcKind === 'ludus' ? copy.subtitleLudus : copy.subtitle}
+      subtitle={copy.subtitle}
       footer={<Button label={copy.accept} onPress={() => router.push('/onboarding/tone')} />}
     >
       <View style={styles.list}>

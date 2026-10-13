@@ -1,7 +1,8 @@
 import type { FontFamilies, TypeScale } from '../types';
 
 /**
- * Builds the type scale for a theme's fonts. Sizes and line heights come from the UI prototype.
+ * Builds the type scale for a theme's fonts. Sizes and line heights come from the UI prototype,
+ * trimmed for real phones. Font-size caps keep the phone's larger text settings from breaking rows.
  * Display face (Marcellus in Vinco) is for big moments only; everything else uses the body face.
  */
 export function createTypeScale(fonts: FontFamilies): TypeScale {
@@ -26,26 +27,26 @@ export function createTypeScale(fonts: FontFamilies): TypeScale {
     /** Big stats: reel count, minutes. */
     display: {
       fontFamily: fonts.display,
-      fontSize: 40,
-      lineHeight: 46,
+      fontSize: 36,
+      lineHeight: 42,
       defaultColor: 'text',
-      maxFontSizeMultiplier: 1.2,
+      maxFontSizeMultiplier: 1.15,
     },
     /** Screen titles. */
     title: {
       fontFamily: fonts.display,
-      fontSize: 30,
-      lineHeight: 36,
+      fontSize: 28,
+      lineHeight: 34,
       defaultColor: 'text',
-      maxFontSizeMultiplier: 1.3,
+      maxFontSizeMultiplier: 1.2,
     },
     /** Sheet titles, rank names, card headings. */
     heading: {
       fontFamily: fonts.display,
-      fontSize: 22,
-      lineHeight: 28,
+      fontSize: 21,
+      lineHeight: 27,
       defaultColor: 'text',
-      maxFontSizeMultiplier: 1.4,
+      maxFontSizeMultiplier: 1.25,
     },
     /** Latin tab names, small display labels. */
     headingSmall: {
@@ -53,15 +54,15 @@ export function createTypeScale(fonts: FontFamilies): TypeScale {
       fontSize: 17,
       lineHeight: 22,
       defaultColor: 'text',
-      maxFontSizeMultiplier: 1.3,
+      maxFontSizeMultiplier: 1.2,
     },
     /** Stoic and Latin quotes. */
     quote: {
       fontFamily: fonts.display,
-      fontSize: 20,
-      lineHeight: 27,
+      fontSize: 19,
+      lineHeight: 26,
       defaultColor: 'text',
-      maxFontSizeMultiplier: 1.4,
+      maxFontSizeMultiplier: 1.25,
     },
     /** Small inscription above a title: "DAY XII OF LX". */
     eyebrow: {
@@ -71,29 +72,29 @@ export function createTypeScale(fonts: FontFamilies): TypeScale {
       letterSpacing: 1.6,
       textTransform: 'uppercase',
       defaultColor: 'textMuted',
-      maxFontSizeMultiplier: 1.4,
+      maxFontSizeMultiplier: 1.25,
     },
     bodyLarge: {
       fontFamily: fonts.body,
       fontSize: 16,
       lineHeight: 24,
       defaultColor: 'text',
-      maxFontSizeMultiplier: 1.6,
+      maxFontSizeMultiplier: 1.35,
     },
     body: {
       fontFamily: fonts.body,
       fontSize: 15,
       lineHeight: 22,
       defaultColor: 'text',
-      maxFontSizeMultiplier: 1.6,
+      maxFontSizeMultiplier: 1.35,
     },
     /** Task names, card titles. */
     label: {
       fontFamily: fonts.bodySemiBold,
-      fontSize: 16,
-      lineHeight: 22,
+      fontSize: 15,
+      lineHeight: 21,
       defaultColor: 'text',
-      maxFontSizeMultiplier: 1.5,
+      maxFontSizeMultiplier: 1.3,
     },
     /** Inline actions like "+1 L". */
     labelSmall: {
@@ -101,21 +102,21 @@ export function createTypeScale(fonts: FontFamilies): TypeScale {
       fontSize: 13,
       lineHeight: 18,
       defaultColor: 'text',
-      maxFontSizeMultiplier: 1.5,
+      maxFontSizeMultiplier: 1.3,
     },
     button: {
       fontFamily: fonts.bodyBold,
       fontSize: 16,
       lineHeight: 20,
       defaultColor: 'text',
-      maxFontSizeMultiplier: 1.3,
+      maxFontSizeMultiplier: 1.2,
     },
     caption: {
       fontFamily: fonts.body,
       fontSize: 13,
       lineHeight: 18,
       defaultColor: 'textMuted',
-      maxFontSizeMultiplier: 1.6,
+      maxFontSizeMultiplier: 1.35,
     },
     /** Section headers: "YOUR ORDERS". */
     overline: {
@@ -125,7 +126,7 @@ export function createTypeScale(fonts: FontFamilies): TypeScale {
       letterSpacing: 0.4,
       textTransform: 'uppercase',
       defaultColor: 'textMuted',
-      maxFontSizeMultiplier: 1.4,
+      maxFontSizeMultiplier: 1.25,
     },
     /** Tab plain labels, legends, badges. */
     micro: {
@@ -133,7 +134,7 @@ export function createTypeScale(fonts: FontFamilies): TypeScale {
       fontSize: 11,
       lineHeight: 14,
       defaultColor: 'textMuted',
-      maxFontSizeMultiplier: 1.4,
+      maxFontSizeMultiplier: 1.3,
     },
   };
 }

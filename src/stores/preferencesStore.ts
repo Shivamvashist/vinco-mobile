@@ -5,11 +5,19 @@ import type { Tone } from '@/features/tone';
 import type { ThemePreferences } from '@/theme';
 
 import { createPhoneStorage } from './phoneStorage';
-import { clampGhostOpacity, DEFAULT_PREFERENCES, sanitizePreferences, type Preferences } from './preferences';
+import {
+  type BodyLine,
+  clampGhostOpacity,
+  DEFAULT_PREFERENCES,
+  sanitizePreferences,
+  type Preferences,
+} from './preferences';
 
 type PreferencesActions = {
   setTone: (tone: Tone) => void;
   setGhostOpacity: (opacity: number) => void;
+  /** Shows or hides one line on Vidi's body chart. */
+  toggleBodyLine: (line: BodyLine) => void;
   updateThemePreferences: (patch: Partial<ThemePreferences>) => void;
   /** Back to the defaults (dev reset only: a journey reset keeps preferences). */
   reset: () => void;
@@ -30,6 +38,12 @@ export const usePreferencesStore = create<PreferencesStore>()(
       ...DEFAULT_PREFERENCES,
       setTone: (tone) => set({ tone }),
       setGhostOpacity: (opacity) => set({ ghostOpacity: clampGhostOpacity(opacity) }),
+      toggleBodyLine: (line) =>
+        set((state) => ({
+          hiddenBodyLines: state.hiddenBodyLines.includes(line)
+            ? state.hiddenBodyLines.filter((hidden) => hidden !== line)
+            : [...state.hiddenBodyLines, line],
+        })),
       updateThemePreferences: (patch) => set(sanitizePreferences(patch)),
       reset: () => set(DEFAULT_PREFERENCES),
     }),
@@ -37,9 +51,18 @@ export const usePreferencesStore = create<PreferencesStore>()(
       name: 'vinco.preferences',
       version: STORE_VERSION,
       storage: createPhoneStorage<Preferences>(),
-      partialize: ({ tone, themeId, colorMode, soundEnabled, hapticsEnabled, ghostOpacity }) => ({
+      partialize: ({
+        tone,
+        themeId,
+        colorMode,
+        soundEnabled,
+        hapticsEnabled,
+        ghostOpacity,
+        hiddenBodyLines,
+      }) => ({
         tone,
         ghostOpacity,
+        hiddenBodyLines,
         themeId,
         colorMode,
         soundEnabled,

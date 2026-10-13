@@ -5,7 +5,6 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
-import { Icon } from '@/components/Icon';
 import { FlowLayout } from '@/components/onboarding/FlowLayout';
 import { OptionCard } from '@/components/OptionCard';
 import { Txt } from '@/components/Txt';
@@ -13,37 +12,37 @@ import { commonCopy, onboardingCopy } from '@/copy';
 import { ARC_LENGTHS, arcEndDay } from '@/features/arc';
 import { useToday } from '@/hooks/useToday';
 import { toRoman } from '@/lib/toRoman';
-import { ONBOARDING_STEPS, useOnboardingStore } from '@/stores';
+import { getStepPosition, useOnboardingStore } from '@/stores';
 import { createStyles, useReduceMotion } from '@/theme';
 
 const copy = onboardingCopy.arc;
 
-/** Step I: how long the campaign runs, or the Ludus (no streak, no end). It starts today. */
+/** Campaign path, step II: how long the campaign runs. It starts today, with Vinco's four orders. */
 export default function ArcLengthScreen() {
   const styles = useStyles();
   const today = useToday();
   const reduceMotion = useReduceMotion();
   const arcLength = useOnboardingStore((state) => state.arcLength);
-  const arcKind = useOnboardingStore((state) => state.arcKind);
   const setArcLength = useOnboardingStore((state) => state.setArcLength);
-  const chooseLudus = useOnboardingStore((state) => state.chooseLudus);
-  const isLudus = arcKind === 'ludus';
   const setLastStep = useOnboardingStore((state) => state.setLastStep);
+  const position = getStepPosition('arc', 'campaign');
 
-  useEffect(() => setLastStep('arc'), [setLastStep]);
+  // Reaching this screen means a campaign: the length shown is the one chosen.
+  useEffect(() => {
+    setLastStep('arc');
+    setArcLength(useOnboardingStore.getState().arcLength);
+  }, [setLastStep, setArcLength]);
 
-  const summary = isLudus
-    ? copy.ludus.summary(commonCopy.dayLabel(today, today))
-    : copy.summary(
-        commonCopy.dayLabel(today, today),
-        commonCopy.dayLabel(arcEndDay(today, arcLength), today),
-      );
+  const summary = copy.summary(
+    commonCopy.dayLabel(today, today),
+    commonCopy.dayLabel(arcEndDay(today, arcLength), today),
+  );
 
   return (
     <FlowLayout
-      step={1}
-      totalSteps={ONBOARDING_STEPS.length}
-      backHref="/onboarding"
+      step={position.step}
+      totalSteps={position.total}
+      backHref="/onboarding/plan"
       title={copy.title}
       subtitle={copy.subtitle}
       footer={<Button label={onboardingCopy.continue} onPress={() => router.push('/onboarding/orders')} />}
@@ -51,7 +50,7 @@ export default function ArcLengthScreen() {
       <View style={styles.options} accessibilityRole="radiogroup">
         {ARC_LENGTHS.map((length) => {
           const option = copy.options[length];
-          const isSelected = !isLudus && arcLength === length;
+          const isSelected = arcLength === length;
           return (
             <OptionCard
               key={length}
@@ -71,26 +70,12 @@ export default function ArcLengthScreen() {
             />
           );
         })}
-        <OptionCard
-          title={copy.ludus.name}
-          description={copy.ludus.description}
-          selected={isLudus}
-          onPress={chooseLudus}
-          leading={
-            <View style={[styles.numerals, styles.ludusIcon]}>
-              <Icon name="workout" color={isLudus ? 'accent' : 'textMuted'} />
-            </View>
-          }
-        />
       </View>
       <Card style={styles.summary}>
         <Txt variant="body">{summary}</Txt>
-        <Animated.View
-          key={isLudus ? 'ludus' : arcLength}
-          entering={reduceMotion ? undefined : FadeInDown.duration(400)}
-        >
+        <Animated.View key={arcLength} entering={reduceMotion ? undefined : FadeInDown.duration(400)}>
           <Txt variant="caption" style={styles.quip}>
-            {isLudus ? copy.ludus.quip : copy.options[arcLength].quip}
+            {copy.options[arcLength].quip}
           </Txt>
         </Animated.View>
       </Card>
@@ -101,7 +86,6 @@ export default function ArcLengthScreen() {
 const useStyles = createStyles((theme) => ({
   options: { gap: theme.space.md },
   numerals: { width: theme.layout.ringSize },
-  ludusIcon: { alignItems: 'flex-start' },
   summary: { marginTop: theme.space.xl },
   quip: { marginTop: theme.space.xs },
 }));

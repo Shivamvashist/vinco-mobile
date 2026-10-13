@@ -26,17 +26,6 @@ export const tasksCopy = {
     roast: 'Your to-do list is emptier than your excuses are creative. Add one thing. Just one.',
   } satisfies ToneLines,
 
-  carryOver: {
-    title: (count: number): string =>
-      count === 1 ? '1 task left unfinished' : `${count} tasks left unfinished`,
-    body: 'Carry them over to today, or drop them. Nothing moves without your say.',
-    from: (dayLabel: string): string => `From ${dayLabel}`,
-    carry: 'Carry over',
-    drop: 'Drop',
-    carryAll: 'Carry all over',
-    dropAll: 'Drop all',
-  },
-
   add: {
     open: 'Add a task',
     title: 'Add to your day',
@@ -52,8 +41,8 @@ export const tasksCopy = {
     whenHint: {
       daily:
         'Shows every day until your campaign ends (in free training, until you remove it). A plan, not an order: it never decides the day.',
-      today: 'Just for today. A plan, not an order.',
-      tomorrow: 'Plan ahead: it shows up tomorrow.',
+      today: 'Just for today. Not done by midnight? It moves to tomorrow by itself.',
+      tomorrow: 'Plan ahead: it shows up tomorrow, and keeps moving on until done.',
       order: 'Counts toward the day: it must hold its minimum for the day to be held. Next, set its goals.',
     } satisfies Record<TaskWhen | 'order', string>,
     orderFull: (max: number): string => `You already have ${max} own orders. Stand one down to add another.`,
@@ -93,10 +82,6 @@ export const tasksCopy = {
     add: 'Add to your day',
     seeAll: (count: number): string => `See all (${count})`,
     manage: 'Manage',
-    carryOver: (count: number): string =>
-      count === 1
-        ? '1 task left from an earlier day · Sort it out'
-        : `${count} tasks left from earlier days · Sort them out`,
     empty: 'Nothing planned. Add one thing you want done today.',
   },
 } as const;

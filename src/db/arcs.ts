@@ -1,7 +1,14 @@
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
 import { arcEndDay, type ArcKind, LUDUS_LENGTH_DAYS } from '@/features/arc';
-import { DEFAULT_ORDER_TARGETS, ORDER_KINDS, type OrderTargets } from '@/features/orders';
+import {
+  DEFAULT_ORDER_TARGETS,
+  ORDER_KINDS,
+  type OrderKind,
+  orderKindsIn,
+  type OrderTarget,
+  type OrderTargets,
+} from '@/features/orders';
 import { daysBetween, type DayKey } from '@/lib/dates';
 
 import type { AppDatabase } from './database';
@@ -15,12 +22,13 @@ export type NewArc = {
   startDay: DayKey;
   /** 'HH:MM', 24-hour. */
   wakeTime: string;
+  /** The Vinco orders this arc has: all four for a campaign, the user's pick for free training. */
   targets: OrderTargets;
   oathPath: string | null;
 };
 
 /**
- * Starts a new arc with its four orders, in one transaction. A campaign also gets its starting
+ * Starts a new arc with its Vinco orders (all four for a campaign), in one transaction. A campaign also gets its starting
  * Truce (a Ludus has nothing to protect). Any arc still active ends first, so there is only ever
  * one active arc: marked finished if it reached its last day, otherwise abandoned.
  * @returns the new arc's id
@@ -40,9 +48,12 @@ export function createArc(db: AppDatabase, arc: NewArc): number {
       })
       .returning({ id: arcs.id })
       .get();
-    tx.insert(arcOrders)
-      .values(ORDER_KINDS.map((kind) => ({ arcId: created.id, kind, ...arc.targets[kind] })))
-      .run();
+    const rows = orderKindsIn(arc.targets).map((orderKind) => ({
+      arcId: created.id,
+      kind: orderKind,
+      ...(arc.targets[orderKind] as OrderTarget),
+    }));
+    if (rows.length > 0) tx.insert(arcOrders).values(rows).run();
     if (kind === 'campaign') grantTruce(tx, arc.startDay, 'arc_start');
     return created.id;
   });
@@ -76,7 +87,9 @@ export function startNextArc(db: AppDatabase, next: NextArc, now: Date = new Dat
   return db.transaction((tx) => {
     const current = getActiveArc(tx);
     if (!current) throw new Error('No active arc to move on from.');
-    const targets = toOrderTargets(selectArcOrders(tx, current.id).all());
+    // A campaign always has Vinco's four; free training keeps the orders the user had.
+    const carried = toOrderTargets(selectArcOrders(tx, current.id).all(), current.kind);
+    const targets = next.kind === 'campaign' ? { ...DEFAULT_ORDER_TARGETS, ...carried } : carried;
     const ownOrders = tx
       .select()
       .from(customOrders)
@@ -149,9 +162,12 @@ export function selectArcOrders(db: AppDatabase, arcId: number) {
   return db.select().from(arcOrders).where(eq(arcOrders.arcId, arcId));
 }
 
-/** Turns an arc's order rows into targets. Missing or broken rows fall back to the defaults. */
-export function toOrderTargets(rows: readonly ArcOrderRow[]): OrderTargets {
-  const targets: OrderTargets = { ...DEFAULT_ORDER_TARGETS };
+/**
+ * Turns an arc's order rows into targets. A campaign always has all four: missing or broken rows
+ * fall back to the defaults. Free training has only the orders it has rows for.
+ */
+export function toOrderTargets(rows: readonly ArcOrderRow[], kind: ArcKind = 'campaign'): OrderTargets {
+  const targets: OrderTargets = kind === 'campaign' ? { ...DEFAULT_ORDER_TARGETS } : {};
   for (const row of rows) {
     const isKnownKind = (ORDER_KINDS as readonly string[]).includes(row.kind);
     const isSane =
@@ -162,4 +178,30 @@ export function toOrderTargets(rows: readonly ArcOrderRow[]): OrderTargets {
     if (isKnownKind && isSane) targets[row.kind] = { min: row.min, full: row.full, step: row.step };
   }
   return targets;
+}
+
+/**
+ * Adds one of Vinco's orders to an arc (free training: picking a suggestion). Counts from today:
+ * days already sealed keep their stored result. Does nothing if the arc already has it.
+ */
+export function addArcOrder(db: AppDatabase, arcId: number, kind: OrderKind, target?: OrderTarget): void {
+  db.insert(arcOrders)
+    .values({ arcId, kind, ...(target ?? DEFAULT_ORDER_TARGETS[kind]) })
+    .onConflictDoNothing()
+    .run();
+}
+
+/**
+ * Removes one of Vinco's orders from a free-training arc. Throws for a campaign, whose four
+ * orders are fixed. Logs stay (days are kept by date); sealed days keep their stored result.
+ */
+export function removeArcOrder(db: AppDatabase, arcId: number, kind: OrderKind): void {
+  db.transaction((tx) => {
+    const arc = tx.select().from(arcs).where(eq(arcs.id, arcId)).get();
+    if (!arc) return;
+    if (arc.kind === 'campaign') throw new Error('A campaign keeps its four orders.');
+    tx.delete(arcOrders)
+      .where(and(eq(arcOrders.arcId, arcId), eq(arcOrders.kind, kind)))
+      .run();
+  });
 }

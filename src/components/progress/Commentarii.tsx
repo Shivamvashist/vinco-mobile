@@ -3,10 +3,11 @@ import { View } from 'react-native';
 
 import { commonCopy, proofCopy, progressCopy } from '@/copy';
 import { chartMax, type LogKind, LOG_KINDS, type WeekBar, weekStartOf } from '@/features/logs';
-import type { OrderTargets } from '@/features/orders';
+import { type OrderTargets, targetFor } from '@/features/orders';
 import { SLEEP } from '@/features/sleep';
 import { useCommentarii } from '@/hooks/useCommentarii';
 import { addDays, type DayKey } from '@/lib/dates';
+import { BODY_LINES, usePreferencesStore } from '@/stores';
 import { createStyles } from '@/theme';
 
 import { Button } from '../Button';
@@ -15,7 +16,7 @@ import { ChoiceChip } from '../ChoiceChip';
 import { IconButton } from '../IconButton';
 import { Txt } from '../Txt';
 import { WeekBarChart } from './WeekBarChart';
-import { WeightChart } from './WeightChart';
+import { BodyChart, type BodySeries } from './BodyChart';
 
 export type CommentariiProps = {
   arc: { startDay: DayKey; lengthDays: number };
@@ -108,7 +109,7 @@ type WeekLogProps = {
 function WeekLog({ kind, logs, targets, today }: WeekLogProps) {
   const styles = useStyles();
   const { bars, summary } = logs[kind];
-  const goal = kind === 'sleep' ? SLEEP.targetMinutes : targets[kind].full;
+  const goal = kind === 'sleep' ? SLEEP.targetMinutes : targetFor(targets, kind).full;
   const values = bars.map((bar) => bar.value);
   const dayName = (day: DayKey) => commonCopy.dayLabel(day, today);
 
@@ -129,8 +130,8 @@ function WeekLog({ kind, logs, targets, today }: WeekLogProps) {
     kind === 'sleep'
       ? { title: copy.sleep.title, target: copy.sleep.target(commonCopy.duration(SLEEP.targetMinutes)) }
       : kind === 'water'
-        ? { title: copy.water.title, target: copy.water.target(litres(targets.water.full)) }
-        : { title: copy.workout.title, target: copy.workout.target(targets.workout.full) };
+        ? { title: copy.water.title, target: copy.water.target(litres(targetFor(targets, 'water').full)) }
+        : { title: copy.workout.title, target: copy.workout.target(targetFor(targets, 'workout').full) };
 
   const insight =
     summary.loggedDays === 0 || summary.average == null
@@ -179,33 +180,85 @@ type WeightLogProps = {
   onLogWeight: () => void;
 };
 
-/** Body weight: the weekly trend in words, the line across the arc, and the log button. */
+/**
+ * Body: the weekly weight trend in words, then weight and calories as two lines across the arc
+ * (either can be hidden), and the log button. Calories only appear once some are logged.
+ */
 function WeightLog({ today, logs, todayWeightKg, onLogWeight }: WeightLogProps) {
   const styles = useStyles();
   const weight = copy.weight;
+  const body = copy.body;
+  const hiddenLines = usePreferencesStore((state) => state.hiddenBodyLines);
+  const toggleBodyLine = usePreferencesStore((state) => state.toggleBodyLine);
   const { thisWeek, change } = logs.weightTrend;
-  const hasAny = logs.weights.length > 0;
+  const hasAny = logs.weights.length > 0 || logs.calories.length > 0;
+  const range = (values: readonly number[]) => [Math.min(...values), Math.max(...values)] as const;
+
+  const allSeries: BodySeries[] = [];
+  if (logs.weights.length > 0) {
+    const [low, high] = range(logs.weights.map((point) => point.kg));
+    allSeries.push({
+      key: 'weight',
+      points: logs.weights.map((point) => ({ day: point.day, value: point.kg })),
+      color: 'accent',
+      rangeLabel: weight.range(proofCopy.kg(low), proofCopy.kg(high)),
+    });
+  }
+  if (logs.calories.length > 0) {
+    const [low, high] = range(logs.calories.map((point) => point.kcal));
+    allSeries.push({
+      key: 'calories',
+      points: logs.calories.map((point) => ({ day: point.day, value: point.kcal })),
+      color: 'currency',
+      rangeLabel: body.caloriesRange(proofCopy.kcal(low), proofCopy.kcal(high)),
+      isDashed: true,
+    });
+  }
+  const shown = allSeries.filter((line) => !hiddenLines.some((hidden) => hidden === line.key));
 
   return (
     <>
       <Card variant="sunk" bordered style={styles.chartCard}>
-        <Txt variant="label">{weight.title}</Txt>
+        <Txt variant="label">{body.title}</Txt>
         {hasAny ? (
           <>
-            <Txt variant="heading" style={styles.headline}>
-              {thisWeek != null ? weight.thisWeek(proofCopy.kg(thisWeek)) : weight.noneThisWeek}
-            </Txt>
-            <Txt variant="caption">
-              {change != null ? weight.change(change) : thisWeek != null ? weight.firstWeek : ''}
-            </Txt>
-            <View style={styles.chart}>
-              <WeightChart
-                points={logs.weights}
-                formatDay={(day) => commonCopy.dayLabel(day, today)}
-                formatRange={(low, high) => weight.range(proofCopy.kg(low), proofCopy.kg(high))}
-                accessibilityLabel={weight.chartLabel(logs.weights.length)}
-              />
+            {logs.weights.length > 0 ? (
+              <>
+                <Txt variant="heading" style={styles.headline}>
+                  {thisWeek != null ? weight.thisWeek(proofCopy.kg(thisWeek)) : weight.noneThisWeek}
+                </Txt>
+                <Txt variant="caption">
+                  {change != null ? weight.change(change) : thisWeek != null ? weight.firstWeek : ''}
+                </Txt>
+              </>
+            ) : null}
+            <View style={[styles.chips, styles.lineChips]}>
+              {BODY_LINES.filter((line) => allSeries.some((series) => series.key === line)).map((line) => (
+                <ChoiceChip
+                  key={line}
+                  label={body.lines[line]}
+                  selected={!hiddenLines.includes(line)}
+                  onPress={() => toggleBodyLine(line)}
+                  isMulti
+                />
+              ))}
             </View>
+            <View style={styles.chart}>
+              {shown.length > 0 ? (
+                <BodyChart
+                  series={shown}
+                  formatDay={(day) => commonCopy.dayLabel(day, today)}
+                  accessibilityLabel={body.chartLabel(logs.weights.length, logs.calories.length)}
+                />
+              ) : (
+                <Txt variant="caption">{body.allHidden}</Txt>
+              )}
+            </View>
+            {logs.calories.length === 0 ? (
+              <Txt variant="micro" style={styles.headline}>
+                {body.caloriesEmpty}
+              </Txt>
+            ) : null}
           </>
         ) : (
           <Txt variant="body" color="textMuted" style={styles.headline}>
@@ -227,6 +280,7 @@ function WeightLog({ today, logs, todayWeightKg, onLogWeight }: WeightLogProps) 
 const useStyles = createStyles((theme) => ({
   eyebrow: { marginBottom: theme.space.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space.sm },
+  lineChips: { marginTop: theme.space.md },
   weekNav: {
     flexDirection: 'row',
     alignItems: 'center',

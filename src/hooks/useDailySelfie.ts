@@ -14,14 +14,18 @@ export type DailySelfie = {
   /** Newest first, today included once taken. */
   recent: { day: DayKey; selfiePath: string }[];
   weightKg: number | null;
+  /** Calories logged today (whole kcal), or null. */
+  calories: number | null;
   /** The most recent weight logged up to today, with its day. */
   latestWeight: { day: DayKey; kg: number } | null;
   /** Saves today's selfie and deletes the photo it replaces. */
   saveSelfie: (path: string) => void;
   saveWeight: (kg: number | null) => void;
+  /** Saves today's calories (a whole number), or null to clear them. */
+  saveCalories: (kcal: number | null) => void;
 };
 
-/** Today's selfie, the ghost, the recent strip and the latest weight, live from the database. */
+/** Today's selfie, the ghost, the recent strip, the weight and calories, live from the database. */
 export function useDailySelfie(today: DayKey): DailySelfie {
   const yesterday = addDays(today, -1);
   const todayLog = useLiveQuery(selectDayLog(db, today), [today]);
@@ -37,6 +41,7 @@ export function useDailySelfie(today: DayKey): DailySelfie {
       row.selfiePath ? [{ day: row.day, selfiePath: row.selfiePath }] : [],
     ),
     weightKg: todayLog.data[0]?.weightKg ?? null,
+    calories: todayLog.data[0]?.calories ?? null,
     latestWeight: weightRow?.weightKg != null ? { day: weightRow.day, kg: weightRow.weightKg } : null,
     saveSelfie: (path) => {
       const previous = getDayLog(db, today)?.selfiePath ?? null;
@@ -45,5 +50,6 @@ export function useDailySelfie(today: DayKey): DailySelfie {
       if (previous && previous !== path) deleteMediaFile(previous);
     },
     saveWeight: (kg) => updateDayLog(db, today, { weightKg: kg }),
+    saveCalories: (kcal) => updateDayLog(db, today, { calories: kcal }),
   };
 }

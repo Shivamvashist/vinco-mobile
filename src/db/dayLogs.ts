@@ -46,6 +46,15 @@ export function selectWeightsBetween(db: AppDatabase, from: DayKey, to: DayKey) 
     .orderBy(asc(dayLogs.day));
 }
 
+/** The query for every day with calories logged between two days, oldest first. Pass to useLiveQuery. */
+export function selectCaloriesBetween(db: AppDatabase, from: DayKey, to: DayKey) {
+  return db
+    .select({ day: dayLogs.day, calories: dayLogs.calories })
+    .from(dayLogs)
+    .where(and(isNotNull(dayLogs.calories), gte(dayLogs.day, from), lte(dayLogs.day, to)))
+    .orderBy(asc(dayLogs.day));
+}
+
 /** The query for every selfie between two days, oldest first: the timelapse frames. */
 export function selectSelfiesBetween(db: AppDatabase, from: DayKey, to: DayKey) {
   return db

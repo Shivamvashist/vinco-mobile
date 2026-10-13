@@ -1,5 +1,11 @@
 import { commonCopy, todayCopy } from '@/copy';
-import type { OrderKind } from '@/features/orders';
+import {
+  type CustomOrder,
+  isTapCounted,
+  type OrderKind,
+  type OrderStatus,
+  targetFor,
+} from '@/features/orders';
 import { sleepMinutesFromMoments } from '@/features/sleep';
 import type { TodayOrders } from '@/hooks/useTodayOrders';
 import { formatClockTime } from '@/lib/dates';
@@ -15,7 +21,7 @@ export type OrderRowContent = {
 /** The words and bar for one order row on Today, from today's state. */
 export function describeOrderRow(kind: OrderKind, orders: TodayOrders): OrderRowContent {
   const amount = orders.amounts[kind];
-  const target = orders.targets[kind];
+  const target = targetFor(orders.targets, kind);
   const status = orders.statuses[kind];
 
   switch (kind) {
@@ -58,4 +64,22 @@ export function describeOrderRow(kind: OrderKind, orders: TodayOrders): OrderRow
       return { name: copy.name, line, action: copy.action, hint: copy.hint };
     }
   }
+}
+
+/** The words for one of the user's own orders on Today. */
+export function describeCustomOrderRow(
+  order: CustomOrder,
+  amount: number,
+  status: OrderStatus,
+): OrderRowContent {
+  const copy = todayCopy.customOrder;
+  const isTapped = isTapCounted(order);
+  return {
+    name: order.name,
+    line: copy.line(amount, order.min, order.full, order.unit, status),
+    action: copy.action(isTapped),
+    hint: copy.hint(isTapped),
+    segments:
+      isTapped && order.full > 1 ? { total: order.full, filled: Math.min(order.full, amount) } : undefined,
+  };
 }

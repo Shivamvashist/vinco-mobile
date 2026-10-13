@@ -10,7 +10,7 @@ import { TypingPreview } from '@/components/onboarding/TypingPreview';
 import { OptionCard } from '@/components/OptionCard';
 import { commonCopy, onboardingCopy, pickTone } from '@/copy';
 import { type Tone, TONES } from '@/features/tone';
-import { ONBOARDING_STEPS, useOnboardingStore, usePreferencesStore } from '@/stores';
+import { getStepPosition, useOnboardingStore, usePreferencesStore } from '@/stores';
 import { createStyles } from '@/theme';
 
 const copy = onboardingCopy.tone;
@@ -21,12 +21,14 @@ const TONE_ICONS: Record<Tone, IconName> = {
   roast: 'flame',
 };
 
-/** Step III: how Vinco talks. The preview types out a real message in the chosen tone. */
+/** How Vinco talks. The preview types out a real message in the chosen tone. */
 export default function ToneScreen() {
   const styles = useStyles();
   const tone = usePreferencesStore((state) => state.tone);
   const setTone = usePreferencesStore((state) => state.setTone);
   const setLastStep = useOnboardingStore((state) => state.setLastStep);
+  const arcKind = useOnboardingStore((state) => state.arcKind);
+  const position = getStepPosition('tone', arcKind);
   const [sceneIndex, setSceneIndex] = useState(0);
   const scene = copy.scenes[sceneIndex] ?? copy.scenes[0];
 
@@ -34,9 +36,9 @@ export default function ToneScreen() {
 
   return (
     <FlowLayout
-      step={3}
-      totalSteps={ONBOARDING_STEPS.length}
-      backHref="/onboarding/orders"
+      step={position.step}
+      totalSteps={position.total}
+      backHref={arcKind === 'campaign' ? '/onboarding/orders' : '/onboarding/plan'}
       title={copy.title}
       subtitle={copy.subtitle}
       footer={<Button label={onboardingCopy.continue} onPress={() => router.push('/onboarding/oath')} />}

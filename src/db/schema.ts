@@ -85,6 +85,8 @@ export const dayLogs = sqliteTable('day_logs', {
   selfiePath: text('selfie_path'),
   /** Optional body weight in kg, logged with the selfie. Shown only as a weekly trend. */
   weightKg: real('weight_kg'),
+  /** Optional calories eaten that day (whole kcal), logged from Today. Shown with the weight. */
+  calories: integer('calories'),
   /** When the day was sealed (Step 9). */
   sealedAt: text('sealed_at'),
   /**

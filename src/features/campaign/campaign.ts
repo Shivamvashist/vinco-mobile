@@ -5,12 +5,13 @@ import {
   areAllOrdersHeld,
   type OrderAmounts,
   type OrderStatus,
+  orderKindsIn,
   type OrderTargets,
 } from '../orders';
 
 /**
  * How a finished day ended.
- * conquered: all four orders at the full goal. held: all four at least at the minimum.
+ * conquered: every order at the full goal. held: every order at least at the minimum.
  * truce: missed, but the user called a Truce to protect the campaign. missed: the campaign breaks.
  */
 export type DayResult = 'conquered' | 'held' | 'truce' | 'missed';
@@ -27,6 +28,9 @@ export function getDayResult(
   truceUsed: boolean,
   customStatuses: readonly OrderStatus[] = [],
 ): DayResult {
+  // A day with no orders at all has nothing to hold: it never counts and never gets the stamp.
+  if (orderKindsIn(targets).length === 0 && customStatuses.length === 0)
+    return truceUsed ? 'truce' : 'missed';
   const areCustomConquered = customStatuses.every((status) => status === 'full');
   const areCustomHeld = customStatuses.every((status) => status !== 'none');
   if (areAllOrdersConquered(amounts, targets) && areCustomConquered) return 'conquered';

@@ -3,7 +3,7 @@ import type { TextStyle } from 'react-native';
 
 import type { motion } from './tokens/motion';
 import type { radius } from './tokens/radius';
-import type { layout, space } from './tokens/spacing';
+import type { LayoutTokens, SpaceTokens } from './tokens/scale';
 
 /** Light or dark variant of a theme. */
 export type SchemeName = 'dark' | 'light';
@@ -182,9 +182,11 @@ export type Theme = {
   statusBarStyle: ColorScheme['statusBarStyle'];
   fonts: FontFamilies;
   type: TypeScale;
-  space: typeof space;
+  /** 1 on phones as wide as the design; less on narrow phones (tokens/scale.ts). */
+  sizeScale: number;
+  space: SpaceTokens;
   radius: typeof radius;
-  layout: typeof layout;
+  layout: LayoutTokens;
   motion: typeof motion;
 };
 

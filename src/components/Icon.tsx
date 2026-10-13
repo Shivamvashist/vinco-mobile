@@ -43,6 +43,12 @@ const ICON_PATHS = {
   dove: 'M4 14c4 0 6-2 8-6c1 3 4 5 8 5c-2 3-5 5-9 5c-3 0-5-1-7-4zM12 8c-1-2-3-3-5-3',
   plus: 'M12 5v14M5 12h14',
   edit: 'M4 20h4L19 9l-4-4L4 16zM14 6l4 4',
+  user: 'M12 12a4 4 0 1 0 0-8a4 4 0 0 0 0 8zM4.5 20a7.5 7.5 0 0 1 15 0',
+  settings:
+    'M12 15a3 3 0 1 0 0-6a3 3 0 0 0 0 6zM12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1',
+  plate:
+    'M12 19a7 7 0 1 0 0-14a7 7 0 0 0 0 14zM12 15a3 3 0 1 0 0-6a3 3 0 0 0 0 6zM3 4v5M3 9v11M21 4c-1.5 1-2 3-2 5h2v11',
+  key: 'M8 15a4 4 0 1 0 0-8a4 4 0 0 0 0 8zM11.5 11H21M18 11v3M15 11v2',
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

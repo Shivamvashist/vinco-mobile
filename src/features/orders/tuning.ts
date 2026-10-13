@@ -1,7 +1,7 @@
 import { roundToHundredths } from '@/lib/progress';
 
 import { DEFAULT_ORDER_TARGETS } from './orders';
-import type { OrderTargets } from './types';
+import type { AllOrderTargets } from './types';
 
 type Range = { min: number; max: number; step: number };
 
@@ -38,7 +38,7 @@ export function fitToRange(value: unknown, range: Range, fallback: number): numb
 }
 
 /** The arc's four targets from the tuned full goals. Every value is validated. */
-export function buildOrderTargets(fullGoals: Partial<FullGoals>): OrderTargets {
+export function buildOrderTargets(fullGoals: Partial<FullGoals>): AllOrderTargets {
   const water = fitToRange(fullGoals.water, FULL_GOAL_RANGES.water, DEFAULT_FULL_GOALS.water);
   const meal = fitToRange(fullGoals.meal, FULL_GOAL_RANGES.meal, DEFAULT_FULL_GOALS.meal);
   const workout = fitToRange(fullGoals.workout, FULL_GOAL_RANGES.workout, DEFAULT_FULL_GOALS.workout);

@@ -2,6 +2,8 @@
 
 Plan as of 7 October 2026. The UI prototype (design canvas) shows every screen described here.
 
+> **Changed since (check these first):** onboarding starts from the user's own orders, with a ready-made campaign as the second choice, and free training is the open plan ([TASKS-2026-10-13.md](../TASKS-2026-10-13.md)); Settings, permissions and the oath sit in a user menu on Today, not in Vici; unfinished to-dos move to the next day by themselves; the oath can be heard twice a day from Day I. Current rules: [.claude/CLAUDE.md](../../.claude/CLAUDE.md) and [ORDERS-AND-TASKS.md](../ORDERS-AND-TASKS.md).
+
 ## 1. Overview
 
 **Vinco uses your phone to beat your phone.** An Android app for people running a 30, 60 or 90 day arc: four non-negotiable daily orders, a daily selfie as proof, and (from 1.0) a live reel counter that steps in when the feed has had enough of your day.
@@ -163,7 +165,7 @@ Going over the reel budget costs 15 denarii for 10 more reels, doubling each tim
 
 ### Shipping
 
-Early Access: ranks, decorations, denarii earning and the Forum on the local ledger (built 10 Oct: Truce, alarm pass "Venia", day card styles, app icons; see docs/WAVE-2.md). 1.0: the Tributum and the server ledger. 1.2: Tributum on Imperium. Open training without a streak is Free training.
+Early Access: ranks, decorations, denarii earning and the Forum on the local ledger (built 10 Oct: Truce, alarm pass "Venia", day card styles, app icons; see docs/docs-v1.0.0/WAVE-2.md). 1.0: the Tributum and the server ledger. 1.2: Tributum on Imperium. Open training without a streak is Free training.
 
 ## 10. Extras
 

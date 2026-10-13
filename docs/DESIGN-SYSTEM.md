@@ -16,7 +16,7 @@ src/theme/
   createStyles.ts      themed StyleSheet hook factory
   resolveTheme.ts      preferences to a concrete theme (pure, tested)
   contrast.ts          WCAG contrast maths (used by tests)
-  tokens/              theme-independent: spacing, radius, layout, motion, type scale builder
+  tokens/              theme-independent: spacing, radius, layout, motion, type scale builder, screen-width scale
   palettes/            colour schemes: basalt (dark), marble (light)
   themes/              core themes (vinco) and the registry
   feedback/            sound bank (expo-audio) and haptics (expo-haptics)
@@ -25,7 +25,7 @@ src/theme/
 
 A **core theme** (`ThemeDefinition`) = a dark scheme + a light scheme + fonts + feedback (sounds and haptics).
 The user's **preferences** (`ThemePreferences`) = which core theme, colour mode (`dark`, `light`, `system`), sound on/off, haptics on/off.
-The provider combines the two into the **resolved theme** that components read.
+The provider combines the two, plus the window width, into the **resolved theme** that components read.
 
 ---
 
@@ -125,22 +125,22 @@ Display face: **Marcellus**, for big moments only. Body face: **Figtree** (400, 
 | -------------- | ------------- | ---------------------- | -------------- | -------------------------- |
 | `hero`         | display       | 64 / 72, tracked       | text           | VINCO wordmark             |
 | `numeral`      | display       | 96 / 100               | text           | Day number on the day card |
-| `display`      | display       | 40 / 46                | text           | Big stats                  |
-| `title`        | display       | 30 / 36                | text           | Screen titles              |
-| `heading`      | display       | 22 / 28                | text           | Sheet titles, rank name    |
+| `display`      | display       | 36 / 42                | text           | Big stats                  |
+| `title`        | display       | 28 / 34                | text           | Screen titles              |
+| `heading`      | display       | 21 / 27                | text           | Sheet titles, rank name    |
 | `headingSmall` | display       | 17 / 22                | text           | Latin tab names            |
-| `quote`        | display       | 20 / 27                | text           | Stoic and Latin quotes     |
+| `quote`        | display       | 19 / 26                | text           | Stoic and Latin quotes     |
 | `eyebrow`      | display       | 13 / 18, caps, tracked | textMuted      | "DAY XII OF LX"            |
 | `bodyLarge`    | body          | 16 / 24                | text           | Longer reading             |
 | `body`         | body          | 15 / 22                | text           | Default                    |
-| `label`        | body semibold | 16 / 22                | text           | Task names                 |
+| `label`        | body semibold | 15 / 21                | text           | Task names                 |
 | `labelSmall`   | body semibold | 13 / 18                | text           | Inline actions "+1 L"      |
 | `button`       | body bold     | 16 / 20                | text           | Buttons                    |
 | `caption`      | body          | 13 / 18                | textMuted      | Sub-lines                  |
 | `overline`     | body semibold | 13 / 18, caps          | textMuted      | "YOUR ORDERS"              |
 | `micro`        | body          | 11 / 14                | textMuted      | Tab labels, legends        |
 
-Each variant caps how far the phone's font-size setting can enlarge it, so huge type never breaks a layout. Roman numerals are decoration only: a small eyebrow above a big Arabic number.
+Sizes are for a 412 dp wide phone; narrower phones get them a little smaller (section 5). Each variant caps how far the phone's font-size setting can enlarge it (body and caption 1.35x, labels 1.3x, titles 1.2x, the wordmark and day numeral not at all), so large system fonts never break a layout. Roman numerals are decoration only: a small eyebrow above a big Arabic number.
 
 ---
 
@@ -148,7 +148,8 @@ Each variant caps how far the phone's font-size setting can enlarge it, so huge 
 
 - **space**: `xxs 2, xs 4, sm 8, md 12, lg 16, xl 20, xxl 24, xxxl 32, huge 48, giant 64`
 - **radius**: `xs 4, sm 10, md 16 (cards), lg 24 (sheets), pill 999`
-- **layout**: `screenGutter 20, flowGutter 24, cardPadding 14, minTouchTarget 44, buttonHeight 56, buttonHeightCompact 48, tabBarHeight 76, iconSize 22, iconSizeSmall 16, buttonHeightLarge 64, chipHeight 30, choiceChipHeight 36, statusCircleSize 30, ringSize 64, ringStrokeWidth 5, barHeightThin / Regular / Thick 3 / 5 / 6, sheetPadding 22`
+- **layout**: `screenGutter 18, flowGutter 22, cardPadding 12, minTouchTarget 44, buttonHeight 52, buttonHeightCompact 44, buttonHeightLarge 58, tabBarHeight 70, iconSize 22, iconSizeSmall 16, iconTileSize 34, chipHeight 30, choiceChipHeight 36, statusCircleSize 28, ringSize 58, ringStrokeWidth 5, barHeightThin / Regular / Thick 3 / 5 / 6, sheetPadding 20` (trimmed for real phones on 13 Oct)
+- **Scaling to the phone** (`tokens/scale.ts`, 13 Oct): all of the above are design sizes for a 412 dp wide phone. The theme multiplies space and layout by `sizeScale = clamp(width / 412, 0.84, 1)` and type by a gentler share of it, so a 360 dp phone gets the same layout a little smaller. `minTouchTarget`, border widths and stamp borders never shrink. Read `theme.sizeScale` for a one-off size; never use raw pixel sizes.
 - **Animating:** `withTiming(value, themeTiming('base'))` or `themeEasing('standard')` from `@/theme`. Check `useReduceMotion()` first; when true, set the final value directly.
 - **motion**: durations `instant 100, fast 200, base 350, slow 500, slower 800` ms; easing `standard (0.2, 0.8, 0.2, 1)`; `stagger 60` ms. Quick and quiet everywhere; the stamp is the one big moment. Respect the phone's reduce-motion setting.
 
@@ -156,7 +157,7 @@ Each variant caps how far the phone's font-size setting can enlarge it, so huge 
 
 ## 6. Sound and haptics (feedback cues)
 
-Components never play a file directly. They call `play(cue)` from `useFeedback()`, and the active theme decides what sound and haptic that cue means. The user can turn sound and haptics off separately. UI sounds mix with music and stay quiet when the phone is on silent.
+Components never play a file directly. They call `play(cue)` from `useFeedback()`, and the active theme decides what sound and haptic that cue means. The user can turn sound and haptics off separately. **Sounds are off by default** (13 Oct); haptics are on. UI sounds mix with music and stay quiet when the phone is on silent.
 
 | Cue                          | When                            | Vinco sound             | Haptic           |
 | ---------------------------- | ------------------------------- | ----------------------- | ---------------- |
@@ -179,7 +180,7 @@ Components never play a file directly. They call `play(cue)` from `useFeedback()
 
 **Levels.** Each recipe keeps the prototype's shape, then the file is scaled to its tier's peak: ticks (tap, select, toggle, steps, denied) -6 dBFS, moments (win, confirm, chime, record, shutter, rise, truce) -3 dBFS, signature (stamp, cross, seal) -1.5 dBFS, whisper (whoosh) -17 dBFS (noise sounds louder than a tone at the same peak, so the tab switch is felt more than heard). Nothing clips; the stamp stays the loudest moment. Playback rewinds, then plays once the rewind lands, so rapid taps never click.
 
-**Always on.** A theme lists `feedback.essential` cues that play even with Sounds off. Vinco's are `seal` (the DAY I stamp on the first selfie) and `stamp` (a conquered day): the two moments the app is built around. The phone's own silent mode still mutes them.
+**Always on.** A theme lists `feedback.essential` cues that play even with Sounds off. Vinco's are `seal` (the DAY I stamp on the first selfie), `recordStop` (the oath locking in) and `stamp` (a conquered day): the moments the app is built around. The phone's own silent mode still mutes them.
 
 Sounds are generated from the prototype's own recipes by `scripts/generate-sounds.mjs` into `assets/sounds/vinco/`. To change a sound, edit its recipe and run `npm run sounds`.
 

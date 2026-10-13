@@ -1,8 +1,18 @@
-/** The Castra (Settings) tab: preferences, the day's setup, the oath, the retreat and dev mode. */
-import { act, fireEvent, screen } from '@testing-library/react-native';
+/** The user menu and Castra (Settings): preferences, the day's setup, the oath, the retreat and dev mode. */
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
+import { router } from 'expo-router';
 import { renderRouter } from 'expo-router/testing-library';
 
-import { arcCopy, commonCopy, devCopy, onboardingCopy, settingsCopy, tabAccessibilityLabel } from '@/copy';
+import {
+  arcCopy,
+  commonCopy,
+  devCopy,
+  menuCopy,
+  onboardingCopy,
+  permissionsCopy,
+  settingsCopy,
+  todayCopy,
+} from '@/copy';
 import { createArc, db, getActiveArc, getDayLog, getTruceReserve } from '@/db';
 import { DEFAULT_ORDER_TARGETS } from '@/features/orders';
 import { addDays, toDayKey } from '@/lib/dates';
@@ -14,13 +24,29 @@ const rows = settingsCopy.rows;
 beforeEach(resetAppState);
 
 describe('Settings', () => {
-  it('opens from its own tab', async () => {
+  it('opens from the user menu on Today', async () => {
     startArc();
     const app = renderRouter(APP_DIR, { initialUrl: '/veni' });
-    fireEvent.press(await screen.findByLabelText(tabAccessibilityLabel('settings')));
+    fireEvent.press(await screen.findByLabelText(todayCopy.menuLabel));
+    expect(await screen.findByText(menuCopy.account.name)).toBeTruthy();
+    expect(screen.getByLabelText(`${menuCopy.oath.label}, ${menuCopy.oath.none}`)).toBeTruthy();
+    const settings = menuCopy.items.settings;
+    fireEvent.press(screen.getByLabelText(`${settings.label}, ${settings.detail}`));
     expect(await screen.findByText(settingsCopy.eyebrow)).toBeTruthy();
     expect(app.getPathname()).toBe('/settings');
-    expect(screen.getByLabelText(`${rows.oath}, ${rows.oathNone}`)).toBeTruthy();
+  });
+
+  it('opens permissions from the menu', async () => {
+    startArc();
+    const app = renderRouter(APP_DIR, { initialUrl: '/veni' });
+    fireEvent.press(await screen.findByLabelText(todayCopy.menuLabel));
+    const permissions = menuCopy.items.permissions;
+    fireEvent.press(await screen.findByLabelText(`${permissions.label}, ${permissions.detail}`));
+    expect(await screen.findByText(permissionsCopy.title)).toBeTruthy();
+    expect(app.getPathname()).toBe('/permissions');
+    expect(screen.getByText(permissionsCopy.items.camera.label)).toBeTruthy();
+    // The microphone status is read from the phone, then shown.
+    await waitFor(() => expect(screen.queryByText(permissionsCopy.status.checking)).toBeNull());
   });
 
   it('changes tone and appearance from the sheets, and toggles sound', async () => {
@@ -102,7 +128,10 @@ describe('Dev mode', () => {
     startArc();
     const today = toDayKey(new Date());
     const tomorrow = addDays(today, 1);
-    renderRouter(APP_DIR, { initialUrl: '/settings' });
+    // Settings opens over the tabs, which keep sealing the days behind it.
+    renderRouter(APP_DIR, { initialUrl: '/veni' });
+    await screen.findByLabelText(todayCopy.menuLabel);
+    act(() => router.push('/settings'));
     fireEvent(await screen.findByLabelText(rows.devMode), 'valueChange', true);
     expect(await screen.findByText(devCopy.today(commonCopy.fullDateLabel(today), 0))).toBeTruthy();
 

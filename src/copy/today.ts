@@ -1,38 +1,11 @@
 import type { OrderKind, OrderStatus } from '@/features/orders';
 
 import { tabsCopy } from './tabs';
-import type { ToneLines } from './toneLines';
 
 const plural = (count: number, one: string, many: string): string => (count === 1 ? one : many);
 
 /** Litres shown without trailing zeros: 2, 2.5. */
 const litres = (value: number): string => `${Number(value.toFixed(2))}`;
-
-/** The line under the Today header, by how many orders are held. */
-const PROGRESS_LINES = [
-  {
-    philosopher: 'Small things done well make the day. Begin with one.',
-    centurion: 'Orders are posted. Move.',
-    roast:
-      "Your thumb has scrolled a marathon today and your legs haven't left the couch. Pick one order. Any order.",
-  },
-  {
-    philosopher: 'Halfway. The obstacle is the way.',
-    centurion: 'Halfway. Keep marching.',
-    roast: 'Halfway. Your phone just called its lawyer about custody of your evenings. Keep going.',
-  },
-  {
-    philosopher: 'One order remains. Finish what you started.',
-    centurion: 'One left. No excuses, soldier.',
-    roast: 'One left. The algorithm is cooking a reel so perfect it should be illegal. Finish first.',
-  },
-  {
-    philosopher: 'All orders held. Rest well, you earned it.',
-    centurion: 'Line held. Dismissed.',
-    roast:
-      'Every order held. Somewhere, an algorithm just lost its favourite customer and is crying in a car park. Same again tomorrow.',
-  },
-] as const satisfies readonly [ToneLines, ToneLines, ToneLines, ToneLines];
 
 /** The Veni (Today) tab. */
 export const todayCopy = {
@@ -78,19 +51,42 @@ export const todayCopy = {
     action: 'See your options',
   },
 
-  /** The line under the header: [under half held, half or more, one left, all held]. */
-  progressLines: PROGRESS_LINES,
-
-  /** The progress line for orders held out of the day's total (any numbers are safe). */
-  progressLine(held: number, total: number): ToneLines {
-    const remaining = total - held;
-    const index = remaining <= 0 ? 3 : remaining === 1 ? 2 : held * 2 >= total ? 1 : 0;
-    return PROGRESS_LINES[index];
-  },
-
   saveError: 'That last change could not be saved. Try again; nothing else was lost.',
 
   ringLabel: (held: number, total: number): string => `${held} of ${total} orders held`,
+  /** Beside the orders heading: "2 of 5 done". */
+  ordersCount: (done: number, total: number): string => `${done} of ${total} done`,
+  menuLabel: 'Open your menu',
+
+  /** The quick logs under the header: loud until done today, then small. */
+  quickLogs: {
+    selfie: 'Selfie',
+    selfieDone: 'Selfie taken',
+    selfieHint: "Opens the camera for today's selfie",
+    weight: 'Weight',
+    weightDone: (kg: string): string => `${kg} kg`,
+    weightHint: "Logs today's weight",
+    calories: 'Calories',
+    caloriesDone: (kcal: string): string => `${kcal} kcal`,
+    caloriesHint: "Logs today's calories",
+  },
+
+  /** Free training has no streak to lose: just a nudge to keep a run of full days going. */
+  run: {
+    chip: (days: number): string => `${days}-day run`,
+    nudge: (days: number): string => `Finish today's orders to keep your ${days}-day run going.`,
+    start: 'Finish every order today to start a run.',
+  },
+
+  /** Free training with no orders yet: one suggestion, and a way to add your own. */
+  noOrders: {
+    title: 'No orders yet',
+    body: 'Start with water, a litre at a time. Add anything else you will do every day.',
+    waterName: 'Water',
+    waterLine: 'A litre at a time, up to 4 L',
+    add: 'Add',
+    added: 'Added',
+  },
 
   orders: {
     water: {
@@ -200,18 +196,19 @@ export const todayCopy = {
 
   /** The user's own orders on Today. */
   customOrder: {
-    /** "10 of 30 pages · minimum held". */
+    /** "3 of 12 glass", "12 glass · done", or "10 of 30 pages · minimum held" for older orders. */
     line: (amount: number, min: number, full: number, unit: string, status: OrderStatus): string => {
       const goal = unit ? `${full} ${unit}` : String(full);
-      // A yes-or-no order (minimum equals full goal) has no partial step.
-      if (min === full) return status === 'full' ? 'Done · conquered' : unit ? goal : 'Once today';
-      if (status === 'full') return `${goal} · conquered`;
-      if (status === 'min') return `${amount} of ${goal} · minimum held`;
-      return `Hold ${min}, conquer ${goal}`;
+      if (status === 'full') return `${goal} · done`;
+      if (status === 'min' && min < full) return `${amount} of ${goal} · minimum held`;
+      return `${amount} of ${goal}`;
     },
-    action: (status: OrderStatus, min: number, full: number): string =>
-      status === 'none' ? (min === full ? 'Done' : 'Hold') : 'Conquer',
-    hint: 'Double tap to move up a level: minimum, then full goal. Long press to go back one.',
+    /** A small count adds one per tap; a big one (steps) is typed in. */
+    action: (isTapCounted: boolean): string => (isTapCounted ? '+1' : 'Log'),
+    hint: (isTapCounted: boolean): string =>
+      isTapCounted
+        ? 'Double tap to add one. Long press to take one back.'
+        : "Double tap to type today's amount.",
   },
 
   addOrder: 'Add an order',

@@ -5,7 +5,10 @@ import { renderRouter } from 'expo-router/testing-library';
 
 import { FEATURES } from '@/config/features';
 import { ordersCopy, settingsCopy, tasksCopy, todayCopy } from '@/copy';
+import { eq } from 'drizzle-orm';
+
 import { addTask, db, getActiveArc, selectCustomOrdersOn } from '@/db';
+import { tasks } from '@/db/schema';
 import { addDays, toDayKey } from '@/lib/dates';
 import { APP_DIR, markAwake, resetAppState, startArc } from '@/testing/routeKit';
 
@@ -84,8 +87,8 @@ describe('To-do on Today', () => {
 
     // The order step opens with the name filled in.
     expect(await screen.findByDisplayValue('Read')).toBeTruthy();
-    fireEvent.changeText(screen.getByLabelText(ordersCopy.add.minLabel), '10');
-    fireEvent.changeText(screen.getByLabelText(ordersCopy.add.fullLabel), '30');
+    fireEvent.changeText(screen.getByLabelText(ordersCopy.add.unitLabel), 'pages');
+    fireEvent.changeText(screen.getByLabelText(ordersCopy.add.countLabel), '10');
     press(ordersCopy.add.save);
 
     await waitFor(() => expect(screen.queryByLabelText(tasksCopy.checkLabel('Read', false))).toBeNull());
@@ -94,17 +97,17 @@ describe('To-do on Today', () => {
     expect(selectCustomOrdersOn(db, arc.id, toDayKey(new Date())).all()).toHaveLength(1);
   });
 
-  it('leads leftovers from yesterday to the full list to carry over or drop', async () => {
+  it('moves a task left undone yesterday on to today by itself', async () => {
     startArc();
     markAwake();
     const today = toDayKey(new Date());
     addTask(db, 'Carry me', 'today', addDays(today, -1), addDays(today, 30));
-    const app = renderRouter(APP_DIR, { initialUrl: '/veni' });
-    fireEvent.press(await screen.findByLabelText(tasksCopy.today.carryOver(1)));
-    expect(await screen.findByText(tasksCopy.carryOver.title(1))).toBeTruthy();
-    expect(app.getPathname()).toBe('/plan');
-    press(tasksCopy.carryOver.carry);
-    expect(await screen.findByText(tasksCopy.carriedOver)).toBeTruthy();
+    renderRouter(APP_DIR, { initialUrl: '/veni' });
+    expect(await screen.findByLabelText(tasksCopy.checkLabel('Carry me', false))).toBeTruthy();
+    expect(screen.getByText(tasksCopy.carriedOver)).toBeTruthy();
+    await waitFor(() =>
+      expect(db.select().from(tasks).where(eq(tasks.title, 'Carry me')).get()?.day).toBe(today),
+    );
   });
 });
 

@@ -10,12 +10,12 @@ import { commonCopy, onboardingCopy } from '@/copy';
 import { useCompleteOnboarding } from '@/hooks/useCompleteOnboarding';
 import { useToday } from '@/hooks/useToday';
 import { toRoman } from '@/lib/toRoman';
-import { ONBOARDING_STEPS, useOnboardingStore } from '@/stores';
+import { getStepPosition, useOnboardingStore } from '@/stores';
 import { createStyles, SchemeOverride, useReduceMotion } from '@/theme';
 
 const copy = onboardingCopy.selfie;
 
-/** Step V: the first selfie, stamped DAY I. Finishing creates the arc and opens Today. */
+/** The last step: the first selfie, stamped DAY I. Finishing creates the arc and opens Today. */
 export default function SelfieScreen() {
   const styles = useStyles();
   const today = useToday();
@@ -23,6 +23,7 @@ export default function SelfieScreen() {
   const arcLength = useOnboardingStore((state) => state.arcLength);
   const arcKind = useOnboardingStore((state) => state.arcKind);
   const setLastStep = useOnboardingStore((state) => state.setLastStep);
+  const position = getStepPosition('selfie', arcKind);
   const completeOnboarding = useCompleteOnboarding();
   const [selfiePath, setSelfiePath] = useState<string | null>(null);
   const [hasFinishError, setHasFinishError] = useState(false);
@@ -44,8 +45,8 @@ export default function SelfieScreen() {
 
   return (
     <FlowLayout
-      step={5}
-      totalSteps={ONBOARDING_STEPS.length}
+      step={position.step}
+      totalSteps={position.total}
       backHref="/onboarding/oath"
       title={copy.title}
       subtitle={arcKind === 'ludus' ? copy.bodyLudus : copy.body(toRoman(arcLength))}

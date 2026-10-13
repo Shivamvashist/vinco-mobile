@@ -1,12 +1,13 @@
 import * as SystemUI from 'expo-system-ui';
 import { createContext, use, useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, useWindowDimensions } from 'react-native';
 
 import { playHaptic } from './feedback/playHaptic';
 import { ReduceMotionProvider } from './ReduceMotionProvider';
 import { configureUiAudio, createSoundBank, type SoundBank } from './feedback/soundBank';
 import { buildTheme, resolveSchemeName } from './resolveTheme';
 import { getThemeDefinition, THEMES } from './themes/registry';
+import { getSizeScale } from './tokens/scale';
 import type { ColorMode, FeedbackCue, SchemeName, Theme, ThemeDefinition, ThemePreferences } from './types';
 
 type ThemeControls = {
@@ -40,7 +41,12 @@ export function ThemeProvider({ children, preferences, onPreferencesChange }: Th
   const systemScheme = useColorScheme();
   const definition = getThemeDefinition(preferences.themeId);
   const schemeName = resolveSchemeName(preferences.colorMode, systemScheme);
-  const theme = useMemo(() => buildTheme(definition, schemeName), [definition, schemeName]);
+  // Sizes follow the phone's width, so a narrow phone gets the same layout, a little smaller.
+  const sizeScale = getSizeScale(useWindowDimensions().width);
+  const theme = useMemo(
+    () => buildTheme(definition, schemeName, sizeScale),
+    [definition, schemeName, sizeScale],
+  );
 
   // Keeps the native root view (seen behind the keyboard and during transitions) on-theme.
   useEffect(() => {
@@ -121,7 +127,10 @@ type SchemeOverrideProps = {
  */
 export function SchemeOverride({ scheme, children }: SchemeOverrideProps) {
   const parent = useTheme();
-  const theme = useMemo(() => buildTheme(getThemeDefinition(parent.id), scheme), [parent.id, scheme]);
+  const theme = useMemo(
+    () => buildTheme(getThemeDefinition(parent.id), scheme, parent.sizeScale),
+    [parent.id, parent.sizeScale, scheme],
+  );
   return <ThemeContext value={theme}>{children}</ThemeContext>;
 }
 

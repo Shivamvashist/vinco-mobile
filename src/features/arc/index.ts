@@ -10,7 +10,7 @@ export {
   isArcKind,
   isArcLength,
   LUDUS_LENGTH_DAYS,
-  OATH_PLAYBACK_DAY,
+  OATH_PLAYS_PER_DAY,
   TIMELAPSE_SELFIES,
 } from './arc';
 export { type ArcSummaryInput, type PastArc, summarizePastArcs } from './history';

@@ -27,7 +27,7 @@ Rules (all levels):
 - **Alarm pass** ("Venia", bought in the Forum): stops it once without the mission.
 - Beating it on the first try pays 2 denarii and logs wake-up automatically ("I'm up" is then already done).
 
-## What's built now (10 Oct 2026)
+## What's built now (10 Oct 2026, menu since 13 Oct)
 
 Everything that doesn't need native code, so the native parts only have to plug in:
 
@@ -37,7 +37,7 @@ Everything that doesn't need native code, so the native parts only have to plug 
 | Aurora settings, next ring, missions   | `src/features/aurora/` (pure, tested)                      |
 | Saved choices (level, budget, alarm)   | `useGuardStore` (`src/stores/guardStore.ts`), persisted    |
 | The bridges native code will implement | `GuardBridge`, `AuroraBridge` (and `unsupported...` stubs) |
-| Settings screens (preview state)       | `/guard` and `/aurora`, from Settings, "Guard"             |
+| Settings screens (preview state)       | `/guard` and `/aurora`, from the user menu on Today        |
 
 The screens let the user choose now and say plainly "Arrives with the Vinco build": the choice is kept and switches on when the native part ships. Pax is the default.
 

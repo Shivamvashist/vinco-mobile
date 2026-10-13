@@ -30,7 +30,6 @@ export default function TabsLayout() {
       <Tabs.Screen name="veni" options={{ title: tabsCopy.veni.plain }} />
       <Tabs.Screen name="vidi" options={{ title: tabsCopy.vidi.plain }} />
       <Tabs.Screen name="vici" options={{ title: tabsCopy.vici.plain }} listeners={devListeners} />
-      <Tabs.Screen name="settings" options={{ title: tabsCopy.settings.plain }} />
     </Tabs>
   );
 }

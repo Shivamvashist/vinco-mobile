@@ -7,7 +7,13 @@ import { Txt } from './Txt';
 
 export type TextFieldProps = Pick<
   TextInputProps,
-  'placeholder' | 'maxLength' | 'keyboardType' | 'autoCapitalize' | 'returnKeyType' | 'onSubmitEditing'
+  | 'placeholder'
+  | 'maxLength'
+  | 'keyboardType'
+  | 'autoCapitalize'
+  | 'returnKeyType'
+  | 'onSubmitEditing'
+  | 'autoFocus'
 > & {
   /** Shown above the field and read by screen readers. */
   label: string;

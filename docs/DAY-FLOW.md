@@ -22,22 +22,27 @@ Until wake-up is logged, Today opens on one card: the **dawn card**.
 
 ## 2. The orders (Today)
 
-- One quiet line under the heading: "Tap to log. Press and hold to take one back."
-- **The VINCO stamp lands only when the day is conquered** (every order at its full goal). A day held at the minimum gets the "Line held" seal card instead, matching how the calendar records it.
+Today, top to bottom (13 Oct): the weekday with the **user button** (opens the menu: Settings, Orders and to-dos, Permissions, Guard, Aurora, the Forum, the oath), the chips (campaign, or the run in free training, and denarii), the **quick logs**, the orders, then the to-do list. No quote line, no progress ring.
 
+- Heading "Your orders" with "3 of 5 done". One quiet line under it while nothing is logged yet: "Tap to log. Press and hold to take one back."
+- **Done orders sink.** An order at its full goal slides to the bottom of the list with its mark; taking it back brings it up again.
+- **The VINCO stamp lands only when the day is conquered** (every order at its full goal). A day held at the minimum gets the "Line held" seal card instead, matching how the calendar records it. A day with no orders is never held.
 - **Extra amounts count.** Hitting the full goal is not a ceiling. Water, meals and workout can go past it (5 L on a 4 L goal), up to a sane cap (water 10 L, meals 8, workout 300 min). Over the goal reads "5 L · conquered, 1 over".
 - **Water and meals:** one tap adds one step, past the goal too. Long press removes one.
 - **Workout:** the sheet offers Hold the line, Conquer, or **an exact time** (a stepper in 5-minute steps), so a 90-minute session logs as 90.
-- Own orders and the to-do list are **switched off for now** (feature flags in `src/config/features.ts`). Their code and tests stay; switching them on brings them back.
+- **Own orders** count up: a tap adds one unit ("3 of 12 glass"), up to 20 a day. Bigger goals (10000 steps) open a small sheet to type the amount. Long press takes one back.
+- **No orders yet** (free training started with none): the dawn card, then a "No orders yet" card suggesting water (one tap adds it).
+- **Free training:** a "3-day run" chip and a nudge, "Finish today's orders to keep your 3-day run going." No Truce banner, no loss screen.
 
-## 3. Proof: selfie and body weight (Today)
+## 3. Quick logs: selfie, weight, calories (Today)
 
-Two tiles under the orders, stacked in one "Proof" section (full width reads better on narrow phones):
+Three round buttons under the chips. Each stands out (accent, label) until it's done today, then shrinks to a small ticked circle on the right, so the orders get the space.
 
-| Tile            | Not done yet                                      | Done                 |
-| --------------- | ------------------------------------------------- | -------------------- |
-| **Selfie**      | "Take today's selfie", accent border, camera icon | "Taken" with a check |
-| **Body weight** | "Log weight · last 72.5 kg"                       | "72.4 kg today"      |
+| Log          | Opens                                                         |
+| ------------ | ------------------------------------------------------------- |
+| **Selfie**   | The selfie screen                                             |
+| **Weight**   | The weight sheet (kg)                                         |
+| **Calories** | The calories sheet: whole kcal for the day, optional, neutral |
 
 ### The selfie screen
 
@@ -48,21 +53,23 @@ Two tiles under the orders, stacked in one "Proof" section (full width reads bet
 
 ### Body weight
 
-- The weight tile opens a small sheet: one number field (kg, 30 to 250, comma or dot), prefilled with today's value if logged, "Save" and "Not now".
+- The Weight quick log opens a small sheet: one number field (kg, 30 to 250, comma or dot), prefilled with today's value if logged, "Save" and "Not now".
 - The selfie flow still offers the same field after the photo; both write the same day's weight.
 - Weight stays neutral in every tone: no jokes, no judgement, trends over weeks.
 
 ## 3b. The timelapse
 
 - A full-screen player shows the selfies one after another, oldest first, about a third of a second each. It plays on open and stops on the last frame ("Play again"). Arrows step frame by frame (pausing). A label shows the day ("Day XII · 14 October") and a progress bar with "12 / 48".
-- **This campaign** (`/timelapse?scope=arc`): from Today ("Watch your campaign" in Proof, once there are two selfies) and from Vidi's timelapse card.
+- **This campaign** (`/timelapse?scope=arc`): from Vidi's timelapse card (Today no longer has a Proof section).
 - **Every selfie ever** (`/timelapse?scope=all`): from Vici ("All your proof"), across every arc, from the first selfie to the latest. Vici is the place for the whole journey; Today and Vidi stay on the current campaign.
 
 ## 4. Vidi: the Commentarii (logs)
 
 Caesar kept _Commentarii_, his campaign notes. Vidi gets a segmented control, **Calendar | Commentarii**, matching the prototype's segment style (and its tick sound).
 
-**Commentarii** shows one log at a time, picked with chips: **Sleep · Water · Workout · Weight**.
+**Calendar:** tap any day for a summary sheet: each order against its goal, sleep, weight, calories, the selfie and to-dos ticked. In free training a missed day shows as a day off. (Past days are judged against the arc's current goals; see "Next" in TASKS-2026-10-13.md.)
+
+**Commentarii** shows one log at a time, picked with chips: **Sleep · Water · Workout · Body**.
 
 - **Sleep, Water, Workout:** a weekly bar chart, Monday to Sunday, like the prototype:
   - Values above the bars, a dashed target line and the target in the corner.
@@ -70,14 +77,14 @@ Caesar kept _Commentarii_, his campaign notes. Vidi gets a segmented control, **
   - **Sleep:** bars in the sleep colour, porphyry under 6 h. Target 7 h 30 m.
   - **Water and workout:** gold at the full goal, outlined gold at the minimum, porphyry under the minimum. Target is the full goal.
   - An insight card under the chart: the week's average and best day ("Average 7 h 05 m. Best: Friday, 8 h 10 m.").
-- **Weight:** a line chart of every logged weight across the arc, with the weekly average as the headline ("72.4 kg this week, down 0.6 kg") and a "Log today's weight" button. Neutral copy only.
+- **Body:** weight as a line across the arc and calories as a dashed line on the same dates, each on its own scale. Chips hide either line (remembered in preferences). The weekly weight average is the headline ("72.4 kg this week, down 0.6 kg"), with a "Log today's weight" button. Neutral copy only.
 - **Empty states:** each log explains how it fills ("Log your sleep with "I'm up" each morning").
 
 ## 5. Sounds
 
 - Every UI sound matches the prototype's recipe exactly, at an even, clean level (no clipping, nothing too quiet).
 - **Switching tabs** plays a whisper-quiet whoosh (-17 dBFS, 0.14 s).
-- **Always on:** the DAY I seal and the VINCO stamp play even with Sounds off (the phone's silent mode still mutes them).
+- **Sounds are off by default** (13 Oct). **Always on:** the DAY I seal, the oath locking in and the VINCO stamp play even with Sounds off (the phone's silent mode still mutes them).
 - **The Vidi segments** play the prototype's tick.
 
 ## Data
@@ -87,4 +94,6 @@ Caesar kept _Commentarii_, his campaign notes. Vidi gets a segmented control, **
 | Bedtime per day (`slept_at`, ISO time, the night before)                          | `day_logs`            |
 | Selfie files named per capture (`YYYY-MM-DD-<time>.jpg`); the old file is deleted | `src/media`           |
 | Ghost opacity preference (0 to 0.6)                                               | preferences store     |
+| Calories per day (whole kcal, migration 0009)                                     | `day_logs.calories`   |
+| Hidden body chart lines                                                           | preferences store     |
 | Order amounts may exceed the full goal, up to a cap per order                     | `src/features/orders` |

@@ -1,6 +1,7 @@
 import { roundToHundredths } from '@/lib/progress';
 
 import {
+  type AllOrderTargets,
   ORDER_KINDS,
   type OrderAmounts,
   type OrderKind,
@@ -13,7 +14,7 @@ import {
  * Default orders from the product plan, used until onboarding lets the user tune them.
  * Workout: 15 minutes holds the line, 40 conquers.
  */
-export const DEFAULT_ORDER_TARGETS: OrderTargets = {
+export const DEFAULT_ORDER_TARGETS: AllOrderTargets = {
   water: { min: 1, full: 4, step: 1 },
   wake: { min: 1, full: 1, step: 1 },
   meal: { min: 1, full: 2, step: 1 },
@@ -59,32 +60,61 @@ export function clampAmount(amount: number, target: OrderTarget, max: number = t
   return roundToHundredths(Math.min(Math.max(max, target.full), Math.max(0, amount)));
 }
 
-/** The status of every order. */
+/** The Vinco orders an arc has, in Today's order. */
+export function orderKindsIn(targets: OrderTargets): OrderKind[] {
+  return ORDER_KINDS.filter((kind) => targets[kind] !== undefined);
+}
+
+/** An order's goals: the arc's, or the default when the arc doesn't have that order. */
+export function targetFor(targets: OrderTargets, kind: OrderKind): OrderTarget {
+  return targets[kind] ?? DEFAULT_ORDER_TARGETS[kind];
+}
+
+/** The status of every order. Orders the arc doesn't have read as not started (and never count). */
 export function getOrderStatuses(
   amounts: OrderAmounts,
   targets: OrderTargets,
 ): Record<OrderKind, OrderStatus> {
+  const statusOf = (kind: OrderKind) => {
+    const target = targets[kind];
+    return target ? getOrderStatus(amounts[kind], target) : 'none';
+  };
   return {
-    water: getOrderStatus(amounts.water, targets.water),
-    wake: getOrderStatus(amounts.wake, targets.wake),
-    meal: getOrderStatus(amounts.meal, targets.meal),
-    workout: getOrderStatus(amounts.workout, targets.workout),
+    water: statusOf('water'),
+    wake: statusOf('wake'),
+    meal: statusOf('meal'),
+    workout: statusOf('workout'),
   };
 }
 
-/** How many orders are at least at their minimum (0 to 4). */
+/** How many of the arc's Vinco orders are at least at their minimum. */
 export function countOrdersHeld(amounts: OrderAmounts, targets: OrderTargets): number {
   const statuses = getOrderStatuses(amounts, targets);
-  return ORDER_KINDS.filter((kind) => statuses[kind] !== 'none').length;
+  return orderKindsIn(targets).filter((kind) => statuses[kind] !== 'none').length;
 }
 
-/** All four orders held: the day can be sealed and the VINCO stamp lands. */
+/** Every Vinco order the arc has is held (true when it has none: own orders then decide). */
 export function areAllOrdersHeld(amounts: OrderAmounts, targets: OrderTargets): boolean {
-  return countOrdersHeld(amounts, targets) === ORDER_KINDS.length;
+  return countOrdersHeld(amounts, targets) === orderKindsIn(targets).length;
 }
 
-/** All four orders at their full goal. */
+/** Every Vinco order the arc has is at its full goal (true when it has none). */
 export function areAllOrdersConquered(amounts: OrderAmounts, targets: OrderTargets): boolean {
   const statuses = getOrderStatuses(amounts, targets);
-  return ORDER_KINDS.every((kind) => statuses[kind] === 'full');
+  return orderKindsIn(targets).every((kind) => statuses[kind] === 'full');
+}
+
+/**
+ * Orders still open first, conquered ones at the bottom, each group keeping its order. Finishing
+ * an order moves it out of the way; undoing brings it back up.
+ */
+export function sortConqueredLast<Item extends { status: OrderStatus }>(items: readonly Item[]): Item[] {
+  return items
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => {
+      const aDone = a.item.status === 'full' ? 1 : 0;
+      const bDone = b.item.status === 'full' ? 1 : 0;
+      return aDone === bDone ? a.index - b.index : aDone - bDone;
+    })
+    .map(({ item }) => item);
 }

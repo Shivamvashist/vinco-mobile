@@ -3,12 +3,16 @@ import type { DayKey } from '@/lib/dates';
 import type { OrderStatus } from './types';
 
 /**
- * The user's own orders. Same rule as Vinco's four: a minimum holds the line, a full goal
- * conquers, and every order must hold for the day to be held. See docs/ORDERS-AND-TASKS.md.
+ * The user's own orders: a name, a unit and how many a day ("Water", "glass", 12). Saved with
+ * the minimum equal to the full goal, so an own order is simply done or not; orders from before
+ * 13 Oct may still have a lower minimum. Every order must hold for the day to be held.
+ * See docs/ORDERS-AND-TASKS.md.
  */
 export const CUSTOM_ORDER_LIMITS = {
-  /** Own orders active at once (eight orders in all with Vinco's four). */
-  maxActive: 4,
+  /** Own orders active at once. */
+  maxActive: 6,
+  /** Up to this many a day, a tap adds one. Bigger goals (10000 steps) are typed in. */
+  maxTapCount: 20,
   nameMaxLength: 40,
   unitMaxLength: 12,
   /** Goals are whole numbers in this range. */
@@ -68,14 +72,28 @@ export function getCustomOrderStatus(amount: number, order: Pick<CustomOrder, 'm
   return amount < order.full ? 'min' : 'full';
 }
 
-/** One tap: not started, then the minimum, then the full goal. */
-export function nextCustomAmount(amount: number, order: Pick<CustomOrder, 'min' | 'full'>): number {
-  const status = getCustomOrderStatus(amount, order);
-  return status === 'none' ? order.min : order.full;
+/** A draft from the add form: one number, "how many a day", is both the minimum and the goal. */
+export function toCustomOrderDraft(name: string, unit: string, count: number): CustomOrderDraft {
+  return { name, unit, min: count, full: count };
 }
 
-/** Long press: back down a level. */
+/** Whether a tap adds one (a small count, like glasses), or the amount is typed in (steps). */
+export function isTapCounted(order: Pick<CustomOrder, 'full'>): boolean {
+  return order.full <= CUSTOM_ORDER_LIMITS.maxTapCount;
+}
+
+/** One tap: one more, up to the goal. */
+export function nextCustomAmount(amount: number, order: Pick<CustomOrder, 'min' | 'full'>): number {
+  return clampCustomAmount((Number.isFinite(amount) ? amount : 0) + 1, order);
+}
+
+/** Long press: one less, never below zero. */
 export function previousCustomAmount(amount: number, order: Pick<CustomOrder, 'min' | 'full'>): number {
-  const status = getCustomOrderStatus(amount, order);
-  return status === 'full' && order.full > order.min ? order.min : 0;
+  return clampCustomAmount((Number.isFinite(amount) ? amount : 0) - 1, order);
+}
+
+/** A typed amount kept between 0 and the goal, as a whole number. */
+export function clampCustomAmount(amount: number, order: Pick<CustomOrder, 'full'>): number {
+  if (!Number.isFinite(amount)) return 0;
+  return Math.min(order.full, Math.max(0, Math.round(amount)));
 }

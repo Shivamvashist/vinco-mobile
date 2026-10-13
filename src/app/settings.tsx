@@ -1,8 +1,10 @@
 import { router } from 'expo-router';
 import Constants from 'expo-constants';
 import { useState } from 'react';
+import { View } from 'react-native';
 
 import { RetreatSheet } from '@/components/arc/RetreatSheet';
+import { IconButton } from '@/components/IconButton';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionHeader } from '@/components/SectionHeader';
@@ -15,14 +17,10 @@ import { WakeTimeSheet } from '@/components/settings/WakeTimeSheet';
 import { commonCopy, devCopy, guardCopy, settingsCopy } from '@/copy';
 import { db, setArcWakeTime } from '@/db';
 import { DevPanel } from '@/dev/DevPanel';
-import { getArcPosition, OATH_PLAYBACK_DAY } from '@/features/arc';
 import { DEFAULT_WAKE_MINUTES } from '@/features/orders';
 import { useActiveArc } from '@/hooks/useActiveArc';
-import { useOathPlayer } from '@/hooks/useOathPlayer';
 import { useResetJourney } from '@/hooks/useResetJourney';
-import { useToday } from '@/hooks/useToday';
 import { formatClockMinutes, parseClockMinutes, toClockString } from '@/lib/dates';
-import { toRoman } from '@/lib/toRoman';
 import {
   GHOST_OPACITY_MAX,
   IS_DEV_MODE_AVAILABLE,
@@ -30,22 +28,24 @@ import {
   useGuardStore,
   usePreferencesStore,
 } from '@/stores';
-import { useThemeControls } from '@/theme';
+import { createStyles, useThemeControls } from '@/theme';
 
 type OpenSheet = 'tone' | 'colorMode' | 'outline' | 'wakeTime' | 'retreat' | null;
 
 const rows = settingsCopy.rows;
 
-/** Castra: settings. How Vinco looks, sounds and talks; the day's setup; the journey. */
+/**
+ * Castra: settings, opened from the user menu on Today. How Vinco looks, sounds and talks; the
+ * day's setup; guard levels; the journey. The oath lives in the menu itself.
+ */
 export default function SettingsScreen() {
-  const today = useToday();
+  const styles = useStyles();
   const tone = usePreferencesStore((state) => state.tone);
   const setTone = usePreferencesStore((state) => state.setTone);
   const ghostOpacity = usePreferencesStore((state) => state.ghostOpacity);
   const setGhostOpacity = usePreferencesStore((state) => state.setGhostOpacity);
   const { preferences, setColorMode, setSoundEnabled, setHapticsEnabled } = useThemeControls();
   const { arc, targets } = useActiveArc();
-  const oath = useOathPlayer(arc?.oathPath ?? null);
   const resetJourney = useResetJourney();
   const isDevModeOn = useDevStore((state) => state.isDevModeOn);
   const setDevModeOn = useDevStore((state) => state.setDevModeOn);
@@ -54,21 +54,6 @@ export default function SettingsScreen() {
   const [openSheet, setOpenSheet] = useState<OpenSheet>(null);
   const close = () => setOpenSheet(null);
 
-  const position = arc ? getArcPosition(arc.startDay, arc.lengthDays, today) : null;
-  const dayNumber =
-    position?.phase === 'active'
-      ? position.dayNumber
-      : position?.phase === 'finished'
-        ? (arc?.lengthDays ?? 1)
-        : 1;
-  const canPlayOath = oath.isAvailable && dayNumber >= OATH_PLAYBACK_DAY;
-  const oathValue = !oath.isAvailable
-    ? rows.oathNone
-    : !canPlayOath
-      ? rows.oathSealed(toRoman(OATH_PLAYBACK_DAY))
-      : oath.isPlaying
-        ? rows.oathStop
-        : rows.oathListen;
   const wakeMinutes = (arc ? parseClockMinutes(arc.wakeTime) : null) ?? DEFAULT_WAKE_MINUTES;
 
   const saveWakeTime = (minutes: number): boolean => {
@@ -84,7 +69,14 @@ export default function SettingsScreen() {
 
   return (
     <>
-      <Screen>
+      <Screen edges={['top', 'bottom']}>
+        <View style={styles.nav}>
+          <IconButton
+            icon="back"
+            accessibilityLabel={commonCopy.back}
+            onPress={() => (router.canGoBack() ? router.back() : router.replace('/veni'))}
+          />
+        </View>
         <ScreenHeader eyebrow={settingsCopy.eyebrow} title={settingsCopy.title} />
 
         <SettingsGroup title={settingsCopy.sections.you}>
@@ -137,16 +129,6 @@ export default function SettingsScreen() {
             onPress={() => router.push('/aurora')}
           />
         </SettingsGroup>
-
-        {arc ? (
-          <SettingsGroup title={settingsCopy.sections.oath}>
-            <SettingsRow
-              label={rows.oath}
-              value={oathValue}
-              onPress={canPlayOath ? oath.toggle : undefined}
-            />
-          </SettingsGroup>
-        ) : null}
 
         <SettingsGroup title={settingsCopy.sections.about}>
           <SettingsRow label={rows.version} value={Constants.expoConfig?.version ?? '1.0.0'} />
@@ -204,3 +186,7 @@ export default function SettingsScreen() {
     </>
   );
 }
+
+const useStyles = createStyles((theme) => ({
+  nav: { marginLeft: -theme.space.md, marginBottom: theme.space.xs },
+}));

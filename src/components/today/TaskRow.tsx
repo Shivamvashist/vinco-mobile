@@ -53,7 +53,7 @@ export function TaskRow({
     >
       <StatusCircle status={status} />
       <View style={styles.text}>
-        <Txt variant="label" numberOfLines={1}>
+        <Txt variant="label" color={isConquered ? 'textMuted' : 'text'} numberOfLines={1}>
           {name}
         </Txt>
         <Txt variant="caption" color={isHeld ? 'accent' : 'textMuted'} numberOfLines={1} style={styles.line}>
@@ -78,17 +78,19 @@ const useStyles = createStyles((theme) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.layout.cardPadding,
-    padding: theme.layout.cardPadding,
-    minHeight: theme.layout.buttonHeight + theme.space.lg,
+    gap: theme.space.md,
+    paddingVertical: theme.space.sm,
+    paddingHorizontal: theme.layout.cardPadding,
+    minHeight: theme.layout.buttonHeight,
     borderRadius: theme.radius.md,
     borderWidth: theme.layout.borderWidth,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.surfaceSunk,
   },
-  rowConquered: { borderColor: theme.colors.accentBorder },
+  // Done: it sinks to the bottom of the list, quieter, with the laurel circle as its mark.
+  rowConquered: { borderColor: theme.colors.accentBorder, backgroundColor: theme.colors.background },
   pressed: { opacity: 0.85 },
   text: { flex: 1, minWidth: 0 },
   line: { marginTop: theme.space.xxs },
-  bar: { marginTop: theme.space.sm },
+  bar: { marginTop: theme.space.xs },
 }));

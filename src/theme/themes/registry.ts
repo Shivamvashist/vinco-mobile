@@ -14,7 +14,7 @@ export const DEFAULT_THEME_ID = vincoTheme.id;
 export const DEFAULT_THEME_PREFERENCES: ThemePreferences = {
   themeId: DEFAULT_THEME_ID,
   colorMode: 'dark',
-  soundEnabled: true,
+  soundEnabled: false,
   hapticsEnabled: true,
 };
 

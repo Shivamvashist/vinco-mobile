@@ -2,7 +2,7 @@ import type { ColorMode } from '@/theme';
 
 import { tabsCopy } from './tabs';
 
-/** The Castra (Settings) tab: how Vinco looks, sounds and talks, the day's setup and the journey. */
+/** Castra (Settings), from the user menu: how Vinco looks, sounds and talks, the day's setup and the journey. */
 export const settingsCopy = {
   eyebrow: `${tabsCopy.settings.latin} · ${tabsCopy.settings.meaning}`,
   title: 'Settings',
@@ -11,7 +11,6 @@ export const settingsCopy = {
     you: 'You',
     day: 'Your day',
     guard: 'Guard',
-    oath: 'Your oath',
     journey: 'Journey',
     about: 'About',
   },
@@ -20,18 +19,13 @@ export const settingsCopy = {
     tone: 'Tone',
     colorMode: 'Appearance',
     sound: 'Sounds',
-    soundDetail: 'The DAY I seal and the VINCO stamp always play.',
+    soundDetail: 'Off by default. The first selfie, your oath and the VINCO stamp always sound.',
     haptics: 'Vibration',
     outline: 'Selfie outline',
     outlineValue: (percent: number): string => (percent === 0 ? 'Off' : `${percent}%`),
     plan: 'Orders and to-dos',
     planValue: 'Manage',
     wakeTime: 'Wake-up time',
-    oath: 'Listen to your oath',
-    oathSealed: (dayRoman: string): string => `Sealed until Day ${dayRoman}`,
-    oathListen: 'Listen',
-    oathStop: 'Stop',
-    oathNone: 'Not recorded',
     retreat: 'Sound the retreat',
     retreatValue: 'Reset journey',
     version: 'Version',

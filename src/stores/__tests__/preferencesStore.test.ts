@@ -27,7 +27,9 @@ describe('usePreferencesStore', () => {
     const state = loadStore().getState();
     expect(state.tone).toBe('centurion');
     expect(state.colorMode).toBe('dark');
-    expect(state.soundEnabled).toBe(true);
+    // Sounds are off by default since 13 Oct; the signature moments still play.
+    expect(state.soundEnabled).toBe(false);
+    expect(state.hiddenBodyLines).toEqual([]);
   });
 
   it('saves changes and restores them on the next start', () => {
@@ -71,7 +73,15 @@ describe('usePreferencesStore', () => {
     loadStore().getState().setTone('roast');
     const saved = JSON.parse(Storage.getItemSync(STORAGE_KEY) ?? '{}') as { state: Record<string, unknown> };
     expect(Object.keys(saved.state).sort()).toEqual(
-      ['colorMode', 'ghostOpacity', 'hapticsEnabled', 'soundEnabled', 'themeId', 'tone'].sort(),
+      [
+        'colorMode',
+        'ghostOpacity',
+        'hapticsEnabled',
+        'hiddenBodyLines',
+        'soundEnabled',
+        'themeId',
+        'tone',
+      ].sort(),
     );
   });
 });

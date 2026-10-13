@@ -9,7 +9,7 @@ const NO_ARC_ID = -1;
 export type ActiveArc = {
   /** The current arc, or null before onboarding is finished. */
   arc: ArcRow | null;
-  /** The arc's tuned orders, or the defaults when there is no arc. */
+  /** The arc's Vinco orders (only the ones it has), or the defaults when there is no arc. */
   targets: OrderTargets;
   isLoaded: boolean;
 };
@@ -22,7 +22,7 @@ export function useActiveArc(): ActiveArc {
 
   return {
     arc,
-    targets: arc ? toOrderTargets(ordersQuery.data) : DEFAULT_ORDER_TARGETS,
+    targets: arc ? toOrderTargets(ordersQuery.data, arc.kind) : DEFAULT_ORDER_TARGETS,
     isLoaded: arcQuery.updatedAt !== undefined && ordersQuery.updatedAt !== undefined,
   };
 }

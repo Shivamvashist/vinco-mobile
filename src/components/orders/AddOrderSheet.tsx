@@ -2,7 +2,12 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { ordersCopy } from '@/copy';
-import { CUSTOM_ORDER_LIMITS, type CustomOrderDraft, type CustomOrderError } from '@/features/orders';
+import {
+  CUSTOM_ORDER_LIMITS,
+  type CustomOrderDraft,
+  type CustomOrderError,
+  toCustomOrderDraft,
+} from '@/features/orders';
 import { createStyles, useFeedback } from '@/theme';
 
 import { BottomSheet } from '../BottomSheet';
@@ -19,18 +24,18 @@ export type AddOrderSheetProps = {
   initialName?: string;
 };
 
-/** Longest number typed into a goal field (9999). */
-const GOAL_MAX_DIGITS = String(CUSTOM_ORDER_LIMITS.maxGoal).length;
+/** Longest number typed into the count field (9999). */
+const COUNT_MAX_DIGITS = String(CUSTOM_ORDER_LIMITS.maxGoal).length;
 
-/** A typed goal as a number. Anything that isn't plain digits is NaN, so validation catches it. */
-function parseGoal(text: string): number {
+/** A typed count as a number. Anything that isn't plain digits is NaN, so validation catches it. */
+export function parseCount(text: string): number {
   const trimmed = text.trim();
   return /^[0-9]+$/.test(trimmed) ? Number(trimmed) : Number.NaN;
 }
 
 /**
- * Adds one of the user's own orders: a name, an optional unit, a minimum and a full goal.
- * Errors show under the fields; the sheet only closes once the order is saved.
+ * Adds one of the user's own orders: what, its unit, and how many a day ("Drink water", "glass",
+ * 12). Errors show under the fields; the sheet only closes once the order is saved.
  */
 export function AddOrderSheet({ visible, onClose, onSave, initialName = '' }: AddOrderSheetProps) {
   const styles = useStyles();
@@ -38,15 +43,14 @@ export function AddOrderSheet({ visible, onClose, onSave, initialName = '' }: Ad
   const copy = ordersCopy.add;
   const [name, setName] = useState(initialName);
   const [unit, setUnit] = useState('');
-  const [min, setMin] = useState('');
-  const [full, setFull] = useState('');
+  const [count, setCount] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const parsed = parseCount(count);
 
   const reset = () => {
     setName('');
     setUnit('');
-    setMin('');
-    setFull('');
+    setCount('');
     setError(null);
   };
 
@@ -56,7 +60,7 @@ export function AddOrderSheet({ visible, onClose, onSave, initialName = '' }: Ad
   };
 
   const save = () => {
-    const result = onSave({ name, unit, min: parseGoal(min), full: parseGoal(full) });
+    const result = onSave(toCustomOrderDraft(name, unit, parsed));
     if (result === null) {
       play('confirm');
       reset();
@@ -83,38 +87,35 @@ export function AddOrderSheet({ visible, onClose, onSave, initialName = '' }: Ad
           maxLength={CUSTOM_ORDER_LIMITS.nameMaxLength}
           autoCapitalize="sentences"
         />
-        <TextField
-          label={copy.unitLabel}
-          value={unit}
-          onChangeText={edit(setUnit)}
-          placeholder={copy.unitPlaceholder}
-          maxLength={CUSTOM_ORDER_LIMITS.unitMaxLength}
-          autoCapitalize="none"
-        />
-        <View style={styles.goals}>
-          <View style={styles.goal}>
+        <View style={styles.pair}>
+          <View style={styles.unit}>
             <TextField
-              label={copy.minLabel}
-              value={min}
-              onChangeText={edit(setMin)}
-              placeholder="10"
-              keyboardType="number-pad"
-              maxLength={GOAL_MAX_DIGITS}
+              label={copy.unitLabel}
+              value={unit}
+              onChangeText={edit(setUnit)}
+              placeholder={copy.unitPlaceholder}
+              maxLength={CUSTOM_ORDER_LIMITS.unitMaxLength}
+              autoCapitalize="none"
             />
           </View>
-          <View style={styles.goal}>
+          <View style={styles.count}>
             <TextField
-              label={copy.fullLabel}
-              value={full}
-              onChangeText={edit(setFull)}
-              placeholder="30"
+              label={copy.countLabel}
+              value={count}
+              onChangeText={edit(setCount)}
+              placeholder={copy.countPlaceholder}
               keyboardType="number-pad"
-              maxLength={GOAL_MAX_DIGITS}
+              maxLength={COUNT_MAX_DIGITS}
               returnKeyType="done"
               onSubmitEditing={save}
             />
           </View>
         </View>
+        {Number.isFinite(parsed) && parsed > 0 ? (
+          <Txt variant="caption" color="accent">
+            {copy.preview(parsed, unit.trim())}
+          </Txt>
+        ) : null}
       </View>
       {error ? (
         <Txt variant="caption" color="danger" accessibilityRole="alert" style={styles.error}>
@@ -131,8 +132,9 @@ export function AddOrderSheet({ visible, onClose, onSave, initialName = '' }: Ad
 
 const useStyles = createStyles((theme) => ({
   fields: { marginTop: theme.space.lg, gap: theme.space.md },
-  goals: { flexDirection: 'row', gap: theme.space.md },
-  goal: { flex: 1 },
+  pair: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space.md },
+  unit: { flexGrow: 1, flexBasis: 120 },
+  count: { flexGrow: 1, flexBasis: 120 },
   error: { marginTop: theme.space.sm },
   actions: { marginTop: theme.space.lg, gap: theme.space.xs },
 }));

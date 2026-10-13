@@ -10,21 +10,28 @@ export {
   getOrderStatuses,
   maxAmountFor,
   ORDER_MAX_AMOUNTS,
+  orderKindsIn,
   removeStep,
+  sortConqueredLast,
+  targetFor,
 } from './orders';
 export {
+  clampCustomAmount,
   CUSTOM_ORDER_LIMITS,
   type CustomOrder,
   type CustomOrderDraft,
   type CustomOrderError,
   getCustomOrderStatus,
   isCustomOrderActiveOn,
+  isTapCounted,
   nextCustomAmount,
   normalizeCustomOrder,
   previousCustomAmount,
+  toCustomOrderDraft,
   validateCustomOrder,
 } from './customOrders';
 export {
+  type AllOrderTargets,
   ORDER_KINDS,
   type OrderAmounts,
   type OrderKind,

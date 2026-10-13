@@ -4,6 +4,7 @@ import { db, getActiveArc } from '@/db';
 import { type OnboardingStep, useOnboardingStore } from '@/stores';
 
 const STEP_HREFS: Record<OnboardingStep, Href> = {
+  plan: '/onboarding/plan',
   arc: '/onboarding/arc',
   orders: '/onboarding/orders',
   tone: '/onboarding/tone',

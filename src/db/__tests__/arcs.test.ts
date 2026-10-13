@@ -2,8 +2,10 @@ import { FEATURES } from '@/config/features';
 import { buildOrderTargets, DEFAULT_ORDER_TARGETS } from '@/features/orders';
 
 import {
+  addArcOrder,
   createArc,
   getActiveArc,
+  removeArcOrder,
   selectAllArcs,
   selectArcOrders,
   setArcWakeTime,
@@ -40,7 +42,7 @@ describe('arcs', () => {
       status: 'active',
     });
     const targets = toOrderTargets(selectArcOrders(db, id).all());
-    expect(targets.water.full).toBe(3.5);
+    expect(targets.water?.full).toBe(3.5);
     expect(targets.workout).toEqual({ min: 15, full: 45, step: 45 });
   });
 
@@ -72,7 +74,7 @@ describe('toOrderTargets', () => {
       { arcId: 1, kind: 'workout', min: NaN, full: 40, step: 40 },
     ] as ArcOrderRow[];
     const targets = toOrderTargets(rows);
-    expect(targets.water.full).toBe(3);
+    expect(targets.water?.full).toBe(3);
     expect(targets.meal).toEqual(DEFAULT_ORDER_TARGETS.meal);
     expect(targets.workout).toEqual(DEFAULT_ORDER_TARGETS.workout);
     expect(targets.wake).toEqual(DEFAULT_ORDER_TARGETS.wake);
@@ -94,7 +96,7 @@ describe('toOrderTargets', () => {
     const next = startNextArc(db, { kind: 'campaign', lengthDays: 30, startDay: '2026-10-12' });
 
     expect(getActiveArc(db)).toMatchObject({ id: next, kind: 'campaign', lengthDays: 30, wakeTime: '06:30' });
-    expect(toOrderTargets(selectArcOrders(db, next).all()).water.full).toBe(3.5);
+    expect(toOrderTargets(selectArcOrders(db, next).all()).water?.full).toBe(3.5);
     expect(getTruceReserve(db)).toBe(1);
     const own = selectCustomOrdersOn(db, next, '2026-10-12').all();
     expect(own.map((order) => order.name)).toEqual(['Read']);
@@ -107,5 +109,40 @@ describe('toOrderTargets', () => {
     createArc(db, { ...NEW_ARC, lengthDays: 30 });
     startNextArc(db, { kind: 'ludus', lengthDays: 0, startDay: '2026-11-08' });
     expect(selectAllArcs(db).all()[1]?.status).toBe('finished');
+  });
+
+  it('gives free training only the orders picked, and lets them change', () => {
+    const db = createTestDatabase();
+    const id = createArc(db, { ...NEW_ARC, kind: 'ludus', targets: { water: DEFAULT_ORDER_TARGETS.water } });
+    expect(toOrderTargets(selectArcOrders(db, id).all(), 'ludus')).toEqual({
+      water: DEFAULT_ORDER_TARGETS.water,
+    });
+
+    addArcOrder(db, id, 'workout');
+    addArcOrder(db, id, 'workout');
+    removeArcOrder(db, id, 'water');
+    expect(toOrderTargets(selectArcOrders(db, id).all(), 'ludus')).toEqual({
+      workout: DEFAULT_ORDER_TARGETS.workout,
+    });
+  });
+
+  it('starts free training with no orders at all, and a campaign from it gets all four', () => {
+    const db = createTestDatabase();
+    const id = createArc(db, { ...NEW_ARC, kind: 'ludus', targets: {} });
+    expect(selectArcOrders(db, id).all()).toEqual([]);
+    const next = startNextArc(db, { kind: 'campaign', lengthDays: 30, startDay: '2026-10-12' });
+    expect(Object.keys(toOrderTargets(selectArcOrders(db, next).all(), 'campaign')).sort()).toEqual([
+      'meal',
+      'wake',
+      'water',
+      'workout',
+    ]);
+  });
+
+  it("keeps a campaign's four orders fixed", () => {
+    const db = createTestDatabase();
+    const id = createArc(db, NEW_ARC);
+    expect(() => removeArcOrder(db, id, 'water')).toThrow();
+    expect(selectArcOrders(db, id).all()).toHaveLength(4);
   });
 });

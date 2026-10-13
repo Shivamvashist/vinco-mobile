@@ -12,6 +12,8 @@ export { dayCardCopy } from './dayCard';
 export { devCopy } from './dev';
 export { forumCopy } from './forum';
 export { guardCopy } from './guard';
+export { menuCopy } from './menu';
+export { permissionsCopy } from './permissions';
 export { progressCopy } from './progress';
 export { settingsCopy } from './settings';
 export { proofCopy } from './proof';

@@ -6,7 +6,14 @@ export type Preferences = ThemePreferences & {
   tone: Tone;
   /** How strongly the last selfie shows over the camera, 0 to GHOST_OPACITY_MAX. */
   ghostOpacity: number;
+  /** Lines hidden on the body chart in Vidi. */
+  hiddenBodyLines: BodyLine[];
 };
+
+/** The lines on Vidi's body chart. */
+export const BODY_LINES = ['weight', 'calories'] as const;
+
+export type BodyLine = (typeof BODY_LINES)[number];
 
 /** The ghost never covers the camera more than this, so the live face stays clear. */
 export const GHOST_OPACITY_MAX = 0.6;
@@ -15,6 +22,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   ...DEFAULT_THEME_PREFERENCES,
   tone: DEFAULT_TONE,
   ghostOpacity: 0.3,
+  hiddenBodyLines: [],
 };
 
 /** A ghost opacity kept inside 0 to GHOST_OPACITY_MAX, rounded to whole percent. */
@@ -44,6 +52,11 @@ export function sanitizePreferences(saved: unknown): Partial<Preferences> {
   if (typeof value.hapticsEnabled === 'boolean') clean.hapticsEnabled = value.hapticsEnabled;
   if (typeof value.ghostOpacity === 'number' && Number.isFinite(value.ghostOpacity)) {
     clean.ghostOpacity = clampGhostOpacity(value.ghostOpacity);
+  }
+
+  if (Array.isArray(value.hiddenBodyLines)) {
+    const saved = value.hiddenBodyLines as unknown[];
+    clean.hiddenBodyLines = BODY_LINES.filter((line) => saved.includes(line));
   }
 
   return clean;

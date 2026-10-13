@@ -1,6 +1,12 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 
-import { db, selectDayLogsBetween, selectOrderLogsBetween, selectWeightsBetween } from '@/db';
+import {
+  db,
+  selectCaloriesBetween,
+  selectDayLogsBetween,
+  selectOrderLogsBetween,
+  selectWeightsBetween,
+} from '@/db';
 import { arcEndDay } from '@/features/arc';
 import {
   orderBars,
@@ -13,7 +19,7 @@ import {
   type WeightTrend,
   weightTrend,
 } from '@/features/logs';
-import type { OrderTargets } from '@/features/orders';
+import { type OrderTargets, targetFor } from '@/features/orders';
 import { sleepMinutesFromMoments } from '@/features/sleep';
 import { addDays, type DayKey } from '@/lib/dates';
 
@@ -23,6 +29,8 @@ export type Commentarii = {
   workout: { bars: WeekBar[]; summary: WeekSummary };
   /** Every weight logged in the arc so far, oldest first. */
   weights: WeightPoint[];
+  /** Every day's calories logged in the arc so far, oldest first. */
+  calories: { day: DayKey; kcal: number }[];
   weightTrend: WeightTrend;
   isLoaded: boolean;
 };
@@ -44,6 +52,7 @@ export function useCommentarii(
   const dayRows = useLiveQuery(selectDayLogsBetween(db, weekStart, weekEnd), [weekStart, weekEnd]);
   const orderRows = useLiveQuery(selectOrderLogsBetween(db, weekStart, weekEnd), [weekStart, weekEnd]);
   const weightRows = useLiveQuery(selectWeightsBetween(db, arc.startDay, today), [arc.startDay, today]);
+  const calorieRows = useLiveQuery(selectCaloriesBetween(db, arc.startDay, today), [arc.startDay, today]);
 
   const lastDay = arcEndDay(arc.startDay, arc.lengthDays);
   const days = weekDays(weekStart);
@@ -67,21 +76,27 @@ export function useCommentarii(
   };
 
   const sleep = sleepBars(days, sleepByDay);
-  const water = orderBars(days, amountsFor('water'), targets.water);
-  const workout = orderBars(days, amountsFor('workout'), targets.workout);
+  const waterTarget = targetFor(targets, 'water');
+  const workoutTarget = targetFor(targets, 'workout');
+  const water = orderBars(days, amountsFor('water'), waterTarget);
+  const workout = orderBars(days, amountsFor('workout'), workoutTarget);
   const weights = weightRows.data.flatMap((row) =>
     row.weightKg != null && Number.isFinite(row.weightKg) ? [{ day: row.day, kg: row.weightKg }] : [],
   );
 
   return {
     sleep: { bars: sleep, summary: summarizeBars(sleep) },
-    water: { bars: water, summary: summarizeBars(water, targets.water.full) },
-    workout: { bars: workout, summary: summarizeBars(workout, targets.workout.full) },
+    water: { bars: water, summary: summarizeBars(water, waterTarget.full) },
+    workout: { bars: workout, summary: summarizeBars(workout, workoutTarget.full) },
     weights,
+    calories: calorieRows.data.flatMap((row) =>
+      row.calories != null && Number.isFinite(row.calories) ? [{ day: row.day, kcal: row.calories }] : [],
+    ),
     weightTrend: weightTrend(weights, today),
     isLoaded:
       dayRows.updatedAt !== undefined &&
       orderRows.updatedAt !== undefined &&
-      weightRows.updatedAt !== undefined,
+      weightRows.updatedAt !== undefined &&
+      calorieRows.updatedAt !== undefined,
   };
 }

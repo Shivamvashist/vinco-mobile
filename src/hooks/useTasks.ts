@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   addTask,
@@ -35,11 +35,10 @@ export type Tasks = {
   today: DayKey;
   isLoaded: boolean;
   daily: TaskItem[];
-  /** Day tasks for today, carried-over ones included. */
+  /** Day tasks for today, ones moved on from earlier days included. */
   todayTasks: TaskItem[];
   tomorrowTasks: TaskItem[];
-  /** Unfinished day tasks from earlier days, waiting for carry over or drop. */
-  carryOver: Task[];
+
   summary: DayTaskSummary;
   /** True when the last change could not be saved. Cleared by the next successful one. */
   hasSaveError: boolean;
@@ -50,7 +49,6 @@ export type Tasks = {
   /** Ticks or unticks a task for today (tomorrow's tasks can't be ticked yet). */
   toggle: (item: TaskItem) => void;
   remove: (taskId: number) => void;
-  resolve: (taskIds: readonly number[], choice: 'carry' | 'drop') => void;
 };
 
 /**
@@ -68,6 +66,19 @@ export function useTasks(arcLastDay: DayKey | null): Tasks {
 
   const tasks = taskRows.data.map(toTask).sort((a, b) => a.id - b.id);
   const completions = toCompletionSet(completionRows.data);
+  const leftoverIds = findCarryOver(tasks, completions, today)
+    .map((task) => task.id)
+    .join(',');
+
+  // A day task left undone moves on to today by itself (it keeps where it came from).
+  useEffect(() => {
+    if (leftoverIds === '') return;
+    try {
+      resolveCarryOver(db, leftoverIds.split(',').map(Number), 'carry', today);
+    } catch (error) {
+      if (__DEV__) console.warn('[tasks] Could not carry tasks over.', error);
+    }
+  }, [leftoverIds, today]);
   // Done tasks sink to the bottom of each list.
   const itemsOn = (day: DayKey, repeat: Task['repeat']): TaskItem[] =>
     sortDoneLast(
@@ -92,7 +103,6 @@ export function useTasks(arcLastDay: DayKey | null): Tasks {
     daily: itemsOn(today, 'daily'),
     todayTasks: itemsOn(today, 'once'),
     tomorrowTasks: itemsOn(tomorrow, 'once'),
-    carryOver: findCarryOver(tasks, completions, today),
     summary: summarizeDay(tasks, completions, today),
     hasSaveError,
     add: (title, when) =>
@@ -110,7 +120,6 @@ export function useTasks(arcLastDay: DayKey | null): Tasks {
       guard('tick', () => setTaskDone(db, item.task.id, today, !item.isDone));
     },
     remove: (taskId) => guard('remove', () => removeTask(db, taskId, today)),
-    resolve: (taskIds, choice) => guard('carry over', () => resolveCarryOver(db, taskIds, choice, today)),
   };
 }
 

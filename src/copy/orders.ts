@@ -7,10 +7,16 @@ export const ordersCopy = {
     title: 'Your orders',
     intro:
       'Every order must hold for the day to count. Hit the minimum and the campaign lives; hit the full goal and you conquer.',
+    introFree: 'Orders are done every day, no matter what. Finish them all and the day is yours.',
     vincoSection: 'Set by Vinco',
+    vincoSectionFree: 'From Vinco',
+    remove: 'Remove',
+    addSuggestion: (name: string): string => `Add ${name.toLowerCase()}`,
     ownSection: 'Your own',
     ownEmpty: 'None yet. Add one you will follow no matter what: reading, steps, study.',
     goals: (min: string, full: string): string => `Hold the line: ${min} · Conquer: ${full}`,
+    /** An own order whose minimum is its goal: "12 glass a day". */
+    daily: (full: string): string => `${full} a day`,
     standDown: 'Stand down',
     standsDownTomorrow: 'Counts today, gone from tomorrow',
     back: 'Back',
@@ -32,24 +38,43 @@ export const ordersCopy = {
 
   add: {
     title: 'Add an order',
-    body: "An order is followed no matter what. It counts from today, and the day isn't held until it is.",
-    nameLabel: 'Order',
-    namePlaceholder: 'Read',
-    unitLabel: 'Unit (optional)',
-    unitPlaceholder: 'pages',
-    minLabel: 'Hold the line (minimum)',
-    fullLabel: 'Conquer (full goal)',
+    body: 'Something you do every day, no matter what. It counts from today.',
+    nameLabel: 'What',
+    namePlaceholder: 'Drink water',
+    unitLabel: 'Unit',
+    unitPlaceholder: 'glass',
+    countLabel: 'How many a day',
+    countPlaceholder: '12',
+    /** "12 glass a day" under the fields, as the order will read. */
+    preview: (count: number, unit: string): string => `${count}${unit ? ` ${unit}` : ''} a day`,
     save: 'Add to my orders',
     cancel: 'Not now',
     limit: (max: number): string =>
       `You have ${max} own orders, the most Vinco allows. Stand one down to add another.`,
     errors: {
       nameMissing: 'Give the order a name.',
-      goalInvalid: `Goals are whole numbers from ${CUSTOM_ORDER_LIMITS.minGoal} to ${CUSTOM_ORDER_LIMITS.maxGoal}.`,
+      goalInvalid: `How many: a whole number from ${CUSTOM_ORDER_LIMITS.minGoal} to ${CUSTOM_ORDER_LIMITS.maxGoal}.`,
       fullBelowMin: 'The full goal must be at least the minimum.',
       tooMany: `You already have ${CUSTOM_ORDER_LIMITS.maxActive} own orders.`,
     } satisfies Record<CustomOrderError, string>,
     failed: "The order couldn't be saved. Try again.",
+  },
+
+  /** Setting an own order's amount by typing (big goals, or a quick fix). */
+  amount: {
+    title: (name: string): string => name,
+    label: (unit: string): string => (unit ? `Done today (${unit})` : 'Done today'),
+    goal: (full: number, unit: string): string => `Goal: ${full}${unit ? ` ${unit}` : ''}`,
+    save: 'Save',
+    cancel: 'Cancel',
+    invalid: 'Type a whole number.',
+  },
+
+  removeSheet: {
+    title: (name: string): string => `Remove ${name.toLowerCase()}?`,
+    body: 'It stops counting from today. Days already sealed keep their results. You can add it back any time.',
+    confirm: 'Remove it',
+    cancel: 'Keep it',
   },
 
   standDownSheet: {

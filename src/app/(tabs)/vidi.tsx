@@ -6,7 +6,8 @@ import { router } from 'expo-router';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Commentarii } from '@/components/progress/Commentarii';
-import { type CalendarDay, MonthCalendar } from '@/components/progress/MonthCalendar';
+import { DaySummarySheet } from '@/components/progress/DaySummarySheet';
+import { type CalendarDay, type CalendarDayStatus, MonthCalendar } from '@/components/progress/MonthCalendar';
 import { StatTile } from '@/components/progress/StatTile';
 import { WeightSheet } from '@/components/proof/WeightSheet';
 import { ProgressBar } from '@/components/ProgressBar';
@@ -47,6 +48,7 @@ export default function VidiScreen() {
   const selfie = useDailySelfie(today);
   const [segment, setSegment] = useState<Segment>('calendar');
   const [isWeightSheetOpen, setIsWeightSheetOpen] = useState(false);
+  const [openDay, setOpenDay] = useState<{ day: DayKey; status: CalendarDayStatus } | null>(null);
 
   const header = <ScreenHeader eyebrow={progressCopy.eyebrow} title={progressCopy.title} />;
 
@@ -104,7 +106,12 @@ export default function VidiScreen() {
         {segment === 'calendar' ? (
           <>
             <View style={styles.section}>
-              <ArcCalendar arc={arc} today={today} campaign={campaign} />
+              <ArcCalendar
+                arc={arc}
+                today={today}
+                campaign={campaign}
+                onOpenDay={(day, status) => setOpenDay({ day, status })}
+              />
             </View>
             <View style={styles.section}>
               <TimelapseCard selfies={campaign.selfieDays} />
@@ -123,6 +130,14 @@ export default function VidiScreen() {
         )}
       </Screen>
 
+      <DaySummarySheet
+        day={openDay?.day ?? null}
+        status={openDay?.status ?? 'open'}
+        isLudus={campaign.isLudus}
+        arcId={arc.id}
+        targets={targets}
+        onClose={() => setOpenDay(null)}
+      />
       <WeightSheet
         visible={isWeightSheetOpen}
         onClose={() => setIsWeightSheetOpen(false)}
@@ -140,10 +155,11 @@ type ArcCalendarProps = {
   arc: { startDay: DayKey; lengthDays: number };
   today: DayKey;
   campaign: Campaign;
+  onOpenDay: (day: DayKey, status: CalendarDayStatus) => void;
 };
 
-/** The calendar, limited to the months the arc covers, opening on this month. */
-function ArcCalendar({ arc, today, campaign }: ArcCalendarProps) {
+/** The calendar, limited to the months the arc covers, opening on this month. Tap a day for its summary. */
+function ArcCalendar({ arc, today, campaign, onOpenDay }: ArcCalendarProps) {
   const endDay = arcEndDay(arc.startDay, arc.lengthDays);
   const firstMonth = toYearMonth(arc.startDay);
   const lastMonth = toYearMonth(daysBetween(today, endDay) < 0 ? endDay : today);
@@ -158,7 +174,9 @@ function ArcCalendar({ arc, today, campaign }: ArcCalendarProps) {
     if (isToday) return { status: campaign.todayStatus, isToday };
     if (daysBetween(today, day) > 0) return { status: 'future', isToday };
     // A past day not sealed yet (sealing runs on open) reads as open until it is.
-    return { status: results.get(day) ?? 'open', isToday };
+    const result = results.get(day) ?? 'open';
+    // Free training has no streak: a day without every order done is a day off, not a miss.
+    return { status: result === 'missed' && campaign.isLudus ? 'rest' : result, isToday };
   };
 
   return (
@@ -170,6 +188,8 @@ function ArcCalendar({ arc, today, campaign }: ArcCalendarProps) {
       canGoForward={compareMonths(visible, lastMonth) < 0}
       onPrevious={() => setShown(shiftMonth(visible.year, visible.month, -1))}
       onNext={() => setShown(shiftMonth(visible.year, visible.month, 1))}
+      onDayPress={(day) => onOpenDay(day, describeDay(day).status)}
+      isLudus={campaign.isLudus}
     />
   );
 }

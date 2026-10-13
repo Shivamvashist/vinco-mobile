@@ -1,14 +1,18 @@
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { commonCopy, progressCopy } from '@/copy';
 import { type DayKey, monthGrid, parseDayKey } from '@/lib/dates';
-import { createStyles } from '@/theme';
+import { createStyles, useFeedback } from '@/theme';
 
 import { IconButton } from '../IconButton';
 import { Txt } from '../Txt';
 
-/** How a day reads on the calendar. `open` is today before it's held; `outside` is not in the arc. */
-export type CalendarDayStatus = 'conquered' | 'held' | 'truce' | 'missed' | 'open' | 'future' | 'outside';
+/**
+ * How a day reads on the calendar. `open` is today before it's held; `rest` is a free-training
+ * day without every order done (no streak, so not "missed"); `outside` is not in the arc.
+ */
+export type CalendarDayStatus =
+  'conquered' | 'held' | 'truce' | 'missed' | 'rest' | 'open' | 'future' | 'outside';
 
 export type CalendarDay = { status: CalendarDayStatus; isToday: boolean };
 
@@ -20,6 +24,10 @@ export type MonthCalendarProps = {
   canGoForward: boolean;
   onPrevious: () => void;
   onNext: () => void;
+  /** Opens a day's summary. Days still to come, or outside the arc, can't be opened. */
+  onDayPress?: (day: DayKey) => void;
+  /** Free training: the legend leaves out Truces and misses. */
+  isLudus?: boolean;
 };
 
 const copy = progressCopy.calendar;
@@ -42,6 +50,8 @@ export function MonthCalendar({
   canGoForward,
   onPrevious,
   onNext,
+  onDayPress,
+  isLudus = false,
 }: MonthCalendarProps) {
   const styles = useStyles();
 
@@ -71,7 +81,7 @@ export function MonthCalendar({
         <View key={weekIndex} style={styles.row}>
           {week.map((day, dayIndex) =>
             day ? (
-              <DayCell key={day} day={day} details={describeDay(day)} />
+              <DayCell key={day} day={day} details={describeDay(day)} onPress={onDayPress} />
             ) : (
               <View key={`blank-${weekIndex}-${dayIndex}`} style={styles.cell} />
             ),
@@ -80,37 +90,68 @@ export function MonthCalendar({
       ))}
 
       <View style={styles.legend}>
-        {LEGEND.map((item) => (
-          <View key={item.status} style={styles.legendItem}>
-            <View style={[styles.legendSwatch, styles[item.status]]} />
-            <Txt variant="micro">{item.label}</Txt>
-          </View>
-        ))}
+        {LEGEND.filter((item) => !isLudus || item.status === 'conquered' || item.status === 'held').map(
+          (item) => (
+            <View key={item.status} style={styles.legendItem}>
+              <View style={[styles.legendSwatch, styles[item.status]]} />
+              <Txt variant="micro">{item.label}</Txt>
+            </View>
+          ),
+        )}
       </View>
     </View>
   );
 }
 
-type DayCellProps = { day: DayKey; details: CalendarDay };
+type DayCellProps = { day: DayKey; details: CalendarDay; onPress?: (day: DayKey) => void };
 
-function DayCell({ day, details }: DayCellProps) {
+function DayCell({ day, details, onPress }: DayCellProps) {
   const styles = useStyles();
+  const play = useFeedback();
   const { status, isToday } = details;
   const dateNumber = parseDayKey(day).day;
   const textColor =
     status === 'conquered' ? 'onAccent' : status === 'future' || status === 'outside' ? 'textFaint' : 'text';
   const statusWord = status === 'open' ? copy.statusWords.today : copy.statusWords[status];
 
+  const canOpen = onPress != null && status !== 'future' && status !== 'outside';
+  const label = copy.dayLabel(commonCopy.fullDateLabel(day), statusWord);
+  const number = (
+    <Txt variant="micro" color={textColor}>
+      {dateNumber}
+    </Txt>
+  );
+
+  if (!canOpen) {
+    return (
+      <View
+        style={[styles.cell, styles.day, styles[status], isToday && styles.today]}
+        accessible
+        accessibilityLabel={label}
+      >
+        {number}
+      </View>
+    );
+  }
   return (
-    <View
-      style={[styles.cell, styles.day, styles[status], isToday && styles.today]}
-      accessible
-      accessibilityLabel={copy.dayLabel(commonCopy.fullDateLabel(day), statusWord)}
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityHint={progressCopy.daySheet.hint}
+      onPress={() => {
+        play('tap');
+        onPress(day);
+      }}
+      style={({ pressed }) => [
+        styles.cell,
+        styles.day,
+        styles[status],
+        isToday && styles.today,
+        pressed && styles.pressed,
+      ]}
     >
-      <Txt variant="micro" color={textColor}>
-        {dateNumber}
-      </Txt>
-    </View>
+      {number}
+    </Pressable>
   );
 }
 
@@ -135,9 +176,11 @@ const useStyles = createStyles((theme) => ({
   truce: { backgroundColor: theme.colors.rest },
   missed: { borderWidth: theme.layout.borderWidthStrong, borderColor: theme.colors.dangerBorder },
   open: { backgroundColor: theme.colors.surface },
+  rest: { backgroundColor: theme.colors.surface },
   future: { backgroundColor: theme.colors.surface },
   outside: {},
   today: { borderWidth: theme.layout.borderWidthStrong, borderColor: theme.colors.text },
+  pressed: { opacity: 0.7 },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space.md, marginTop: theme.space.sm },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: theme.space.xs + theme.space.xxs },
   legendSwatch: { width: theme.space.md, height: theme.space.md, borderRadius: theme.radius.xs },

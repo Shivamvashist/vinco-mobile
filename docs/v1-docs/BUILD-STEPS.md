@@ -2,7 +2,7 @@
 
 From an empty folder to Early Access on **2 November 2026**. Each step lists its goal, the work, how it's checked, and what to learn along the way. Tick boxes as you finish.
 
-**Status:** Steps 1 to 5 and 7 to 11 done; Step 13's day card done. Step 6 (Play build) waits on the developer's decisions. Next: Step 12 (nudges, to-do, step one, bedtime) and Step 13's decorations.
+**Status (14 Oct):** Steps 1 to 5 and 7 to 11 done, most of 12 and 13, Wave 2 and Wave 3 done. Step 6 (Play build) waits on the developer's decisions. Next: local notifications (Step 12), then hardening (Step 14). Current task list: [TASKS-2026-10-13.md](../TASKS-2026-10-13.md).
 
 **Every step ends with a checkpoint:**
 
@@ -249,7 +249,7 @@ From an empty folder to Early Access on **2 November 2026**. Each step lists its
 - [ ] `expo-notifications`, local only; permission asked when first needed
 - [ ] Scheduler: morning brief, evening check (only if something's open), wind-down; at most three a day (tested)
 - [x] Orders and tasks ([docs/ORDERS-AND-TASKS.md](../ORDERS-AND-TASKS.md)): the user's own orders (minimum and full goal, count toward the seal, stand down from tomorrow), daily tasks to the arc's end, day tasks for today or tomorrow, "carry over or drop?", the to-do tile and screen, "Your orders" screen; day results stored at sealing
-- [ ] Own orders in onboarding (orders step), if wanted
+- [x] Own orders in onboarding: Wave 3 starts onboarding from them
 - [ ] Step one templates and the Armory list
 
 ## Step 13: Day card and honours
@@ -258,7 +258,7 @@ From an empty folder to Early Access on **2 November 2026**. Each step lists its
 - [x] Starting decorations (computed from records) and the treasury on Vici
 - [x] Wave 2 (10 Oct): the Forum on the local ledger (Truce, alarm pass, card styles, app icons), the Aerarium (ways to earn), treasury history
 
-## Wave 2 (10 Oct): see [docs/WAVE-2.md](../WAVE-2.md)
+## Wave 2 (10 Oct): see [WAVE-2.md](../docs-v1.0.0/WAVE-2.md), archived
 
 - [x] Free training (open plan, no streak) in onboarding and Vici; moving between a campaign and free training
 - [x] Castra (Settings) tab; Vici rebuilt (record, treasury, decorations, past arcs, what next)
@@ -266,6 +266,13 @@ From an empty folder to Early Access on **2 November 2026**. Each step lists its
 - [x] Fits every phone: orders step stacks, selfie and timelapse frames flex
 - [x] Guard levels and Aurora: rules, store, bridges and preview screens ([docs/GUARDIANS.md](../GUARDIANS.md)); native modules next
 - [x] Backend plan ([docs/BACKEND-PLAN.md](../BACKEND-PLAN.md))
+
+## Wave 3 (13 Oct): see [TASKS-2026-10-13.md](../TASKS-2026-10-13.md)
+
+- [x] Onboarding from orders (suggested, own, or a ready-made campaign); oath for three months, heard twice a day
+- [x] Clean Today: user menu instead of the Settings tab, quick logs, done orders sink, water suggestion, run nudge in free training
+- [x] To-dos carried over by themselves; calories; Vidi body chart and day summary
+- [x] Sizes scaled to the phone's width; sounds off by default with signature moments always on
 
 ## Step 14: Hardening and release
 

@@ -1,5 +1,7 @@
 # Vinco UI kit: component specs
 
+Sizes below are design sizes: the theme scales them to the phone's width (DESIGN-SYSTEM.md section 5).
+
 Every shared component, specced against the prototype (`docs/v1-reference/Vinco app UI.html`) **before** it was built, as [CONVENTIONS.md](CONVENTIONS.md) section 7 requires. Only components with a known screen to serve are here: nothing generic "just in case".
 
 Each one is shown in all its states in the theme lab (`/dev/theme-lab`, long-press the Vici tab in development).
@@ -31,7 +33,7 @@ Shared rules for all components:
 
 ### Icon
 
-- **Used in:** order rows and order cards (water, sunrise, meal, workout), chips (flame), tone cards (book, helmet, flame), tiles (camera, list), lock badge, back and close buttons, recorders (mic), status (check), selfie (flipCamera).
+- **Used in:** order rows and order cards (water, sunrise, meal, workout), chips (flame), tone cards (book, helmet, flame), quick logs (camera, plate), the user button (user), the menu (settings, key), lock badge, back and close buttons, recorders (mic), status (check), selfie (flipCamera).
 - **Props:** `name: IconName`, `size = layout.iconSize`, `color: ColorRole = 'text'`, `strokeWidth = 1.8`, `accessibilityLabel?`.
 - **Drawing:** the prototype's 24 by 24 line icons, round caps and joins, no fill.
 - **Accessibility:** decorative (hidden) unless a label is passed, then announced as an image.
@@ -51,7 +53,7 @@ Shared rules for all components:
 ### Button
 
 - **Used in:** every primary action ("Continue", "Accept my orders", "Seal the day"), secondary ("See your progress", "Record again"), quiet links ("Skip for now", "Back to Today"), and the large two-line "Cross the Rubicon / Begin your arc".
-- **Props:** `label`, `onPress`, `variant: 'primary' | 'secondary' | 'ghost' | 'danger' = 'primary'` (danger: wax-seal red, only for the confirm step of something that can't be undone, like "Retreat to the Rubicon"), `size: 'regular' | 'compact' | 'large' = 'regular'` (56, 48, 64), `sublabel?` (large only), `disabled`, `loading`, `cue: FeedbackCue | null = 'tap'`, `accessibilityHint?`.
+- **Props:** `label`, `onPress`, `variant: 'primary' | 'secondary' | 'ghost' | 'danger' = 'primary'` (danger: wax-seal red, only for the confirm step of something that can't be undone, like "Retreat to the Rubicon"), `size: 'regular' | 'compact' | 'large' = 'regular'` (52, 44, 58), `sublabel?` (large only), `disabled`, `loading`, `cue: FeedbackCue | null = 'tap'`, `accessibilityHint?`.
 - **States:** pressed (primary darkens to `accentPressed`, secondary fills with `surface`, ghost dims), disabled (primary turns `surface` with muted text, no cue), loading (spinner, presses ignored).
 - **Edge cases:** a second press within 500 ms is ignored, so a double tap can't navigate twice or save twice.
 - **Accessibility:** role button, busy and disabled states, label includes the sublabel.
@@ -83,7 +85,7 @@ Shared rules for all components:
 
 ### ProgressBar
 
-- **Used in:** water's 4 segments (Today), onboarding step indicator (5 segments, thin), rank progress and timelapse progress (continuous).
+- **Used in:** water's 4 segments (Today), onboarding step indicator (4 or 6 segments by path, thin), rank progress and timelapse progress (continuous).
 - **Props:** `value` (0 to 1) **or** `segments: { total, filled }`, `size: 'thin' | 'regular' | 'thick' = 'regular'` (3, 5, 6), `color: ColorRole = 'accent'`, `accessibilityLabel?`.
 - **Edge cases:** values outside 0 to 1, NaN and Infinity are clamped; `filled` above `total` is capped; `total` 0 renders an empty track.
 - **Motion:** fill animates over `motion.duration.base`.
@@ -91,15 +93,15 @@ Shared rules for all components:
 
 ### ProgressRing
 
-- **Used in:** Today header, orders done out of 4.
-- **Props:** `value` (0 to 1), `size = 64`, `strokeWidth = 5`, `children` (centre content), `accessibilityLabel`.
+- **Used in:** the theme lab (Today dropped its ring on 13 Oct for "3 of 5 done").
+- **Props:** `value` (0 to 1), `size = layout.ringSize`, `strokeWidth = 5`, `children` (centre content), `accessibilityLabel`.
 - **Motion:** arc animates over 600 ms with the standard easing.
 - **Edge cases and accessibility:** clamped like ProgressBar; role progressbar.
 
 ### StatusCircle
 
 - **Used in:** each order row (Today), the step-one box.
-- **Props:** `status: 'none' | 'min' | 'full'`, `size = 30`.
+- **Props:** `status: 'none' | 'min' | 'full'`, `size = layout.statusCircleSize`.
 - **Look:** none = `borderStrong` ring; min = `accent` ring with `accentFill`; full = solid `accent` with an `onAccent` check.
 - **Motion:** pops (0.6, 1.2, 1) when the status changes, never on first render.
 
@@ -121,8 +123,8 @@ Shared rules for all components:
 
 ### TextField
 
-- **Used in:** workout note (Today, Step 5), weight (selfie, Step 10), step-one goal (Step 12).
-- **Props:** `label`, `value`, `onChangeText`, `multiline`, plus `placeholder`, `maxLength`, `keyboardType`, `autoCapitalize`, `returnKeyType`, `onSubmitEditing`.
+- **Used in:** workout note (Today, Step 5), weight (selfie, Step 10), own orders (what, unit, how many), calories.
+- **Props:** `label`, `value`, `onChangeText`, `multiline`, plus `placeholder`, `autoFocus`, `maxLength`, `keyboardType`, `autoCapitalize`, `returnKeyType`, `onSubmitEditing`.
 - **Look:** caption label above; field on `background` with `border`, radius `sm`, body font; border turns `accent` while focused; placeholder in `textFaint`.
 - **Edge cases:** callers pass `maxLength` so notes stay short; font scale capped like body text.
 - **Accessibility:** the label is the field's accessibility label.
@@ -170,6 +172,8 @@ Shared rules for all components:
 
 ## Built with their screens, not in the kit
 
-These are specific to one screen, so they live with it: `today/` (`TaskRow`, `WorkoutSheet`, `StampOverlay`, `SelfieTile`, `SealDayCard`: stays once every order holds so the day card is always one tap away; `TruceBanner`: while a Truce can still save the campaign; `TodayTodo`: every-day and today tasks inline, hold to edit, carry-over line; `DawnCard`: the first step until wake-up is logged; `WakeSheet`: wake and bed times with live hours slept and validation; `SickDaySheet`, `SickDayCard`: the sick-day Truce and the way back), `arc/` also `AllProofCard` (every selfie across arcs), `proof/` also `TimelapseTile`, `proof/` (`WeightTile`, `WeightSheet`: neutral, 30 to 250 kg), `progress/` also `WeekBarChart` (a week of bars after the prototype: values over bars, dashed target, tones full, held, short, rest), `WeightChart` (one line across the arc, latest point larger), `Commentarii` (the logs view: chips, week arrows, chart, insight), `orders/` (`AddOrderSheet`: name, unit, minimum, full goal; errors inline, closes only once saved), `tasks/` (`TaskItemRow`: a checkbox row, hold or pencil to edit, optional remove; `CarryOverCard`: carry over or drop, one by one or all; `TaskSheet`: one sheet for add and edit, "How often?" with Just today, Tomorrow, Every day or An order; `TaskSheets`: chains it into `AddOrderSheet`), `plan/` (`OrdersPanel`, `TodoPanel` for `/plan`), `onboarding/` (`FlowLayout`, `QuoteCarousel`, `RiverLines`, `TypingPreview`, `OathRecorder`), `progress/` (`StatTile`, `MonthCalendar`), `arc/` (`ArcJourney`, `RankCard`, `RecordGrid`, `TreasuryCard`, `DecorationGrid`: earned gold, locked dashed with how to earn; `PastArcList`, `ArcChoiceCard`, `BeginCampaignSheet`, `LudusSheet`, `RetreatSheet`: confirm button stays disabled until RETREAT is typed; "Hold the line" cancels), `campaign/` (`Column`), `dayCard/` (`DayCard`, fixed palettes so a shared card looks the same on every phone). `settings/` (`SettingsGroup`: titled card that draws the lines between rows; `SettingsRow`: value with chevron or a switch, optional detail line; `ToneSheet`, `AppearanceSheet`, `OutlineSheet`, `WakeTimeSheet`), `forum/` (`ForumItemCard`, `ItemArt`, `PurchaseSheet`: the button says why not, "Need 30 more"; `EarnList`, `TreasuryHistory`), `guard/` (`PreviewNotice`: "Arrives with the Vinco build"). Also outside the kit: `StartupError` (database recovery screen).
+These are specific to one screen, so they live with it: `today/` (`OrderList`: heading with "3 of 5 done", rows that slide as done orders sink; `QuickLogs`: selfie, weight and calories buttons that shrink once done; `TaskRow`: a shorter row, muted once conquered; `WorkoutSheet`, `StampOverlay`, `SealDayCard`: stays once every order holds so the day card is always one tap away; `TruceBanner`: while a Truce can still save the campaign; `TodayTodo`: every-day and today tasks inline, hold to edit; `DawnCard`: the first step until wake-up is logged; `WakeSheet`: wake and bed times with live hours slept and validation; `SickDaySheet`, `SickDayCard`: the sick-day Truce and the way back), `menu/` (`UserMenu`: popover under the user button with Settings, Orders and to-dos, Permissions, Guard, Aurora, the Forum and the oath), `arc/` also `AllProofCard` (every selfie across arcs), `proof/` (`WeightSheet`: neutral, 30 to 250 kg; `CaloriesSheet`: whole kcal for the day), `progress/` also `WeekBarChart` (a week of bars after the prototype: values over bars, dashed target, tones full, held, short, rest), `BodyChart` (weight and dashed calories, each on its own scale, each hideable), `DaySummarySheet` (one calendar day: orders, sleep, body, selfie, to-dos), `Commentarii` (the logs view: chips, week arrows, chart, insight), `orders/` (`AddOrderSheet`: what, unit, how many a day, with a preview line; errors inline, closes only once saved; `OrderAmountSheet`: type the amount for goals over 20; `PlanOrderCard`: a suggested or own order in onboarding), `tasks/` (`TaskItemRow`: a checkbox row, hold or pencil to edit, optional remove; `TaskSheet`: one sheet for add and edit, "How often?" with Just today, Tomorrow, Every day or An order; `TaskSheets`: chains it into `AddOrderSheet`), `plan/` (`OrdersPanel`, `TodoPanel` for `/plan`), `onboarding/` (`FlowLayout`, `QuoteCarousel`, `RiverLines`, `TypingPreview`, `OathRecorder`), `progress/` (`StatTile`, `MonthCalendar`: tap a day for its summary), `arc/` (`ArcJourney`, `RankCard`, `RecordGrid`, `TreasuryCard`, `DecorationGrid`: earned gold, locked dashed with how to earn; `PastArcList`, `ArcChoiceCard`, `BeginCampaignSheet`, `LudusSheet`, `RetreatSheet`: confirm button stays disabled until RETREAT is typed; "Hold the line" cancels), `campaign/` (`Column`), `dayCard/` (`DayCard`, fixed palettes so a shared card looks the same on every phone). `settings/` (`SettingsGroup`: titled card that draws the lines between rows; `SettingsRow`: value with chevron or a switch, optional detail line; `ToneSheet`, `AppearanceSheet`, `OutlineSheet`, `WakeTimeSheet`), `forum/` (`ForumItemCard`, `ItemArt`, `PurchaseSheet`: the button says why not, "Need 30 more"; `EarnList`, `TreasuryHistory`), `guard/` (`PreviewNotice`: "Arrives with the Vinco build"). Also outside the kit: `StartupError` (database recovery screen).
 
 Kit changes in Wave 2: `StatChip` can be pressed (`onPress`, `currency` emphasis); `ChoiceChip` has `isMulti` (checkbox chips, 44 wide) and `accessibilityLabel`; `Stepper` values shrink to fit; `SelfieCapture` has `fill` and a window-based frame height; `Icon` gained coin, shield, bell, card, laurel, medal, history, alarm, eye, block, dove, plus, edit.
+
+Kit changes in Wave 3 (13 Oct): every size comes from the scaled theme; `TextField` takes `autoFocus`; `Icon` gained user, settings, plate, key.

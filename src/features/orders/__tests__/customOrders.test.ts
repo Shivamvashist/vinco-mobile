@@ -1,10 +1,13 @@
 import {
+  clampCustomAmount,
   CUSTOM_ORDER_LIMITS,
   getCustomOrderStatus,
   isCustomOrderActiveOn,
+  isTapCounted,
   nextCustomAmount,
   normalizeCustomOrder,
   previousCustomAmount,
+  toCustomOrderDraft,
   validateCustomOrder,
 } from '..';
 
@@ -37,20 +40,29 @@ describe('own orders', () => {
     });
   });
 
-  it('steps up and down a level per tap', () => {
-    expect(getCustomOrderStatus(0, READ)).toBe('none');
-    expect(nextCustomAmount(0, READ)).toBe(10);
-    expect(nextCustomAmount(10, READ)).toBe(30);
-    expect(nextCustomAmount(30, READ)).toBe(30);
-    expect(previousCustomAmount(30, READ)).toBe(10);
-    expect(previousCustomAmount(10, READ)).toBe(0);
-    expect(previousCustomAmount(0, READ)).toBe(0);
+  it('counts up one per tap, to the goal, and back down', () => {
+    const water = toCustomOrderDraft('Water', 'glass', 12);
+    expect(water).toEqual({ name: 'Water', unit: 'glass', min: 12, full: 12 });
+    expect(nextCustomAmount(0, water)).toBe(1);
+    expect(nextCustomAmount(11, water)).toBe(12);
+    expect(nextCustomAmount(12, water)).toBe(12);
+    expect(getCustomOrderStatus(11, water)).toBe('none');
+    expect(getCustomOrderStatus(12, water)).toBe('full');
+    expect(previousCustomAmount(1, water)).toBe(0);
+    expect(previousCustomAmount(0, water)).toBe(0);
   });
 
-  it('treats a yes-or-no order as one step', () => {
-    const noSugar = { min: 1, full: 1 };
-    expect(nextCustomAmount(0, noSugar)).toBe(1);
-    expect(getCustomOrderStatus(1, noSugar)).toBe('full');
-    expect(previousCustomAmount(1, noSugar)).toBe(0);
+  it('keeps a lower minimum from older orders working', () => {
+    expect(getCustomOrderStatus(10, READ)).toBe('min');
+    expect(nextCustomAmount(29, READ)).toBe(30);
+  });
+
+  it('taps small counts and types big ones', () => {
+    expect(isTapCounted({ full: CUSTOM_ORDER_LIMITS.maxTapCount })).toBe(true);
+    expect(isTapCounted({ full: 10000 })).toBe(false);
+    expect(clampCustomAmount(12.6, { full: 30 })).toBe(13);
+    expect(clampCustomAmount(-4, { full: 30 })).toBe(0);
+    expect(clampCustomAmount(99, { full: 30 })).toBe(30);
+    expect(clampCustomAmount(Number.NaN, { full: 30 })).toBe(0);
   });
 });
