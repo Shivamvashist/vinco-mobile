@@ -1,5 +1,4 @@
 import type { ArcLength } from '@/features/arc';
-import type { ColorMode } from '@/theme';
 
 import { tabsCopy } from './tabs';
 import type { ToneLines } from './toneLines';
@@ -36,42 +35,90 @@ export const arcCopy = {
       `${meaning}. Next: ${nextName} in ${days} ${days === 1 ? 'day' : 'days'}.`,
     top: (meaning: string): string => `${meaning}. The highest rank.`,
     progressLabel: 'Progress to next rank',
-    denarii: (amount: number): string => `${amount} denarii earned`,
   },
 
-  settingsSection: 'Settings',
-  settings: {
-    tone: 'Tone',
-    colorMode: 'Appearance',
-    sound: 'Sounds',
-    haptics: 'Vibration',
-    orders: 'Your orders',
-    ordersValue: 'Add or stand down',
-    truces: 'Truces in reserve',
-    retreat: 'Sound the retreat',
-    retreatValue: 'Reset journey',
-    devMode: 'Dev mode',
-    oath: 'Your oath',
-    oathSealed: (dayRoman: string): string => `Sealed until Day ${dayRoman}`,
-    oathListen: 'Listen',
-    oathStop: 'Stop',
-    oathNone: 'Not recorded',
+  /** Free training: the open plan, no streak. */
+  ludusName: 'Free training',
+  ludusCaption: (startLabel: string, dayRoman: string): string => `Since ${startLabel} · Day ${dayRoman}`,
+
+  stats: {
+    section: 'Your record',
+    campaign: 'Campaign',
+    best: 'Best campaign',
+    trained: 'Days trained',
+    conquered: 'Days conquered',
+    held: 'Held at the minimum',
+    trucesUsed: 'Truces called',
+    selfies: 'Selfies',
+    daysSoFar: 'Days since Day I',
   },
-  colorModes: {
-    dark: 'Dark',
-    light: 'Light',
-    system: 'Match phone',
-  } satisfies Record<ColorMode, string>,
+
+  treasury: {
+    section: 'Treasury',
+    denarii: (amount: number): string => `${amount} denarii`,
+    truces: (count: number): string => `${count} ${count === 1 ? 'Truce' : 'Truces'}`,
+    passes: (count: number): string => `${count} alarm ${count === 1 ? 'pass' : 'passes'}`,
+    visit: 'Visit the Forum',
+    trucesHint: 'How Truces work',
+  },
+
+  decorations: {
+    section: 'Decorations',
+    count: (earned: number, total: number): string => `${earned} of ${total} earned`,
+    earned: 'Earned',
+    items: {
+      firstSeal: { name: 'First seal', how: 'Hold the line for one day.' },
+      conqueror: { name: 'Conqueror', how: 'Conquer a day: every order at its full goal.' },
+      ironWeek: { name: 'Iron week', how: 'Seven days of campaign in a row.' },
+      resurgo: { name: '"Resurgo"', how: 'I rise again: hold the day after a miss.' },
+      halfway: {
+        name: 'Halfway to Rome',
+        how: 'Pass the middle of your campaign (30 days in free training).',
+      },
+      proofKeeper: { name: 'Proof keeper', how: 'Take seven selfies.' },
+      oathKeeper: { name: 'Oath keeper', how: 'Reach Day X with your oath recorded.' },
+    },
+  },
+
+  past: {
+    section: 'Past arcs',
+    ludus: 'Free training',
+    dates: (startLabel: string, endLabel: string): string => `${startLabel} to ${endLabel}`,
+    done: (completed: number, conquered: number): string =>
+      `${completed} ${completed === 1 ? 'day' : 'days'} held · ${conquered} conquered`,
+    finished: 'Complete',
+    ended: 'Ended early',
+  },
+
+  /** Moving between campaigns and free training. */
+  choice: {
+    ludusTitle: 'Ready for a campaign?',
+    ludusBody: 'Pick a length and it starts today. Your orders, wake-up time and oath come with you.',
+    begin: 'Begin a campaign',
+    finishedTitle: 'Campaign complete',
+    finishedBody: 'You finished what you started. What next?',
+    another: 'Begin another campaign',
+    toLudus: 'Switch to free training',
+    leaveForLudus: 'Switch to free training instead',
+    sheetTitle: 'Begin a campaign',
+    sheetBody: 'It starts today, Day I. Your orders, wake-up time and oath come with you.',
+    start: (lengthRoman: string): string => `Begin ${lengthRoman} days`,
+    ludusSheetTitle: 'Leave the campaign?',
+    ludusSheetBody:
+      'Your campaign ends today and you switch to free training: no streak, no fall. Your record stays in Past arcs. This is not a retreat: nothing is wiped.',
+    ludusConfirm: 'Switch to free training',
+    cancel: 'Stay',
+    failed: 'That did not save. Nothing changed. Try again.',
+  },
+
   sheets: {
-    tone: 'How should Vinco talk to you?',
-    colorMode: 'Appearance',
     truces: (count: number): string =>
       count === 0 ? 'No Truces in reserve' : `${count} ${count === 1 ? 'Truce' : 'Truces'} in reserve`,
   },
 
   /** How Truces are earned, under the reserve count. */
   truceInfo: (everyDays: number, max: number, price: number): string =>
-    `Earn one every ${everyDays} days of campaign (hold up to ${max}), or buy one for ${price} denarii when a day falls.`,
+    `Earn one every ${everyDays} days of campaign (hold up to ${max}). Buy one ahead in the Forum for ${price} denarii, or at the moment a day falls.`,
 
   /** Resetting the journey. The typed word guards against a slip of the thumb. */
   retreat: {

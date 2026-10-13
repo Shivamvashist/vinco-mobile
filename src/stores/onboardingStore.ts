@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-import { type ArcLength, DEFAULT_ARC_LENGTH, isArcLength } from '@/features/arc';
+import { type ArcKind, type ArcLength, DEFAULT_ARC_LENGTH, isArcKind, isArcLength } from '@/features/arc';
 import {
   DEFAULT_FULL_GOALS,
   DEFAULT_WAKE_MINUTES,
@@ -21,6 +21,8 @@ export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
 
 /** Choices made so far. Becomes an arc in the database when onboarding finishes. */
 export type OnboardingDraft = {
+  /** A campaign (arcLength days) or the Ludus (no end). */
+  arcKind: ArcKind;
   arcLength: ArcLength;
   fullGoals: FullGoals;
   /** Minutes after midnight. */
@@ -32,7 +34,10 @@ export type OnboardingDraft = {
 };
 
 type OnboardingActions = {
+  /** Picks a campaign of this length. */
   setArcLength: (length: ArcLength) => void;
+  /** Picks the Ludus (the length stays, for if they switch back). */
+  chooseLudus: () => void;
   setFullGoal: (order: TunableOrder, value: number) => void;
   setWakeMinutes: (minutes: number) => void;
   setOathPath: (path: string | null) => void;
@@ -44,6 +49,7 @@ type OnboardingActions = {
 export type OnboardingStore = OnboardingDraft & OnboardingActions;
 
 export const DEFAULT_ONBOARDING_DRAFT: OnboardingDraft = {
+  arcKind: 'campaign',
   arcLength: DEFAULT_ARC_LENGTH,
   fullGoals: DEFAULT_FULL_GOALS,
   wakeMinutes: DEFAULT_WAKE_MINUTES,
@@ -60,6 +66,7 @@ export function sanitizeOnboardingDraft(saved: unknown): OnboardingDraft {
     value.fullGoals != null && typeof value.fullGoals === 'object' ? value.fullGoals : {}
   ) as Record<string, unknown>;
   return {
+    arcKind: isArcKind(value.arcKind) ? value.arcKind : 'campaign',
     arcLength: isArcLength(value.arcLength) ? value.arcLength : DEFAULT_ARC_LENGTH,
     fullGoals: {
       water: fitToRange(goals.water, FULL_GOAL_RANGES.water, DEFAULT_FULL_GOALS.water),
@@ -79,7 +86,8 @@ export const useOnboardingStore = create<OnboardingStore>()(
   persist(
     (set) => ({
       ...DEFAULT_ONBOARDING_DRAFT,
-      setArcLength: (arcLength) => set({ arcLength }),
+      setArcLength: (arcLength) => set({ arcLength, arcKind: 'campaign' }),
+      chooseLudus: () => set({ arcKind: 'ludus' }),
       setFullGoal: (order, value) =>
         set((state) => ({
           fullGoals: {
@@ -97,7 +105,8 @@ export const useOnboardingStore = create<OnboardingStore>()(
       name: 'vinco.onboarding',
       version: STORE_VERSION,
       storage: createPhoneStorage<OnboardingDraft>(),
-      partialize: ({ arcLength, fullGoals, wakeMinutes, oathPath, lastStep }) => ({
+      partialize: ({ arcKind, arcLength, fullGoals, wakeMinutes, oathPath, lastStep }) => ({
+        arcKind,
         arcLength,
         fullGoals,
         wakeMinutes,

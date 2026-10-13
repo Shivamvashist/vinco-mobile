@@ -187,3 +187,32 @@ export function resolveCarryOver(
     }
   });
 }
+
+/**
+ * Renames a task or changes how often it comes (just today, tomorrow, every day), in one
+ * transaction: the task is removed from today on and added again as asked, so the usual limits
+ * and rules apply. A tick for today carries over when the new task still shows today.
+ * Throws TaskSaveError if refused (nothing changes).
+ * @returns the task's new id
+ */
+export function changeTask(
+  db: AppDatabase,
+  taskId: number,
+  title: string,
+  when: TaskWhen,
+  today: DayKey,
+  arcLastDay: DayKey,
+): number {
+  return db.transaction((tx) => {
+    const wasDoneToday =
+      tx
+        .select()
+        .from(taskCompletions)
+        .where(and(eq(taskCompletions.taskId, taskId), eq(taskCompletions.day, today)))
+        .get() !== undefined;
+    removeTask(tx, taskId, today);
+    const id = addTask(tx, title, when, today, arcLastDay);
+    if (wasDoneToday && when !== 'tomorrow') setTaskDone(tx, id, today, true);
+    return id;
+  });
+}

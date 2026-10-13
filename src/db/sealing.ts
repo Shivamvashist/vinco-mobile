@@ -1,6 +1,6 @@
-import { and, gte, lte } from 'drizzle-orm';
+import { and, gte, isNotNull, lte } from 'drizzle-orm';
 
-import { arcEndDay } from '@/features/arc';
+import { arcEndDay, type ArcKind } from '@/features/arc';
 import {
   applyTruce,
   type DayRecord,
@@ -20,8 +20,11 @@ import { toOrderAmounts } from './orderLogs';
 import { type DayLogRow, dayLogs, ledger, type OrderLogRow, orderLogs } from './schema';
 import { grantTruce, refundTruce } from './truces';
 
-/** The arc to seal. Without an id, only Vinco's four orders count (own orders belong to an arc). */
-type ArcRange = { id?: number; startDay: DayKey; lengthDays: number };
+/**
+ * The arc to seal. Without an id, only Vinco's four orders count (own orders belong to an arc).
+ * A Ludus (no streak) earns day denarii but no campaign-week bonus or Truces.
+ */
+type ArcRange = { id?: number; kind?: ArcKind; startDay: DayKey; lengthDays: number };
 
 /**
  * Seals every finished day of the arc that isn't sealed yet: today's past days, including
@@ -75,7 +78,9 @@ export function sealFinishedDays(
       const result = getDayStanding(tx, arc.id ?? null, day, targets);
       const hasSickDayTruce = log?.truceUsed === true;
       const recordResult = applyTruce(result, hasSickDayTruce);
-      const campaignAfter = getCurrentCampaign(records, day, keepsCampaign(recordResult));
+      // The Ludus keeps no campaign, so no weekly bonus or Truce is ever earned there.
+      const campaignAfter =
+        arc.kind === 'ludus' ? 0 : getCurrentCampaign(records, day, keepsCampaign(recordResult));
       records.push({ day, result: recordResult });
 
       tx.insert(dayLogs)
@@ -116,6 +121,14 @@ export function selectOrderLogsBetween(db: AppDatabase, from: DayKey, to: DayKey
     .select()
     .from(orderLogs)
     .where(and(gte(orderLogs.day, from), lte(orderLogs.day, to)));
+}
+
+/** The query for every sealed day's stored result, for the journey's history. Pass to useLiveQuery. */
+export function selectSealedResults(db: AppDatabase) {
+  return db
+    .select({ day: dayLogs.day, result: dayLogs.result })
+    .from(dayLogs)
+    .where(isNotNull(dayLogs.result));
 }
 
 /** The query for every denarii award. Pass to useLiveQuery. */

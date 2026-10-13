@@ -4,6 +4,7 @@ export {
   findCarryOver,
   isTaskOnDay,
   normalizeTaskTitle,
+  sortDoneLast,
   summarizeDay,
   type Task,
   type TaskError,

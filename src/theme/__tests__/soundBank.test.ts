@@ -6,7 +6,12 @@ import type { FeedbackSet } from '../types';
 const mockedCreatePlayer = createAudioPlayer as jest.Mock;
 
 function feedbackWith(sounds: Partial<FeedbackSet['sounds']>): FeedbackSet {
-  return { volume: 0.5, sounds: sounds as FeedbackSet['sounds'], haptics: {} as FeedbackSet['haptics'] };
+  return {
+    volume: 0.5,
+    sounds: sounds as FeedbackSet['sounds'],
+    haptics: {} as FeedbackSet['haptics'],
+    essential: [],
+  };
 }
 
 beforeEach(() => mockedCreatePlayer.mockClear());

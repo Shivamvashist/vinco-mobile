@@ -17,6 +17,7 @@ export function useCompleteOnboarding(): (selfiePath: string | null) => void {
     const draft = useOnboardingStore.getState();
     db.transaction((tx) => {
       createArc(tx, {
+        kind: draft.arcKind,
         lengthDays: draft.arcLength,
         startDay: today,
         wakeTime: toClockString(draft.wakeMinutes),

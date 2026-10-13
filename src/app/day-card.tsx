@@ -12,14 +12,21 @@ import { Toast } from '@/components/Toast';
 import { Txt } from '@/components/Txt';
 import { dayCardCopy } from '@/copy';
 import { getArcPosition } from '@/features/arc';
+import { type ForumItemId } from '@/features/forum';
 import { type OrderKind } from '@/features/orders';
 import { useActiveArc } from '@/hooks/useActiveArc';
 import { useCampaign } from '@/hooks/useCampaign';
+import { useForum } from '@/hooks/useForum';
 import { type TodayOrders, useTodayOrders } from '@/hooks/useTodayOrders';
-import { formatClockTime } from '@/lib/dates';
+import { dayOfArc, formatClockTime } from '@/lib/dates';
 import { createStyles, DAY_CARD_STYLES, type DayCardStyle, useFeedback } from '@/theme';
 
 const SWATCH_SIZE = 44;
+/** Card styles bought in the Forum, by the item that unlocks them. */
+const FORUM_STYLE_ITEMS: Partial<Record<DayCardStyle['id'], ForumItemId>> = {
+  aurum: 'cardAurum',
+  nox: 'cardNox',
+};
 
 /** "Day sealed": the shareable day card, in three styles. */
 export default function DayCardScreen() {
@@ -28,6 +35,13 @@ export default function DayCardScreen() {
   const { arc, targets } = useActiveArc();
   const orders = useTodayOrders(targets, arc?.id ?? null);
   const campaign = useCampaign(arc, targets, orders.today);
+  const forum = useForum();
+  // Free styles, plus the ones bought in the Forum.
+  const styleOptions = DAY_CARD_STYLES.filter((option) => {
+    const itemId = FORUM_STYLE_ITEMS[option.id];
+    return !option.isFromForum || (itemId != null && forum.holdings[itemId].held > 0);
+  });
+  const hasMoreInForum = styleOptions.length < DAY_CARD_STYLES.length;
   const cardRef = useRef<View>(null);
   const [cardStyle, setCardStyle] = useState<DayCardStyle>(DAY_CARD_STYLES[0] as DayCardStyle);
   const [isSharing, setIsSharing] = useState(false);
@@ -35,7 +49,11 @@ export default function DayCardScreen() {
   const hideToast = useCallback(() => setToast(null), []);
 
   const position = arc ? getArcPosition(arc.startDay, arc.lengthDays, orders.today) : null;
-  const dayNumber = position?.phase === 'active' ? position.dayNumber : (arc?.lengthDays ?? 1);
+  const dayNumber = campaign.isLudus
+    ? Math.max(1, dayOfArc(arc?.startDay ?? orders.today, orders.today))
+    : position?.phase === 'active'
+      ? position.dayNumber
+      : (arc?.lengthDays ?? 1);
 
   const close = () => {
     if (router.canGoBack()) router.back();
@@ -78,12 +96,13 @@ export default function DayCardScreen() {
           dayNumber={dayNumber}
           lengthDays={arc?.lengthDays ?? dayNumber}
           rows={describeRows(orders)}
-          campaign={campaign.campaign}
+          campaign={campaign.isLudus ? campaign.completedDays : campaign.campaign}
+          isLudus={campaign.isLudus}
           rankName={campaign.rank.current?.name ?? null}
           cardStyle={cardStyle}
         />
         <View style={styles.swatches} accessibilityRole="radiogroup">
-          {DAY_CARD_STYLES.map((option) => {
+          {styleOptions.map((option) => {
             const isSelected = option.id === cardStyle.id;
             return (
               <Pressable
@@ -104,6 +123,14 @@ export default function DayCardScreen() {
             );
           })}
         </View>
+        {hasMoreInForum ? (
+          <Button
+            label={dayCardCopy.moreStyles}
+            variant="ghost"
+            size="compact"
+            onPress={() => router.push('/forum')}
+          />
+        ) : null}
       </ScrollView>
 
       <View style={styles.footer}>

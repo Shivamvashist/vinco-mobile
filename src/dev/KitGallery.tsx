@@ -49,6 +49,7 @@ export function KitGallery() {
   const [statusIndex, setStatusIndex] = useState(0);
   const [arc, setArc] = useState(60);
   const [scene, setScene] = useState<'open' | 'missed'>('open');
+  const [days, setDays] = useState<string[]>(['M', 'W']);
   const [waterGoal, setWaterGoal] = useState(4);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -98,10 +99,26 @@ export function KitGallery() {
           <StatChip icon="flame" label="Campaign 11" />
           <StatChip label="Truce ready" emphasis="muted" />
           <StatChip label="Optio" emphasis="muted" />
+          <StatChip icon="coin" label="120 denarii" emphasis="currency" onPress={() => undefined} />
         </View>
         <View style={styles.wrapRow} accessibilityRole="radiogroup">
           <ChoiceChip label="9pm, task open" selected={scene === 'open'} onPress={() => setScene('open')} />
           <ChoiceChip label="Missed a day" selected={scene === 'missed'} onPress={() => setScene('missed')} />
+        </View>
+        <View style={styles.wrapRow}>
+          {['M', 'T', 'W'].map((day) => (
+            <ChoiceChip
+              key={day}
+              label={day}
+              isMulti
+              selected={days.includes(day)}
+              onPress={() =>
+                setDays((current) =>
+                  current.includes(day) ? current.filter((value) => value !== day) : [...current, day],
+                )
+              }
+            />
+          ))}
         </View>
       </Group>
 

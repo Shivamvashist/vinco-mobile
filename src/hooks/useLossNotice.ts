@@ -23,7 +23,11 @@ export function useLossNotice(): void {
   const campaign = useCampaign(arc, targets, today);
   const acknowledgedLossDay = useNoticesStore((state) => state.acknowledgedLossDay);
   const acknowledgeLoss = useNoticesStore((state) => state.acknowledgeLoss);
-  const breakDay = campaign.isLoaded ? (findLatestLoss(campaign.records)?.firstMissedDay ?? null) : null;
+  // The Ludus has no campaign to lose: a missed day there is just a day off.
+  const breakDay =
+    campaign.isLoaded && !campaign.isLudus
+      ? (findLatestLoss(campaign.records)?.firstMissedDay ?? null)
+      : null;
 
   useEffect(() => {
     // Day keys sort as text.

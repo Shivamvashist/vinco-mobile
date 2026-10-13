@@ -50,6 +50,20 @@
       "when": 1791549108930,
       "tag": "0006_day_sleep",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1791587340891,
+      "tag": "0007_arc_kind",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1791587693497,
+      "tag": "0008_forum",
+      "breakpoints": true
     }
   ]
 }

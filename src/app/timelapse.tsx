@@ -17,7 +17,6 @@ import { createStyles, SchemeOverride } from '@/theme';
 
 /** Each selfie stays this long: quick enough to see the change, slow enough to see a face. */
 const FRAME_MS = 350;
-const FRAME_HEIGHT = 440;
 
 const copy = proofCopy.reel;
 
@@ -44,6 +43,7 @@ function TimelapseContent() {
   const [isPlaying, setIsPlaying] = useState(true);
 
   const count = frames.length;
+  const title = scope === 'arc' && arc?.kind === 'ludus' ? copy.ludusTitle : copy.titles[scope];
   const shown = Math.min(index, Math.max(0, count - 1));
   const frame = frames[shown];
   const nextFrame = frames[shown + 1];
@@ -88,7 +88,7 @@ function TimelapseContent() {
       <View style={styles.header}>
         <IconButton icon="close" accessibilityLabel={copy.close} onPress={close} />
         <Txt variant="headingSmall" accessibilityRole="header" style={styles.title}>
-          {copy.titles[scope].toUpperCase()}
+          {title.toUpperCase()}
         </Txt>
         <View style={styles.headerSpacer} />
       </View>
@@ -125,10 +125,7 @@ function TimelapseContent() {
 
           <View style={styles.progressRow}>
             <View style={styles.progress}>
-              <ProgressBar
-                value={count > 1 ? shown / (count - 1) : 1}
-                accessibilityLabel={copy.titles[scope]}
-              />
+              <ProgressBar value={count > 1 ? shown / (count - 1) : 1} accessibilityLabel={title} />
             </View>
             <Txt variant="caption">{copy.counter(shown + 1, count)}</Txt>
           </View>
@@ -155,8 +152,9 @@ const useStyles = createStyles((theme) => ({
   title: { flex: 1, textAlign: 'center', letterSpacing: 2 },
   headerSpacer: { width: theme.layout.minTouchTarget },
   body: { flex: 1, padding: theme.space.lg, gap: theme.space.lg },
+  // The photo takes whatever the controls leave, on any screen height.
   frame: {
-    height: FRAME_HEIGHT,
+    flex: 1,
     borderRadius: theme.radius.lg,
     overflow: 'hidden',
     backgroundColor: theme.colors.surface,

@@ -15,6 +15,8 @@ export type AddOrderSheetProps = {
   onClose: () => void;
   /** Saves the order. Returns null when saved, or why it was refused. */
   onSave: (draft: CustomOrderDraft) => CustomOrderError | 'failed' | null;
+  /** The name to start with (a task becoming an order). Remount with a key to reset it. */
+  initialName?: string;
 };
 
 /** Longest number typed into a goal field (9999). */
@@ -30,11 +32,11 @@ function parseGoal(text: string): number {
  * Adds one of the user's own orders: a name, an optional unit, a minimum and a full goal.
  * Errors show under the fields; the sheet only closes once the order is saved.
  */
-export function AddOrderSheet({ visible, onClose, onSave }: AddOrderSheetProps) {
+export function AddOrderSheet({ visible, onClose, onSave, initialName = '' }: AddOrderSheetProps) {
   const styles = useStyles();
   const play = useFeedback();
   const copy = ordersCopy.add;
-  const [name, setName] = useState('');
+  const [name, setName] = useState(initialName);
   const [unit, setUnit] = useState('');
   const [min, setMin] = useState('');
   const [full, setFull] = useState('');

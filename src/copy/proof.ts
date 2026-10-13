@@ -59,6 +59,8 @@ export const proofCopy = {
   /** The timelapse player and its entry points. Neutral: it shows change, never judges it. */
   reel: {
     titles: { arc: 'This campaign', all: 'Every selfie' },
+    /** In free training there is no campaign: the same reel is "your training". */
+    ludusTitle: 'Your training',
     frameLabel: (dayRoman: string, date: string): string => `Day ${dayRoman} · ${date}`,
     counter: (index: number, total: number): string => `${index} / ${total}`,
     play: 'Play',
@@ -73,6 +75,7 @@ export const proofCopy = {
       `Selfie from ${date}, ${index} of ${total}`,
     arcTile: {
       title: 'Watch your campaign',
+      ludusTitle: 'Watch your training',
       detail: (frames: number): string => `${frames} selfies, one after another`,
     },
     allCard: {

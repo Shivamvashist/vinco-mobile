@@ -21,8 +21,12 @@ import { fileURLToPath } from 'node:url';
 const SAMPLE_RATE = 44100;
 const SILENCE = 0.0001;
 const TAIL_FADE_SECONDS = 0.01;
-/** Peak per tier, as a share of full scale: soft -9 dBFS, tick -6, moment -3, signature -1.5. */
-const LEVELS = { soft: 0.35, tick: 0.5, moment: 0.71, signature: 0.84 };
+/**
+ * Peak per tier, as a share of full scale: whisper -17 dBFS, soft -9, tick -6, moment -3,
+ * signature -1.5. Whisper is for noise-based cues (the tab whoosh): noise sounds far louder
+ * than a tone at the same peak, so it sits well below the ticks.
+ */
+const LEVELS = { whisper: 0.14, soft: 0.35, tick: 0.5, moment: 0.71, signature: 0.84 };
 const OUTPUT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'sounds', 'vinco');
 
 /** Deterministic noise so the files are identical on every run. */
@@ -283,11 +287,11 @@ const RECIPES = {
     duration: 0.2,
     layers: [tone({ frequency: 330, type: 'triangle', volume: 0.1, attack: 0, length: 0.15 })],
   },
-  // Switching tabs: a short, soft air movement (not in the prototype, which had no tab sound)
+  // Switching tabs: a brief breath of air, felt more than heard (not in the prototype)
   whoosh: {
-    level: 'soft',
-    duration: 0.2,
-    layers: [whoosh({ length: 0.18, volume: 1, from: 500, to: 2600 })],
+    level: 'whisper',
+    duration: 0.14,
+    layers: [whoosh({ length: 0.12, volume: 1, from: 900, to: 2400, q: 1.6 })],
   },
 };
 

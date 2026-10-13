@@ -40,6 +40,8 @@ export function createTestDatabase(): AppDatabase {
 
 /** Empties every table, keeping the schema. Run between tests. */
 export function clearTestDatabase(db: AppDatabase): void {
+  db.delete(schema.itemUses).run();
+  db.delete(schema.purchases).run();
   db.delete(schema.taskCompletions).run();
   db.delete(schema.tasks).run();
   db.delete(schema.customOrderLogs).run();

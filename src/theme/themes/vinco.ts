@@ -79,5 +79,7 @@ export const vincoTheme: ThemeDefinition = {
       denied: 'warning',
       whoosh: 'selection',
     },
+    // The first selfie's DAY I seal and a conquered day's stamp always sound.
+    essential: ['seal', 'stamp'],
   },
 };

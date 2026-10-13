@@ -7,13 +7,14 @@ import {
   selectDayLogsBetween,
   selectLedger,
   selectOrderLogsBetween,
+  selectPurchases,
   selectTruces,
   toCustomAmounts,
   toCustomOrder,
   toDayRecords,
   toOrderAmounts,
 } from '@/db';
-import { getArcPosition } from '@/features/arc';
+import { type ArcKind, getArcPosition } from '@/features/arc';
 import {
   CAESAR_ARC_LENGTH,
   countCompletedDays,
@@ -49,12 +50,14 @@ export type Campaign = {
   denarii: number;
   /** Today so far: open until all four orders hold. */
   todayStatus: 'open' | 'held' | 'conquered';
+  /** True in free training (the 'ludus' kind): no campaign, no loss, no Truces. */
+  isLudus: boolean;
   /** Days of the arc with a saved selfie, today included. */
   selfieDays: number;
   isLoaded: boolean;
 };
 
-type ArcInfo = { id: number; startDay: DayKey; lengthDays: number } | null;
+type ArcInfo = { id: number; kind?: ArcKind; startDay: DayKey; lengthDays: number } | null;
 
 /** The campaign so far, computed live from the arc's rows. Sealing itself runs in useSealFinishedDays. */
 export function useCampaign(arc: ArcInfo, targets: OrderTargets, today: DayKey): Campaign {
@@ -63,6 +66,7 @@ export function useCampaign(arc: ArcInfo, targets: OrderTargets, today: DayKey):
   const orderRows = useLiveQuery(selectOrderLogsBetween(db, from, today), [from, today]);
   const ledgerRows = useLiveQuery(selectLedger(db));
   const truceRows = useLiveQuery(selectTruces(db));
+  const purchaseRows = useLiveQuery(selectPurchases(db));
   const customRows = useLiveQuery(selectCustomOrdersOn(db, arc?.id ?? NO_ARC_ID, today), [arc?.id, today]);
   const customLogs = useLiveQuery(selectCustomOrderLogsBetween(db, today, today), [today]);
 
@@ -78,11 +82,15 @@ export function useCampaign(arc: ArcInfo, targets: OrderTargets, today: DayKey):
   const isTodayHeld = arc != null && todayResult !== 'missed';
   const sumAmounts = (rows: readonly { amount: number }[]) =>
     rows.reduce((sum, row) => sum + (Number.isFinite(row.amount) ? row.amount : 0), 0);
-  const denarii = sumAmounts(ledgerRows.data);
+  // Earned (and Truces bought at need) minus what the Forum took.
+  const denarii =
+    sumAmounts(ledgerRows.data) - sumAmounts(purchaseRows.data.map((row) => ({ amount: row.price })));
   const truceReserve = Math.max(0, sumAmounts(truceRows.data));
   const completedDays = countCompletedDays(records, isTodayHeld);
+  const isLudus = arc?.kind === 'ludus';
   const hasFinishedCaesarArc =
     arc != null &&
+    !isLudus &&
     arc.lengthDays >= CAESAR_ARC_LENGTH &&
     getArcPosition(arc.startDay, arc.lengthDays, today).phase === 'finished';
 
@@ -93,7 +101,9 @@ export function useCampaign(arc: ArcInfo, targets: OrderTargets, today: DayKey):
     completedDays,
     rank: getRankStatus(completedDays, hasFinishedCaesarArc),
     truceReserve,
-    truceOffer: arc ? getTruceOffer(records, today, truceReserve, denarii) : null,
+    // The Ludus has no campaign to save.
+    truceOffer: arc && !isLudus ? getTruceOffer(records, today, truceReserve, denarii) : null,
+    isLudus,
     todayStatus: !isTodayHeld ? 'open' : todayResult === 'conquered' ? 'conquered' : 'held',
     selfieDays: dayRows.data.filter((row) => row.selfiePath).length,
     denarii,
@@ -102,6 +112,7 @@ export function useCampaign(arc: ArcInfo, targets: OrderTargets, today: DayKey):
       orderRows.updatedAt !== undefined &&
       ledgerRows.updatedAt !== undefined &&
       truceRows.updatedAt !== undefined &&
+      purchaseRows.updatedAt !== undefined &&
       customRows.updatedAt !== undefined &&
       customLogs.updatedAt !== undefined,
   };

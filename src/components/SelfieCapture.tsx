@@ -1,7 +1,7 @@
 import Slider from '@react-native-community/slider';
 import { CameraView, type CameraType, useCameraPermissions } from 'expo-camera';
 import { useEffect, useRef, useState } from 'react';
-import { Image, Linking, Pressable, View } from 'react-native';
+import { Image, Linking, Pressable, useWindowDimensions, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -23,8 +23,13 @@ import { Txt } from './Txt';
 
 const copy = proofCopy.camera;
 
-// One-off sizes from the prototype's selfie screens.
-const FRAME_HEIGHT = 420;
+// One-off sizes from the prototype's selfie screens. The frame's height follows the screen:
+// a share of the window, never taller than the prototype's 420 or shorter than a usable 220.
+const FRAME_MAX_HEIGHT = 420;
+const FRAME_MIN_HEIGHT = 220;
+const FRAME_SHARE_OF_WINDOW = 0.5;
+/** In fill mode the frame gives way first on very short screens, so the shutter stays visible. */
+const FRAME_MIN_FILL_HEIGHT = 160;
 const SHUTTER_SIZE = 76;
 const GUIDE_WIDTH = 200;
 const GUIDE_HEIGHT = 260;
@@ -55,6 +60,12 @@ export type SelfieCaptureProps = {
   existingUri?: string | null;
   /** The photo is saved in the app's private folder (retakes replace it). */
   onCaptured: (path: string) => void;
+  /**
+   * Fill the space the parent gives (the parent must not scroll): the frame takes whatever
+   * is left after the controls, so the shutter is on screen on every phone.
+   * Otherwise the frame is a share of the window's height.
+   */
+  fill?: boolean;
 };
 
 /**
@@ -71,9 +82,18 @@ export function SelfieCapture({
   confirmAlignment = false,
   existingUri,
   onCaptured,
+  fill = false,
 }: SelfieCaptureProps) {
   const theme = useTheme();
   const styles = useStyles();
+  const { height: windowHeight } = useWindowDimensions();
+  const frameSize = fill
+    ? styles.frameFill
+    : {
+        height: Math.round(
+          Math.min(FRAME_MAX_HEIGHT, Math.max(FRAME_MIN_HEIGHT, windowHeight * FRAME_SHARE_OF_WINDOW)),
+        ),
+      };
   const play = useFeedback();
   const [permission, requestPermission] = useCameraPermissions();
   const camera = useRef<CameraView>(null);
@@ -135,11 +155,11 @@ export function SelfieCapture({
     setPhase('ready');
   };
 
-  if (!permission) return <View style={styles.frame} />;
+  if (!permission) return <View style={[styles.frame, frameSize]} />;
 
   if (!permission.granted && phase !== 'captured') {
     return (
-      <View style={[styles.frame, styles.permission]}>
+      <View style={[styles.frame, frameSize, styles.permission]}>
         <Txt variant="body" color="textMuted" align="center">
           {copy.permissionDenied}
         </Txt>
@@ -169,8 +189,8 @@ export function SelfieCapture({
   const showGhostSlider = !isCaptured && ghostUri != null && onGhostOpacityChange != null;
 
   return (
-    <View>
-      <View style={styles.frame}>
+    <View style={fill ? styles.rootFill : undefined}>
+      <View style={[styles.frame, frameSize]}>
         {isCaptured ? (
           <Image source={{ uri: photoUri }} style={styles.fill} accessibilityIgnoresInvertColors />
         ) : isReviewing ? (
@@ -329,8 +349,9 @@ function FaceGuide({ isStill = false }: { isStill?: boolean }) {
 }
 
 const useStyles = createStyles((theme) => ({
+  rootFill: { flex: 1 },
+  frameFill: { flex: 1, minHeight: FRAME_MIN_FILL_HEIGHT },
   frame: {
-    height: FRAME_HEIGHT,
     borderRadius: theme.radius.lg,
     overflow: 'hidden',
     backgroundColor: theme.colors.backgroundDeep,

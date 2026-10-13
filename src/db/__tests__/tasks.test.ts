@@ -1,7 +1,13 @@
+import { DEFAULT_ORDER_TARGETS } from '@/features/orders';
 import { TASK_LIMITS } from '@/features/tasks';
 
+import { FEATURES } from '@/config/features';
+
+import { createArc } from '../arcs';
+import { convertTaskToOrder, CustomOrderError, selectCustomOrdersOn } from '../customOrders';
 import {
   addTask,
+  changeTask,
   removeTask,
   resolveCarryOver,
   selectTaskCompletionsBetween,
@@ -77,5 +83,74 @@ describe('tasks', () => {
     expect(tasksAround(db)).toEqual([
       expect.objectContaining({ title: 'Carry me', day: TODAY, carriedFrom: '2026-10-12' }),
     ]);
+  });
+});
+
+describe('changing a task', () => {
+  it('renames it and makes it daily, keeping the tick for today', () => {
+    const db = createTestDatabase();
+    const id = addTask(db, 'Stretch', 'today', TODAY, ARC_END);
+    setTaskDone(db, id, TODAY, true);
+    const next = changeTask(db, id, 'Stretch well', 'daily', TODAY, ARC_END);
+    const [task] = tasksAround(db);
+    expect(task).toMatchObject({ id: next, title: 'Stretch well', repeat: 'daily', lastDay: ARC_END });
+    expect(
+      selectTaskCompletionsBetween(db, TODAY, TODAY)
+        .all()
+        .map((row) => row.taskId),
+    ).toEqual([next]);
+  });
+
+  it('moves it to tomorrow, leaving the tick for today behind', () => {
+    const db = createTestDatabase();
+    const id = addTask(db, 'Buy oats', 'today', TODAY, ARC_END);
+    setTaskDone(db, id, TODAY, true);
+    changeTask(db, id, 'Buy oats', 'tomorrow', TODAY, ARC_END);
+    expect(tasksAround(db).map((task) => task.day)).toEqual(['2026-10-15']);
+    expect(selectTaskCompletionsBetween(db, TODAY, '2026-10-15').all()).toHaveLength(0);
+  });
+
+  it('changes nothing when refused', () => {
+    const db = createTestDatabase();
+    const id = addTask(db, 'Stretch', 'today', TODAY, ARC_END);
+    expect(() => changeTask(db, id, '   ', 'daily', TODAY, ARC_END)).toThrow(TaskSaveError);
+    expect(tasksAround(db).map((task) => task.title)).toEqual(['Stretch']);
+  });
+});
+
+describe('turning a task into an order', () => {
+  beforeEach(() => jest.replaceProperty(FEATURES, 'customOrders', true));
+  afterEach(() => jest.restoreAllMocks());
+
+  const startArc = (db: ReturnType<typeof createTestDatabase>) =>
+    createArc(db, {
+      lengthDays: 30,
+      startDay: TODAY,
+      wakeTime: '06:30',
+      targets: DEFAULT_ORDER_TARGETS,
+      oathPath: null,
+    });
+
+  it('adds the order and removes the task together', () => {
+    const db = createTestDatabase();
+    const arcId = startArc(db);
+    const id = addTask(db, 'Read', 'today', TODAY, ARC_END);
+    convertTaskToOrder(db, id, arcId, { name: 'Read', unit: 'pages', min: 10, full: 30 }, TODAY);
+    expect(tasksAround(db)).toHaveLength(0);
+    expect(
+      selectCustomOrdersOn(db, arcId, TODAY)
+        .all()
+        .map((order) => order.name),
+    ).toEqual(['Read']);
+  });
+
+  it('keeps the task when the order is refused', () => {
+    const db = createTestDatabase();
+    const arcId = startArc(db);
+    const id = addTask(db, 'Read', 'today', TODAY, ARC_END);
+    expect(() =>
+      convertTaskToOrder(db, id, arcId, { name: 'Read', unit: '', min: 30, full: 10 }, TODAY),
+    ).toThrow(CustomOrderError);
+    expect(tasksAround(db)).toHaveLength(1);
   });
 });

@@ -1,7 +1,8 @@
 import { Pressable, View } from 'react-native';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 
 import { tasksCopy } from '@/copy';
-import { createStyles } from '@/theme';
+import { createStyles, useReduceMotion } from '@/theme';
 
 import { IconButton } from '../IconButton';
 import { StatusCircle } from '../StatusCircle';
@@ -15,23 +16,34 @@ export type TaskItemRowProps = {
   /** Tomorrow's tasks can't be ticked yet. */
   canTick: boolean;
   onToggle: () => void;
-  onRemove: () => void;
+  /** A quick remove button on the right. */
+  onRemove?: () => void;
+  /** Long press (and, without onRemove, the button on the right) opens the task's sheet. */
+  onEdit?: () => void;
 };
 
+const ROW_MOVE = LinearTransition.duration(220);
+
 /**
- * One task: a check circle and title (tap to tick), and a remove button. Simpler than an
- * order row on purpose: a task is done or not, with no minimum.
+ * One task: a check circle and title (tap to tick, press and hold to edit), and a remove or
+ * edit button. Simpler than an order row on purpose: a task is done or not, with no minimum.
  */
-export function TaskItemRow({ title, isDone, note, canTick, onToggle, onRemove }: TaskItemRowProps) {
+export function TaskItemRow({ title, isDone, note, canTick, onToggle, onRemove, onEdit }: TaskItemRowProps) {
   const styles = useStyles();
+  const reduceMotion = useReduceMotion();
   return (
-    <View style={styles.row}>
+    // Slides to its new place when ticking moves it to the bottom (or back up).
+    <Animated.View style={styles.row} layout={reduceMotion ? undefined : ROW_MOVE}>
       <Pressable
         accessibilityRole="checkbox"
         accessibilityState={{ checked: isDone, disabled: !canTick }}
         accessibilityLabel={tasksCopy.checkLabel(title, isDone)}
-        disabled={!canTick}
-        onPress={onToggle}
+        accessibilityHint={onEdit ? tasksCopy.edit.hint : undefined}
+        accessibilityActions={onEdit ? [{ name: 'longpress', label: tasksCopy.edit.title }] : undefined}
+        onAccessibilityAction={onEdit ? () => onEdit() : undefined}
+        disabled={!canTick && !onEdit}
+        onPress={canTick ? onToggle : onEdit}
+        onLongPress={onEdit}
         style={({ pressed }) => [styles.main, pressed && styles.pressed]}
       >
         <StatusCircle status={isDone ? 'full' : 'none'} />
@@ -42,14 +54,23 @@ export function TaskItemRow({ title, isDone, note, canTick, onToggle, onRemove }
           {note ? <Txt variant="caption">{note}</Txt> : null}
         </View>
       </Pressable>
-      <IconButton
-        icon="close"
-        color="textMuted"
-        accessibilityLabel={tasksCopy.remove(title)}
-        cue="stepDown"
-        onPress={onRemove}
-      />
-    </View>
+      {onRemove ? (
+        <IconButton
+          icon="close"
+          color="textMuted"
+          accessibilityLabel={tasksCopy.remove(title)}
+          cue="stepDown"
+          onPress={onRemove}
+        />
+      ) : onEdit ? (
+        <IconButton
+          icon="edit"
+          color="textMuted"
+          accessibilityLabel={tasksCopy.edit.open(title)}
+          onPress={onEdit}
+        />
+      ) : null}
+    </Animated.View>
   );
 }
 

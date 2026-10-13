@@ -2,11 +2,17 @@ import { router } from 'expo-router';
 
 import { clearJourney, db } from '@/db';
 import { deleteAllMedia } from '@/media';
-import { useDevStore, useNoticesStore, useOnboardingStore, usePreferencesStore } from '@/stores';
+import {
+  useDevStore,
+  useGuardStore,
+  useNoticesStore,
+  useOnboardingStore,
+  usePreferencesStore,
+} from '@/stores';
 
 /**
  * journey: ends the arc and deletes every record, selfie and the oath. Preferences stay.
- * everything (dev mode): the journey, plus preferences and the simulated clock.
+ * everything (dev mode): the journey, plus preferences, guard and alarm choices, and the simulated clock.
  */
 export type ResetScope = 'journey' | 'everything';
 
@@ -23,6 +29,7 @@ export function useResetJourney(): (scope: ResetScope) => void {
     useNoticesStore.getState().reset();
     if (scope === 'everything') {
       usePreferencesStore.getState().reset();
+      useGuardStore.getState().reset();
       useDevStore.getState().resetDayOffset();
     }
     // Replace, so Back can't return to the old journey's tabs.

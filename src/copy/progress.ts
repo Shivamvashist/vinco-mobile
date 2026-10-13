@@ -10,6 +10,8 @@ export const progressCopy = {
     campaign: 'Campaign',
     fullGoalDays: 'Full-goal days',
     daysToGo: 'Days to go',
+    daysTrained: 'Days trained',
+    selfies: 'Selfies',
   },
 
   calendar: {

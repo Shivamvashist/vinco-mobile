@@ -1,5 +1,21 @@
 import { addDays, dayOfArc, type DayKey } from '@/lib/dates';
 
+/**
+ * campaign: 30, 60 or 90 days with a streak that can break.
+ * ludus: free training (the name users see). No streak, no fall, no end date.
+ */
+export type ArcKind = 'campaign' | 'ludus';
+
+/**
+ * The length stored for a Ludus: an end far enough never to arrive (about ten years), so every
+ * date range keeps working. Screens branch on the kind, never on this number.
+ */
+export const LUDUS_LENGTH_DAYS = 3650;
+
+export function isArcKind(value: unknown): value is ArcKind {
+  return value === 'campaign' || value === 'ludus';
+}
+
 /** The three campaign lengths on offer. */
 export const ARC_LENGTHS = [30, 60, 90] as const;
 

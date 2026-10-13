@@ -8,19 +8,22 @@ import { Txt } from '../Txt';
 
 export type TimelapseTileProps = {
   frames: number;
+  /** The Ludus has no campaign: the tile says "your training". */
+  isLudus?: boolean;
   onPress: () => void;
 };
 
 /** Plays this campaign's selfies as a timelapse. Shown once there are at least two. */
-export function TimelapseTile({ frames, onPress }: TimelapseTileProps) {
+export function TimelapseTile({ frames, isLudus = false, onPress }: TimelapseTileProps) {
   const theme = useTheme();
   const styles = useStyles();
   const copy = proofCopy.reel.arcTile;
   const detail = copy.detail(frames);
+  const title = isLudus ? copy.ludusTitle : copy.title;
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${copy.title}, ${detail}`}
+      accessibilityLabel={`${title}, ${detail}`}
       onPress={onPress}
       style={({ pressed }) => [styles.tile, pressed && styles.pressed]}
     >
@@ -28,7 +31,7 @@ export function TimelapseTile({ frames, onPress }: TimelapseTileProps) {
         <Icon name="play" color="accent" />
       </View>
       <View style={styles.text}>
-        <Txt variant="label">{copy.title}</Txt>
+        <Txt variant="label">{title}</Txt>
         <Txt variant="caption">{detail}</Txt>
       </View>
       <Icon name="forward" size={theme.layout.iconSizeSmall} color="textMuted" />

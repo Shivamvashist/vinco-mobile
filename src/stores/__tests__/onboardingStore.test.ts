@@ -21,6 +21,7 @@ describe('sanitizeOnboardingDraft', () => {
       lastStep: 'tone',
     });
     expect(draft).toEqual({
+      arcKind: 'campaign',
       arcLength: 90,
       fullGoals: { water: 3.5, meal: 3, workout: 40 },
       wakeMinutes: 6 * 60,
@@ -29,9 +30,10 @@ describe('sanitizeOnboardingDraft', () => {
     });
   });
 
-  it('rejects unknown arc lengths and steps', () => {
-    const draft = sanitizeOnboardingDraft({ arcLength: 45, lastStep: 'payment' });
+  it('rejects unknown arc lengths, kinds and steps', () => {
+    const draft = sanitizeOnboardingDraft({ arcLength: 45, arcKind: 'holiday', lastStep: 'payment' });
     expect(draft.arcLength).toBe(60);
+    expect(draft.arcKind).toBe('campaign');
     expect(draft.lastStep).toBeNull();
   });
 });
@@ -47,6 +49,13 @@ describe('useOnboardingStore', () => {
     expect(state.fullGoals.water).toBe(5);
     expect(state.fullGoals.workout).toBe(35);
     expect(state.wakeMinutes).toBe(4 * 60);
+  });
+
+  it('picks the Ludus, and a length picks a campaign again', () => {
+    act(() => useOnboardingStore.getState().chooseLudus());
+    expect(useOnboardingStore.getState().arcKind).toBe('ludus');
+    act(() => useOnboardingStore.getState().setArcLength(30));
+    expect(useOnboardingStore.getState()).toMatchObject({ arcKind: 'campaign', arcLength: 30 });
   });
 
   it('resets to the defaults', () => {

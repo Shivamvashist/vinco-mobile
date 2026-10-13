@@ -1,5 +1,5 @@
 /**
- * DEV ONLY: the dev tools card in Vici, shown when dev mode is on (dev builds only).
+ * DEV ONLY: the dev tools card in Settings, shown when dev mode is on (dev builds only).
  * Moves the calendar ahead, fills today's orders, opens the theme lab and resets everything.
  */
 import { router } from 'expo-router';

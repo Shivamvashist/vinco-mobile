@@ -4,7 +4,6 @@ import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
-import { AddOrderSheet } from '@/components/orders/AddOrderSheet';
 import { TimelapseTile } from '@/components/proof/TimelapseTile';
 import { WeightSheet } from '@/components/proof/WeightSheet';
 import { WeightTile } from '@/components/proof/WeightTile';
@@ -13,6 +12,8 @@ import { ProgressRing } from '@/components/ProgressRing';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionHeader } from '@/components/SectionHeader';
+import { describeArcHeader } from '@/components/today/describeArcHeader';
+import { describeOrderRow } from '@/components/today/describeOrderRow';
 import { DawnCard } from '@/components/today/DawnCard';
 import { SealDayCard } from '@/components/today/SealDayCard';
 import { SickDayCard } from '@/components/today/SickDayCard';
@@ -20,7 +21,8 @@ import { SickDaySheet } from '@/components/today/SickDaySheet';
 import { SelfieTile } from '@/components/today/SelfieTile';
 import { StampOverlay } from '@/components/today/StampOverlay';
 import { TaskRow } from '@/components/today/TaskRow';
-import { TodoTile } from '@/components/today/TodoTile';
+import { TaskSheets, type TaskSheetTarget } from '@/components/tasks/TaskSheets';
+import { TodayTodo } from '@/components/today/TodayTodo';
 import { FEATURES } from '@/config/features';
 import { TruceBanner } from '@/components/today/TruceBanner';
 import { WakeSheet } from '@/components/today/WakeSheet';
@@ -28,7 +30,7 @@ import { WorkoutSheet } from '@/components/today/WorkoutSheet';
 import { ToneLine } from '@/components/ToneLine';
 import { Txt } from '@/components/Txt';
 import { commonCopy, pickTone, todayCopy } from '@/copy';
-import { arcEndDay, getArcPosition } from '@/features/arc';
+import { arcEndDay } from '@/features/arc';
 import { planTrucePayment } from '@/features/campaign';
 import {
   CUSTOM_ORDER_LIMITS,
@@ -37,7 +39,7 @@ import {
   type OrderKind,
   type OrderStatus,
 } from '@/features/orders';
-import { sleepMinutesFromMoments, toWakeMoments } from '@/features/sleep';
+import { toWakeMoments } from '@/features/sleep';
 import { useActiveArc } from '@/hooks/useActiveArc';
 import { useCampaign } from '@/hooks/useCampaign';
 import { useDailySelfie } from '@/hooks/useDailySelfie';
@@ -46,18 +48,15 @@ import { useSelfieReel } from '@/hooks/useSelfieReel';
 import { useSickDay } from '@/hooks/useSickDay';
 import { useOwnOrderActions } from '@/hooks/useOwnOrderActions';
 import { useTasks } from '@/hooks/useTasks';
-import { type TodayOrders, useTodayOrders } from '@/hooks/useTodayOrders';
+import { useTodayOrders } from '@/hooks/useTodayOrders';
 import {
-  type DayKey,
   daysLeftInYear,
   formatClockMinutes,
-  formatClockTime,
   parseClockMinutes,
   parseDayKey,
   toDayKey,
   weekdayIndex,
 } from '@/lib/dates';
-import { toRoman } from '@/lib/toRoman';
 import { usePreferencesStore } from '@/stores';
 import { createStyles, useFeedback } from '@/theme';
 
@@ -79,11 +78,11 @@ export default function VeniScreen() {
   const ownOrders = useOwnOrderActions(arcId);
   const latestBedtime = useLatestBedtime(orders.today);
   const [isWorkoutSheetOpen, setIsWorkoutSheetOpen] = useState(false);
-  const [isAddOrderOpen, setIsAddOrderOpen] = useState(false);
   const [isWakeSheetOpen, setIsWakeSheetOpen] = useState(false);
   const [isWeightSheetOpen, setIsWeightSheetOpen] = useState(false);
   const [isSickSheetOpen, setIsSickSheetOpen] = useState(false);
   const [sickError, setSickError] = useState<string | null>(null);
+  const [todoTarget, setTodoTarget] = useState<TaskSheetTarget>(null);
   const sickDay = useSickDay(orders.today);
   const reel = useSelfieReel('arc', activeArc.arc, orders.today);
   const { today, targets, statuses, heldCount, totalCount } = orders;
@@ -194,14 +193,27 @@ export default function VeniScreen() {
         />
         {activeArc.arc && campaign.isLoaded ? (
           <View style={styles.chips}>
-            <StatChip icon="flame" label={todayCopy.chips.campaign(campaign.campaign)} />
-            <StatChip
-              label={
-                orders.isSickDay ? todayCopy.sickDay.chip : todayCopy.chips.truces(campaign.truceReserve)
-              }
-              emphasis="muted"
-            />
+            {campaign.isLudus ? (
+              <StatChip icon="workout" label={todayCopy.chips.trained(campaign.completedDays)} />
+            ) : (
+              <>
+                <StatChip icon="flame" label={todayCopy.chips.campaign(campaign.campaign)} />
+                <StatChip
+                  label={
+                    orders.isSickDay ? todayCopy.sickDay.chip : todayCopy.chips.truces(campaign.truceReserve)
+                  }
+                  emphasis="muted"
+                />
+              </>
+            )}
             {campaign.rank.current ? <StatChip label={campaign.rank.current.name} emphasis="muted" /> : null}
+            <StatChip
+              icon="coin"
+              label={todayCopy.chips.denarii(campaign.denarii)}
+              emphasis="currency"
+              accessibilityHint={todayCopy.chips.denariiHint}
+              onPress={() => router.push('/forum')}
+            />
           </View>
         ) : null}
         <View style={styles.toneLine}>
@@ -217,16 +229,37 @@ export default function VeniScreen() {
           </View>
         ) : null}
 
+        {header.isFinished ? (
+          <Card bordered style={[styles.notice, styles.finished]}>
+            <Txt variant="heading" accessibilityRole="header">
+              {todayCopy.finished.title}
+            </Txt>
+            <Txt variant="body" color="textMuted">
+              {todayCopy.finished.body}
+            </Txt>
+            <Button
+              label={todayCopy.finished.action}
+              size="compact"
+              onPress={() => router.navigate('/vici')}
+            />
+          </Card>
+        ) : null}
+
         {isDawn ? (
           <View style={styles.notice}>
             <DawnCard
               hour={now.getHours()}
               plannedTime={plannedWakeMinutes != null ? formatClockMinutes(plannedWakeMinutes) : null}
               onRise={() => setIsWakeSheetOpen(true)}
-              onFeelingSick={() => {
-                setSickError(null);
-                setIsSickSheetOpen(true);
-              }}
+              // The Ludus has no campaign to protect, so no sick-day Truce.
+              onFeelingSick={
+                campaign.isLudus
+                  ? undefined
+                  : () => {
+                      setSickError(null);
+                      setIsSickSheetOpen(true);
+                    }
+              }
             />
           </View>
         ) : null}
@@ -266,7 +299,7 @@ export default function VeniScreen() {
           accessibilityElementsHidden={isDawn}
         >
           {(isLoaded ? ORDER_KINDS : []).map((kind) => {
-            const row = describeRow(kind, orders);
+            const row = describeOrderRow(kind, orders);
             return (
               <TaskRow
                 key={kind}
@@ -304,7 +337,7 @@ export default function VeniScreen() {
               label={todayCopy.addOrder}
               variant="ghost"
               size="compact"
-              onPress={() => setIsAddOrderOpen(true)}
+              onPress={() => setTodoTarget({ type: 'order' })}
             />
           ) : null}
         </View>
@@ -328,6 +361,7 @@ export default function VeniScreen() {
               {reel.frames.length >= 2 ? (
                 <TimelapseTile
                   frames={reel.frames.length}
+                  isLudus={campaign.isLudus}
                   onPress={() => router.push({ pathname: '/timelapse', params: { scope: 'arc' } })}
                 />
               ) : null}
@@ -335,20 +369,21 @@ export default function VeniScreen() {
           </>
         ) : null}
         {FEATURES.tasks && activeArc.arc && isLoaded && tasks.isLoaded ? (
-          <View style={styles.tile}>
-            <TodoTile summary={tasks.summary} onPress={() => router.push('/tasks')} />
-          </View>
+          <TodayTodo
+            tasks={tasks}
+            onAdd={() => setTodoTarget({ type: 'add' })}
+            onEdit={(item) => setTodoTarget({ type: 'edit', item })}
+            onOpenAll={() => router.push({ pathname: '/plan', params: { tab: 'todo' } })}
+          />
         ) : null}
       </Screen>
 
-      <AddOrderSheet
-        visible={isAddOrderOpen}
-        onClose={() => setIsAddOrderOpen(false)}
-        onSave={(draft) => {
-          const result = ownOrders.add(draft);
-          if (result === null) setIsAddOrderOpen(false);
-          return result;
-        }}
+      <TaskSheets
+        target={todoTarget}
+        onClose={() => setTodoTarget(null)}
+        tasks={tasks}
+        ownOrders={ownOrders}
+        canAddOrder={canAddOrder}
       />
 
       <WakeSheet
@@ -406,90 +441,15 @@ export default function VeniScreen() {
   );
 }
 
-/** The eyebrow and stamp title, from where today falls in the arc. */
-function describeArcHeader(
-  arc: { startDay: DayKey; lengthDays: number } | null,
-  today: DayKey,
-): { eyebrow: string; stampTitle: string } {
-  if (!arc) return { eyebrow: todayCopy.eyebrow, stampTitle: todayCopy.stamp.title };
-  const position = getArcPosition(arc.startDay, arc.lengthDays, today);
-  if (position.phase === 'finished') {
-    return { eyebrow: todayCopy.arcFinishedEyebrow, stampTitle: todayCopy.stamp.title };
-  }
-  if (position.phase === 'notStarted')
-    return { eyebrow: todayCopy.eyebrow, stampTitle: todayCopy.stamp.title };
-  const dayRoman = toRoman(position.dayNumber);
-  return {
-    eyebrow: todayCopy.arcEyebrow(dayRoman, toRoman(position.lengthDays)),
-    stampTitle: todayCopy.stamp.titleWithDay(dayRoman),
-  };
-}
-
-type RowContent = {
-  name: string;
-  line: string;
-  action: string;
-  hint: string;
-  segments?: { total: number; filled: number };
-};
-
-/** The words and bar for one order row, from today's state. */
-function describeRow(kind: OrderKind, orders: TodayOrders): RowContent {
-  const amount = orders.amounts[kind];
-  const target = orders.targets[kind];
-  const status = orders.statuses[kind];
-
-  switch (kind) {
-    case 'water': {
-      const copy = todayCopy.orders.water;
-      const total = Math.max(1, Math.ceil(target.full / target.step));
-      const filled = status === 'full' ? total : Math.floor(amount / target.step);
-      return {
-        name: copy.name,
-        line: copy.line(amount, target.full, status),
-        action: copy.action,
-        hint: copy.hint,
-        segments: { total, filled },
-      };
-    }
-    case 'wake': {
-      const copy = todayCopy.orders.wake;
-      const sleep = sleepMinutesFromMoments(
-        orders.sleptAt?.toISOString() ?? null,
-        orders.wokeAt?.toISOString() ?? null,
-      );
-      const line = orders.wokeAt
-        ? copy.doneLine(formatClockTime(orders.wokeAt), sleep != null ? commonCopy.duration(sleep) : null)
-        : copy.idleLine;
-      return { name: copy.name, line, action: copy.action, hint: copy.hint };
-    }
-    case 'meal': {
-      const copy = todayCopy.orders.meal;
-      return {
-        name: copy.name,
-        line: copy.line(amount, target.full, status),
-        action: copy.action,
-        hint: copy.hint,
-      };
-    }
-    case 'workout': {
-      const copy = todayCopy.orders.workout;
-      const line =
-        status === 'none' ? copy.idleLine(target.full) : copy.doneLine(amount, status, orders.workoutNote);
-      return { name: copy.name, line, action: copy.action, hint: copy.hint };
-    }
-  }
-}
-
 const useStyles = createStyles((theme) => ({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space.sm, marginTop: theme.space.md },
   toneLine: { marginTop: theme.space.lg },
   notice: { marginTop: theme.space.lg },
+  finished: { gap: theme.space.sm },
   waiting: { marginBottom: theme.space.sm },
   rowsWaiting: { opacity: 0.45 },
   rows: { gap: theme.space.sm },
   proof: { marginTop: theme.space.lg },
-  tile: { marginTop: theme.space.sm },
   error: {
     marginBottom: theme.space.sm,
     borderWidth: theme.layout.borderWidth,

@@ -5,19 +5,24 @@ import {
   customOrderLogs,
   customOrders,
   dayLogs,
+  itemUses,
   ledger,
   orderLogs,
+  purchases,
   taskCompletions,
   tasks,
   truces,
 } from './schema';
 
 /**
- * Deletes every record of the user's journey (arcs, orders, days, tasks, denarii, Truces) in one
+ * Deletes every record of the user's journey (arcs, orders, days, tasks, denarii, Forum
+ * purchases, Truces) in one
  * transaction, keeping the tables. Media files are deleted separately (src/media).
  */
 export function clearJourney(db: AppDatabase): void {
   db.transaction((tx) => {
+    tx.delete(itemUses).run();
+    tx.delete(purchases).run();
     tx.delete(taskCompletions).run();
     tx.delete(tasks).run();
     tx.delete(customOrderLogs).run();

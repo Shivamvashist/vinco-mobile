@@ -100,7 +100,8 @@ function FeedbackProvider({ children, definition, soundEnabled, hapticsEnabled }
 
   const play = useCallback<PlayFeedback>(
     (cue) => {
-      if (soundEnabled) soundBank.current?.play(cue);
+      // Signature moments sound even with Sounds off (the phone's silent mode still wins).
+      if (soundEnabled || definition.feedback.essential.includes(cue)) soundBank.current?.play(cue);
       if (hapticsEnabled) playHaptic(definition.feedback.haptics[cue] ?? 'none');
     },
     [definition, soundEnabled, hapticsEnabled],

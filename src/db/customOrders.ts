@@ -12,6 +12,7 @@ import type { DayKey } from '@/lib/dates';
 
 import { type AppDatabase, nowIso } from './database';
 import { type CustomOrderLogRow, customOrderLogs, type CustomOrderRow, customOrders } from './schema';
+import { removeTask } from './tasks';
 
 /** The query for an arc's own orders, oldest first. Pass to useLiveQuery. */
 export function selectCustomOrders(db: AppDatabase, arcId: number) {
@@ -176,4 +177,24 @@ export function getCustomOrdersWithAmounts(
     .all();
   const amounts = toCustomAmounts(logs, day);
   return rows.map((row) => ({ order: toCustomOrder(row), amount: amounts.get(row.id) ?? 0 }));
+}
+
+/**
+ * Turns a task into one of the user's own orders, in one transaction: the order is added
+ * (starting today, with the usual checks) and the task removed from today on.
+ * Throws CustomOrderError if the order is refused (the task stays).
+ * @returns the new order's id
+ */
+export function convertTaskToOrder(
+  db: AppDatabase,
+  taskId: number,
+  arcId: number,
+  draft: CustomOrderDraft,
+  today: DayKey,
+): number {
+  return db.transaction((tx) => {
+    const id = addCustomOrder(tx, arcId, draft, today);
+    removeTask(tx, taskId, today);
+    return id;
+  });
 }

@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 import {
   addTask,
+  changeTask,
   db,
   removeTask,
   resolveCarryOver,
@@ -18,6 +19,7 @@ import {
   type DayTaskSummary,
   findCarryOver,
   isTaskOnDay,
+  sortDoneLast,
   summarizeDay,
   type Task,
   type TaskError,
@@ -43,6 +45,8 @@ export type Tasks = {
   hasSaveError: boolean;
   /** Adds a task. Returns null when saved, or why it was refused. */
   add: (title: string, when: TaskWhen) => TaskError | 'failed' | null;
+  /** Renames a task or changes how often it comes. Returns null when saved, or why not. */
+  change: (taskId: number, title: string, when: TaskWhen) => TaskError | 'failed' | null;
   /** Ticks or unticks a task for today (tomorrow's tasks can't be ticked yet). */
   toggle: (item: TaskItem) => void;
   remove: (taskId: number) => void;
@@ -64,10 +68,13 @@ export function useTasks(arcLastDay: DayKey | null): Tasks {
 
   const tasks = taskRows.data.map(toTask).sort((a, b) => a.id - b.id);
   const completions = toCompletionSet(completionRows.data);
+  // Done tasks sink to the bottom of each list.
   const itemsOn = (day: DayKey, repeat: Task['repeat']): TaskItem[] =>
-    tasks
-      .filter((task) => task.repeat === repeat && isTaskOnDay(task, day))
-      .map((task) => ({ task, isDone: completions.has(completionKey(task.id, day)) }));
+    sortDoneLast(
+      tasks
+        .filter((task) => task.repeat === repeat && isTaskOnDay(task, day))
+        .map((task) => ({ task, isDone: completions.has(completionKey(task.id, day)) })),
+    );
 
   const guard = (label: string, action: () => void) => {
     try {
@@ -88,17 +95,16 @@ export function useTasks(arcLastDay: DayKey | null): Tasks {
     carryOver: findCarryOver(tasks, completions, today),
     summary: summarizeDay(tasks, completions, today),
     hasSaveError,
-    add: (title, when) => {
-      try {
-        addTask(db, title, when, today, arcLastDay ?? today);
-        setHasSaveError(false);
-        return null;
-      } catch (error) {
-        if (error instanceof TaskSaveError) return error.reason;
-        if (__DEV__) console.warn('[tasks] Could not add.', error);
-        return 'failed';
-      }
-    },
+    add: (title, when) =>
+      saveTask(
+        () => addTask(db, title, when, today, arcLastDay ?? today),
+        () => setHasSaveError(false),
+      ),
+    change: (taskId, title, when) =>
+      saveTask(
+        () => changeTask(db, taskId, title, when, today, arcLastDay ?? today),
+        () => setHasSaveError(false),
+      ),
     toggle: (item) => {
       if (item.task.day > today && item.task.repeat === 'once') return;
       guard('tick', () => setTaskDone(db, item.task.id, today, !item.isDone));
@@ -106,4 +112,17 @@ export function useTasks(arcLastDay: DayKey | null): Tasks {
     remove: (taskId) => guard('remove', () => removeTask(db, taskId, today)),
     resolve: (taskIds, choice) => guard('carry over', () => resolveCarryOver(db, taskIds, choice, today)),
   };
+}
+
+/** Runs a task write, turning a refusal into its reason. */
+function saveTask(write: () => void, onSaved: () => void): TaskError | 'failed' | null {
+  try {
+    write();
+    onSaved();
+    return null;
+  } catch (error) {
+    if (error instanceof TaskSaveError) return error.reason;
+    if (__DEV__) console.warn('[tasks] Could not save.', error);
+    return 'failed';
+  }
 }

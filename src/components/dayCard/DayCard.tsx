@@ -15,7 +15,10 @@ export type DayCardProps = {
   dayNumber: number;
   lengthDays: number;
   rows: readonly DayCardRow[];
+  /** The campaign, or in the Ludus the days trained. */
   campaign: number;
+  /** The Ludus has no length: "LUDUS · DAY III" and days trained instead. */
+  isLudus?: boolean;
   rankName: string | null;
   cardStyle: DayCardStyle;
 };
@@ -31,7 +34,7 @@ const COMPACT_AFTER_ROWS = 5;
  * Uses its own fixed palette so a shared card looks the same on every phone. The ref is for capture.
  */
 export const DayCard = forwardRef<View, DayCardProps>(function DayCard(
-  { dayNumber, lengthDays, rows, campaign, rankName, cardStyle },
+  { dayNumber, lengthDays, rows, campaign, isLudus = false, rankName, cardStyle },
   ref,
 ) {
   const styles = useStyles();
@@ -44,18 +47,24 @@ export const DayCard = forwardRef<View, DayCardProps>(function DayCard(
     <View
       ref={ref}
       collapsable={false}
-      style={[styles.card, { backgroundColor: cardStyle.background }]}
+      style={[
+        styles.card,
+        { backgroundColor: cardStyle.background },
+        cardStyle.frame ? [styles.framed, { borderColor: cardStyle.frame }] : null,
+      ]}
       accessible
       accessibilityLabel={dayCardCopy.cardLabel(
         toRoman(dayNumber),
-        toRoman(lengthDays),
+        isLudus ? null : toRoman(lengthDays),
         heldCount,
         rows.length,
       )}
     >
       <Laurel width={96} strokeColor={cardStyle.accent} strokeWidth={1.6} />
       <Txt variant="eyebrow" style={[styles.eyebrow, ink]}>
-        {dayCardCopy.eyebrow(toRoman(dayNumber), toRoman(lengthDays))}
+        {isLudus
+          ? dayCardCopy.ludusEyebrow(toRoman(dayNumber))
+          : dayCardCopy.eyebrow(toRoman(dayNumber), toRoman(lengthDays))}
       </Txt>
       <Txt variant="numeral" style={ink}>
         {dayNumber}
@@ -96,7 +105,7 @@ export const DayCard = forwardRef<View, DayCardProps>(function DayCard(
 
       <View style={styles.footer}>
         <Txt variant="micro" style={[ink, styles.faded]}>
-          {dayCardCopy.campaign(campaign)}
+          {isLudus ? dayCardCopy.trained(campaign) : dayCardCopy.campaign(campaign)}
         </Txt>
         {rankName ? (
           <Txt variant="micro" style={[ink, styles.faded]}>
@@ -112,6 +121,7 @@ export const DayCard = forwardRef<View, DayCardProps>(function DayCard(
 });
 
 const useStyles = createStyles((theme) => ({
+  framed: { borderWidth: 3 },
   card: {
     width: CARD_WIDTH,
     height: CARD_HEIGHT,

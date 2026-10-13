@@ -94,7 +94,8 @@ export function Stepper({
           {caption}
         </Txt>
         <Animated.View style={[styles.valueWrap, bumpStyle]}>
-          <Txt variant="label" numberOfLines={1}>
+          {/* Shrinks a little on a tight row rather than cutting the value off. */}
+          <Txt variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
             {formatValue(safeValue)}
           </Txt>
         </Animated.View>

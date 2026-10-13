@@ -76,7 +76,8 @@ Caesar kept _Commentarii_, his campaign notes. Vidi gets a segmented control, **
 ## 5. Sounds
 
 - Every UI sound matches the prototype's recipe exactly, at an even, clean level (no clipping, nothing too quiet).
-- **Switching tabs** plays a soft, short whoosh instead of the toggle click.
+- **Switching tabs** plays a whisper-quiet whoosh (-17 dBFS, 0.14 s).
+- **Always on:** the DAY I seal and the VINCO stamp play even with Sounds off (the phone's silent mode still mutes them).
 - **The Vidi segments** play the prototype's tick.
 
 ## Data

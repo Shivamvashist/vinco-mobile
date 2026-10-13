@@ -1,4 +1,12 @@
-import { findCarryOver, isTaskOnDay, summarizeDay, type Task, TASK_LIMITS, validateNewTask } from '..';
+import {
+  findCarryOver,
+  isTaskOnDay,
+  sortDoneLast,
+  summarizeDay,
+  type Task,
+  TASK_LIMITS,
+  validateNewTask,
+} from '..';
 
 const TODAY = '2026-10-14';
 
@@ -59,5 +67,20 @@ describe('carry-over and summary', () => {
 
   it('summarises today for the tile', () => {
     expect(summarizeDay(tasks, completions, TODAY)).toEqual({ done: 1, total: 2, toCarryOver: 1 });
+  });
+});
+
+describe('sortDoneLast', () => {
+  const item = (id: number, isDone: boolean) => ({ task: { id }, isDone });
+
+  it('puts open tasks first and done ones last, each in the order added', () => {
+    const sorted = sortDoneLast([item(1, true), item(2, false), item(3, true), item(4, false)]);
+    expect(sorted.map((entry) => entry.task.id)).toEqual([2, 4, 1, 3]);
+  });
+
+  it('leaves the list it was given untouched', () => {
+    const items = [item(2, true), item(1, false)];
+    sortDoneLast(items);
+    expect(items.map((entry) => entry.task.id)).toEqual([2, 1]);
   });
 });

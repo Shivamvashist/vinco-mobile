@@ -27,7 +27,7 @@ export const onboardingCopy = {
 
   arc: {
     title: 'How long is your campaign?',
-    subtitle: "It starts today. You can't shorten it later, only finish it.",
+    subtitle: 'It starts today. Pick a length, or pick free training with no streak at all.',
     options: {
       30: {
         name: 'First campaign',
@@ -45,6 +45,14 @@ export const onboardingCopy = {
         quip: 'Bold. The Senate has been notified.',
       },
     } satisfies Record<ArcLength, { name: string; description: string; quip: string }>,
+    /** The open plan: no length, no streak (stored as the 'ludus' arc kind). */
+    ludus: {
+      name: 'Free training',
+      description: 'No streak, no fall. Same orders, at your own pace.',
+      quip: 'Same orders, no pressure. Start a campaign whenever you are ready.',
+      summary: (todayLabel: string): string =>
+        `Day I is today, ${todayLabel}. No end date, and a missed day is just a day off.`,
+    },
     mostChosen: 'Most chosen',
     summary: (todayLabel: string, endLabel: string): string =>
       `Day I is today, ${todayLabel}. Your arc ends ${endLabel}.`,
@@ -54,6 +62,8 @@ export const onboardingCopy = {
     title: 'Your orders',
     subtitle:
       'Four non-negotiables, every day. Tune the numbers; the orders stay. Hitting the minimum keeps your campaign alive.',
+    subtitleLudus:
+      'Four non-negotiables, every day. Tune the numbers; the orders stay. Hitting the minimum holds the day.',
     holdLabel: 'Hold the line',
     conquerLabel: 'Conquer',
     requiredLabel: 'Required order',
@@ -147,6 +157,7 @@ export const onboardingCopy = {
     title: 'Your first proof',
     body: (arcLengthRoman: string): string =>
       `One photo a day. It never leaves your phone. On Day ${arcLengthRoman} it becomes your timelapse.`,
+    bodyLudus: 'One photo a day. It never leaves your phone. Every photo joins your timelapse.',
     stamp: 'DAY I',
     quote: '"Alea iacta est."',
     quoteMeaning: 'Caesar, crossing the Rubicon: the die is cast.',

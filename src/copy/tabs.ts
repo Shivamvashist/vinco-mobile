@@ -1,5 +1,5 @@
 /**
- * The three tabs: one per word of "Veni, vidi, vici".
+ * The tabs: one per word of "Veni, vidi, vici", then the camp (settings).
  * Keys match the route file names in src/app/(tabs)/.
  */
 export const tabsCopy = {
@@ -17,6 +17,12 @@ export const tabsCopy = {
     latin: 'Vici',
     plain: 'Arc',
     meaning: 'I conquered',
+  },
+  /** A castra was the legion's camp: where it was set up and supplied. */
+  settings: {
+    latin: 'Castra',
+    plain: 'Settings',
+    meaning: 'The camp',
   },
 } as const;
 

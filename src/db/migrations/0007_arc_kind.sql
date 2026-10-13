@@ -1,0 +1,1 @@
+ALTER TABLE `arcs` ADD `kind` text DEFAULT 'campaign' NOT NULL;

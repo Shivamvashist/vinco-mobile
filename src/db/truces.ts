@@ -1,6 +1,7 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 
 import { getDayLog, updateDayLog } from './dayLogs';
+import { getDenariiBalance } from './forum';
 
 import { planTrucePayment, type TrucePayment, type TruceReason, TRUCES } from '@/features/campaign';
 import type { DayKey } from '@/lib/dates';
@@ -18,15 +19,6 @@ export function getTruceReserve(db: AppDatabase): number {
   const row = db
     .select({ total: sql<number>`coalesce(sum(${truces.amount}), 0)` })
     .from(truces)
-    .get();
-  return Number(row?.total ?? 0);
-}
-
-/** Denarii held now (earned minus spent). */
-export function getDenariiBalance(db: AppDatabase): number {
-  const row = db
-    .select({ total: sql<number>`coalesce(sum(${ledger.amount}), 0)` })
-    .from(ledger)
     .get();
   return Number(row?.total ?? 0);
 }

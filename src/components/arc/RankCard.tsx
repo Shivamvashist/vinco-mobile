@@ -10,14 +10,13 @@ import { Txt } from '../Txt';
 
 export type RankCardProps = {
   rank: RankStatus;
-  denarii: number;
 };
 
 const MEDALLION_SIZE = 56;
 const copy = arcCopy.rank;
 
-/** The current rank: medallion, name, what it means, days to the next, and denarii earned. */
-export function RankCard({ rank, denarii }: RankCardProps) {
+/** The current rank: medallion, name, what it means, and days to the next. */
+export function RankCard({ rank }: RankCardProps) {
   const styles = useStyles();
   const { current, next } = rank;
   const medallionName = current?.name ?? next?.name ?? '';
@@ -46,9 +45,6 @@ export function RankCard({ rank, denarii }: RankCardProps) {
             <ProgressBar value={rank.progress} accessibilityLabel={copy.progressLabel} />
           </View>
         ) : null}
-        <Txt variant="micro" color="currency" style={styles.denarii}>
-          {copy.denarii(denarii)}
-        </Txt>
       </View>
     </Card>
   );
@@ -69,5 +65,4 @@ const useStyles = createStyles((theme) => ({
   text: { flex: 1, minWidth: 0 },
   detail: { marginTop: theme.space.xxs },
   progress: { marginTop: theme.space.sm },
-  denarii: { marginTop: theme.space.sm },
 }));

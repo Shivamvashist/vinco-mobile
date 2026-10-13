@@ -102,3 +102,13 @@ export function summarizeDay(
     toCarryOver: findCarryOver(tasks, completions, today).length,
   };
 }
+
+/**
+ * Open tasks first, done ones at the bottom, each group in the order added. Ticking a task
+ * moves it down out of the way; unticking brings it back up.
+ */
+export function sortDoneLast<Item extends { task: Pick<Task, 'id'>; isDone: boolean }>(
+  items: readonly Item[],
+): Item[] {
+  return [...items].sort((a, b) => (a.isDone === b.isDone ? a.task.id - b.task.id : a.isDone ? 1 : -1));
+}

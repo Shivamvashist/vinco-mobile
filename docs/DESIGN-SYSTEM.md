@@ -177,7 +177,9 @@ Components never play a file directly. They call `play(cue)` from `useFeedback()
 | `denied`                     | Tap on something locked         | low tick                | warning          |
 | `whoosh`                     | Switching tabs                  | soft filtered air       | selection        |
 
-**Levels.** Each recipe keeps the prototype's shape, then the file is scaled to its tier's peak: ticks (tap, select, toggle, steps, denied) -6 dBFS, moments (win, confirm, chime, record, shutter, rise, truce) -3 dBFS, signature (stamp, cross, seal) -1.5 dBFS, soft (whoosh) -9 dBFS. Nothing clips; the stamp stays the loudest moment. Playback rewinds, then plays once the rewind lands, so rapid taps never click.
+**Levels.** Each recipe keeps the prototype's shape, then the file is scaled to its tier's peak: ticks (tap, select, toggle, steps, denied) -6 dBFS, moments (win, confirm, chime, record, shutter, rise, truce) -3 dBFS, signature (stamp, cross, seal) -1.5 dBFS, whisper (whoosh) -17 dBFS (noise sounds louder than a tone at the same peak, so the tab switch is felt more than heard). Nothing clips; the stamp stays the loudest moment. Playback rewinds, then plays once the rewind lands, so rapid taps never click.
+
+**Always on.** A theme lists `feedback.essential` cues that play even with Sounds off. Vinco's are `seal` (the DAY I stamp on the first selfie) and `stamp` (a conquered day): the two moments the app is built around. The phone's own silent mode still mutes them.
 
 Sounds are generated from the prototype's own recipes by `scripts/generate-sounds.mjs` into `assets/sounds/vinco/`. To change a sound, edit its recipe and run `npm run sounds`.
 

@@ -39,20 +39,25 @@ export const tasksCopy = {
 
   add: {
     open: 'Add a task',
-    title: 'Add a task',
-    label: 'Task',
+    title: 'Add to your day',
+    label: 'What',
     placeholder: 'Call the bank',
-    whenLabel: 'When',
+    whenLabel: 'How often?',
     when: {
-      daily: 'Every day',
-      today: 'Today',
+      today: 'Just today',
       tomorrow: 'Tomorrow',
-    } satisfies Record<TaskWhen, string>,
+      daily: 'Every day',
+      order: 'An order',
+    } satisfies Record<TaskWhen | 'order', string>,
     whenHint: {
-      daily: 'Shows every day until your arc ends. Not an order: it never decides the day.',
-      today: 'Just for today.',
+      daily:
+        'Shows every day until your campaign ends (in free training, until you remove it). A plan, not an order: it never decides the day.',
+      today: 'Just for today. A plan, not an order.',
       tomorrow: 'Plan ahead: it shows up tomorrow.',
-    } satisfies Record<TaskWhen, string>,
+      order: 'Counts toward the day: it must hold its minimum for the day to be held. Next, set its goals.',
+    } satisfies Record<TaskWhen | 'order', string>,
+    orderFull: (max: number): string => `You already have ${max} own orders. Stand one down to add another.`,
+    next: 'Next: set its goals',
     save: 'Add task',
     /** The sheet stays open after each save, for adding several in a row. */
     done: 'Done',
@@ -63,4 +68,35 @@ export const tasksCopy = {
     failed: "The task couldn't be saved. Try again.",
   },
   saveError: 'That change could not be saved. Try again.',
+
+  /** Long-press (or the edit button) on a task. */
+  edit: {
+    title: 'Edit task',
+    hint: 'Press and hold a task to edit it',
+    open: (title: string): string => `Edit ${title}`,
+    save: 'Save',
+    remove: 'Remove task',
+    makeOrder: 'Next: make it an order',
+  },
+
+  /** "Your orders and to-dos": one place to control everything the day holds. */
+  plan: {
+    eyebrow: 'Your plan',
+    title: 'Orders and to-dos',
+    segments: { orders: 'Orders', todo: 'To-do' },
+    back: 'Back',
+  },
+
+  /** The to-do section on Today. */
+  today: {
+    section: 'To-do',
+    add: 'Add to your day',
+    seeAll: (count: number): string => `See all (${count})`,
+    manage: 'Manage',
+    carryOver: (count: number): string =>
+      count === 1
+        ? '1 task left from an earlier day · Sort it out'
+        : `${count} tasks left from earlier days · Sort them out`,
+    empty: 'Nothing planned. Add one thing you want done today.',
+  },
 } as const;

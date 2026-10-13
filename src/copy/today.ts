@@ -43,9 +43,21 @@ export const todayCopy = {
   /** "Day XII of LX" (shown in caps). */
   arcEyebrow: (dayRoman: string, lengthRoman: string): string => `Day ${dayRoman} of ${lengthRoman}`,
   arcFinishedEyebrow: 'Arc complete',
+  /** "Free training · Day XII" (shown in caps): counts days, with no end. */
+  ludusEyebrow: (dayRoman: string): string => `Free training · Day ${dayRoman}`,
+  /** After a campaign's last day: the way on, from Today. */
+  finished: {
+    title: 'Campaign complete',
+    body: 'You finished what you started. Begin another campaign, or switch to free training.',
+    action: 'Choose what next',
+  },
 
   chips: {
     campaign: (days: number): string => `Campaign ${days}`,
+    /** Free training has no streak: it counts the days trained instead. */
+    trained: (days: number): string => `${days} ${days === 1 ? 'day' : 'days'} trained`,
+    denarii: (amount: number): string => `${amount} denarii`,
+    denariiHint: 'Opens the Forum',
     truces: (count: number): string =>
       count === 0 ? 'No Truces' : `${count} ${count === 1 ? 'Truce' : 'Truces'}`,
   },
@@ -203,17 +215,6 @@ export const todayCopy = {
   },
 
   addOrder: 'Add an order',
-
-  /** The to-do tile under the orders. */
-  todoTile: {
-    title: 'To-do',
-    empty: 'Plan your day',
-    summary: (done: number, total: number, toCarryOver: number): string => {
-      const parts = total > 0 ? [`${done} of ${total} done`] : [];
-      if (toCarryOver > 0) parts.push(`${toCarryOver} to carry over`);
-      return parts.length > 0 ? parts.join(' · ') : 'Plan your day';
-    },
-  },
 
   workoutSheet: {
     title: 'What did you train?',

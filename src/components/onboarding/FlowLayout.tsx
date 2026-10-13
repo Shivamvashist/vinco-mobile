@@ -21,6 +21,11 @@ export type FlowLayoutProps = {
   children: ReactNode;
   /** Pinned under the scrolling content: the step's main button. */
   footer: ReactNode;
+  /**
+   * Scrolls by default. Turn off for a step whose content fills the screen (the camera):
+   * the body then takes exactly the space between the title and the footer.
+   */
+  scroll?: boolean;
 };
 
 /** The shared frame of an onboarding step: back, progress, title, scrolling body, pinned footer. */
@@ -32,8 +37,22 @@ export function FlowLayout({
   subtitle,
   children,
   footer,
+  scroll = true,
 }: FlowLayoutProps) {
   const styles = useStyles();
+
+  const heading = (
+    <>
+      <Txt variant="title" accessibilityRole="header">
+        {title}
+      </Txt>
+      {subtitle ? (
+        <Txt variant="body" color="textMuted" style={styles.subtitle}>
+          {subtitle}
+        </Txt>
+      ) : null}
+    </>
+  );
 
   const handleBack = () => {
     if (router.canGoBack()) router.back();
@@ -58,22 +77,22 @@ export function FlowLayout({
         </Txt>
       </View>
 
-      <ScrollView
-        style={styles.body}
-        contentContainerStyle={styles.bodyContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <Txt variant="title" accessibilityRole="header">
-          {title}
-        </Txt>
-        {subtitle ? (
-          <Txt variant="body" color="textMuted" style={styles.subtitle}>
-            {subtitle}
-          </Txt>
-        ) : null}
-        <View style={styles.children}>{children}</View>
-      </ScrollView>
+      {scroll ? (
+        <ScrollView
+          style={styles.body}
+          contentContainerStyle={styles.bodyContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {heading}
+          <View style={styles.children}>{children}</View>
+        </ScrollView>
+      ) : (
+        <View style={[styles.body, styles.bodyFixed]}>
+          {heading}
+          <View style={[styles.children, styles.childrenFill]}>{children}</View>
+        </View>
+      )}
 
       <View style={styles.footer}>{footer}</View>
     </Screen>
@@ -87,7 +106,9 @@ const useStyles = createStyles((theme) => ({
   progress: { flex: 1 },
   body: { flex: 1 },
   bodyContent: { paddingTop: theme.space.xxl, paddingBottom: theme.space.xl },
+  bodyFixed: { paddingTop: theme.space.xl, paddingBottom: theme.space.md },
   subtitle: { marginTop: theme.space.sm },
   children: { marginTop: theme.space.xxl },
+  childrenFill: { flex: 1, marginTop: theme.space.lg },
   footer: { paddingTop: theme.space.md, gap: theme.space.xs },
 }));

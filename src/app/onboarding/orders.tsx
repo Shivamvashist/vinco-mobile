@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { type ReactNode, useEffect } from 'react';
-import { View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -16,6 +16,12 @@ import { createStyles, useTheme } from '@/theme';
 
 const copy = onboardingCopy.orders;
 
+/**
+ * Below this width (in dp, scaled by the user's font size) the minimum and the "Conquer"
+ * stepper stack, so values like "2 litres" never get cut to "2...".
+ */
+const SIDE_BY_SIDE_MIN_WIDTH = 420;
+
 /** Step II: the four orders. Minimums are fixed; full goals and the wake-up time can be tuned. */
 export default function OrdersScreen() {
   const styles = useStyles();
@@ -24,6 +30,7 @@ export default function OrdersScreen() {
   const setFullGoal = useOnboardingStore((state) => state.setFullGoal);
   const setWakeMinutes = useOnboardingStore((state) => state.setWakeMinutes);
   const setLastStep = useOnboardingStore((state) => state.setLastStep);
+  const arcKind = useOnboardingStore((state) => state.arcKind);
 
   useEffect(() => setLastStep('orders'), [setLastStep]);
 
@@ -33,7 +40,7 @@ export default function OrdersScreen() {
       totalSteps={ONBOARDING_STEPS.length}
       backHref="/onboarding/arc"
       title={copy.title}
-      subtitle={copy.subtitle}
+      subtitle={arcKind === 'ludus' ? copy.subtitleLudus : copy.subtitle}
       footer={<Button label={copy.accept} onPress={() => router.push('/onboarding/tone')} />}
     >
       <View style={styles.list}>
@@ -101,6 +108,8 @@ type OrderCardProps = {
 function OrderCard({ icon, name, minimum, note, children }: OrderCardProps) {
   const theme = useTheme();
   const styles = useStyles();
+  const { width, fontScale } = useWindowDimensions();
+  const isStacked = width / Math.max(1, fontScale) < SIDE_BY_SIDE_MIN_WIDTH;
   return (
     <Card bordered>
       <View style={styles.titleRow}>
@@ -117,14 +126,16 @@ function OrderCard({ icon, name, minimum, note, children }: OrderCardProps) {
           accessibilityLabel={copy.requiredLabel}
         />
       </View>
-      <View style={styles.goals}>
-        <View style={[styles.goalCell, styles.minimumCell]}>
+      <View style={[styles.goals, isStacked && styles.goalsStacked]}>
+        <View style={[styles.goalCell, !isStacked && styles.goalCellSideBySide, styles.minimumCell]}>
           <Txt variant="micro">{copy.holdLabel}</Txt>
           <Txt variant="label" style={styles.minimumValue}>
             {minimum}
           </Txt>
         </View>
-        <View style={[styles.goalCell, styles.stepperCell]}>{children}</View>
+        <View style={[styles.goalCell, !isStacked && styles.goalCellSideBySide, styles.stepperCell]}>
+          {children}
+        </View>
       </View>
       {note ? (
         <Txt variant="caption" style={styles.note}>
@@ -148,8 +159,9 @@ const useStyles = createStyles((theme) => ({
   },
   name: { flex: 1 },
   goals: { flexDirection: 'row', gap: theme.space.sm, marginTop: theme.space.md },
+  goalsStacked: { flexDirection: 'column' },
+  goalCellSideBySide: { flex: 1 },
   goalCell: {
-    flex: 1,
     minWidth: 0,
     borderRadius: theme.radius.sm,
     backgroundColor: theme.colors.background,

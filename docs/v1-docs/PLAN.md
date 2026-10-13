@@ -163,7 +163,7 @@ Going over the reel budget costs 15 denarii for 10 more reels, doubling each tim
 
 ### Shipping
 
-Early Access: ranks, decorations, denarii earning (local ledger). 1.0: the Forum and the Tributum, server ledger. 1.2: Tributum on Imperium.
+Early Access: ranks, decorations, denarii earning and the Forum on the local ledger (built 10 Oct: Truce, alarm pass "Venia", day card styles, app icons; see docs/WAVE-2.md). 1.0: the Tributum and the server ledger. 1.2: Tributum on Imperium. Open training without a streak is Free training.
 
 ## 10. Extras
 

@@ -226,6 +226,13 @@ No generic components. Every component is planned against the prototype before c
 3. **Build it** with theme tokens only, then add it to the theme lab (`src/app/dev/theme-lab.tsx`) in every state.
 4. **Verify it doesn't break**: both colour schemes, largest font size, smallest screen, rapid taps, long text in every language field.
 
+**Fit every phone.** Phones run from about 320 to 480 dp wide and 560 to 900 dp tall, and users enlarge fonts.
+
+- No fixed height for large media (camera, photos, the timelapse). Use flex to take the space left, or a share of `useWindowDimensions()` with a minimum and a maximum.
+- A screen whose main action must be visible (the shutter) doesn't scroll: the media flexes, the action stays pinned.
+- Two cells side by side stack below about 420 dp of width divided by `fontScale`, rather than cutting text to "2...".
+- Values that must stay on one line use `numberOfLines={1}` with `adjustsFontSizeToFit` (minimum scale 0.75), never a plain ellipsis that hides the number.
+
 ---
 
 ## 8. Formatting and tooling

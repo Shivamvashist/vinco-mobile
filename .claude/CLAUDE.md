@@ -2,16 +2,19 @@
 
 Read this before every task. Then read [HISTORY.md](../HISTORY.md) for the current state.
 
-| Doc                                                           | What's in it                                                                            |
-| ------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| [HISTORY.md](../HISTORY.md)                                   | Current state, architecture, decisions, milestone log. **Update after every milestone** |
-| [docs/CONVENTIONS.md](../docs/CONVENTIONS.md)                 | Naming, exports, folders, edge-case checklist, UI process. **Follow it**                |
-| [docs/DESIGN-SYSTEM.md](../docs/DESIGN-SYSTEM.md)             | Theme, colour roles, type, sounds, haptics, adding a theme                              |
-| [docs/ORDERS-AND-TASKS.md](../docs/ORDERS-AND-TASKS.md)       | Orders (decide the day) vs daily and day tasks (the plan): rules, screens, data         |
-| [docs/DAY-FLOW.md](../docs/DAY-FLOW.md)                       | The day screen by screen: dawn and wake sheet, orders, proof, Commentarii, sounds       |
-| [docs/v1-docs/BUILD-STEPS.md](../docs/v1-docs/BUILD-STEPS.md) | The step-by-step plan and what's next                                                   |
-| [docs/v1-docs/PLAN.md](../docs/v1-docs/PLAN.md)               | Full product plan                                                                       |
-| `docs/v1-reference/Vinco app UI.html`                         | Clickable prototype of all 18 screens: exact layouts, copy, motion and sounds           |
+| Doc                                                           | What's in it                                                                                   |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| [HISTORY.md](../HISTORY.md)                                   | Current state, architecture, decisions, milestone log. **Update after every milestone**        |
+| [docs/CONVENTIONS.md](../docs/CONVENTIONS.md)                 | Naming, exports, folders, edge-case checklist, UI process. **Follow it**                       |
+| [docs/DESIGN-SYSTEM.md](../docs/DESIGN-SYSTEM.md)             | Theme, colour roles, type, sounds, haptics, adding a theme                                     |
+| [docs/ORDERS-AND-TASKS.md](../docs/ORDERS-AND-TASKS.md)       | Orders (decide the day) vs daily and day tasks (the plan): rules, screens, data                |
+| [docs/DAY-FLOW.md](../docs/DAY-FLOW.md)                       | The day screen by screen: dawn and wake sheet, orders, proof, Commentarii, sounds              |
+| [docs/WAVE-2.md](../docs/WAVE-2.md)                           | Free training, to-dos, Forum, Settings tab and Vici, sounds, fitting every phone (10 Oct plan) |
+| [docs/GUARDIANS.md](../docs/GUARDIANS.md)                     | Pax, Vigil, Guard, Imperium and Aurora: built base, native plan, permissions                   |
+| [docs/BACKEND-PLAN.md](../docs/BACKEND-PLAN.md)               | vinco-api: data, sync, endpoints, trust, and features that need the server                     |
+| [docs/v1-docs/BUILD-STEPS.md](../docs/v1-docs/BUILD-STEPS.md) | The step-by-step plan and what's next                                                          |
+| [docs/v1-docs/PLAN.md](../docs/v1-docs/PLAN.md)               | Full product plan                                                                              |
+| `docs/v1-reference/Vinco app UI.html`                         | Clickable prototype of all 18 screens: exact layouts, copy, motion and sounds                  |
 
 ## Working rules (non-negotiable)
 
@@ -32,7 +35,7 @@ Read this before every task. Then read [HISTORY.md](../HISTORY.md) for the curre
 
 Vinco is an Android app for people running a 30, 60 or 90 day "arc." Every day the user completes four non-negotiable orders (water, wake-up, a protein meal, a workout), takes a selfie as proof, and sees their progress fill in. Later, the Vigil counts every reel and short they watch, shows it live in a floating badge, and steps in at milestones. The theme is Roman and Stoic, the look is modern, and the voice can be calm, firm or sarcastic.
 
-Tagline: **Veni, vidi, vici.** The three words are the app's three tabs: Veni (Today), Vidi (Progress), Vici (Arc).
+Tagline: **Veni, vidi, vici.** The three words are the app's first three tabs: Veni (Today), Vidi (Progress), Vici (Arc). A fourth, Castra (Settings), holds the settings.
 
 ## The developer
 
@@ -45,7 +48,7 @@ Tagline: **Veni, vidi, vici.** The three words are the app's three tabs: Veni (T
 **Early Access build (tracker only).** First build to Play closed testing by **12 October 2026**; public Early Access on **2 November 2026**.
 
 - Everything runs **on the phone**. **No backend yet.** No API calls, auth or server.
-- The Vigil, Aurora alarm missions, squads, AI and the denarii shop come in Vinco 1.0 (1 January 2027). Don't build them unless asked.
+- The Vigil counting, Aurora ringing, squads and AI come in Vinco 1.0 (1 January 2027). Their settings, rules and bridges exist now in preview (docs/GUARDIANS.md); the native parts wait for a development build. The Forum (denarii shop) is built on the local ledger.
 - See BUILD-STEPS.md for what's done and next.
 
 ## Stack
@@ -72,7 +75,9 @@ Two repos: `vinco-mobile` (this one) and `vinco-api` (later: Hono, OpenAPI spec 
 - **Styles:** `createStyles((theme) => ...)` from `@/theme`. Colour **roles** only (`theme.colors.accent`), never hex. Spacing, radius and sizes from tokens.
 - **Fonts:** pick weight by family (`theme.fonts.bodySemiBold`), never `fontWeight`.
 - **Feedback:** `useFeedback()` then `play('tap')`. Never play audio files directly. Sound files carry their own level (tiers in `scripts/generate-sounds.mjs`); the theme plays them at full volume.
-- **Feature flags:** built-but-off features live behind `FEATURES` (`src/config/features.ts`). Own orders and the to-do list are off for now.
+- **Feature flags:** features that can be switched off live behind `FEATURES` (`src/config/features.ts`). Own orders and the to-do list are on (since 10 Oct).
+- **Fit every phone:** no fixed heights for large media; flex or a share of the window; stack side-by-side cells on narrow screens (CONVENTIONS section 7).
+- **Native later:** screens talk to `guardBridge` and `auroraBridge`, never to native code; the stubs are swapped for the Kotlin modules in one place.
 - **Copy:** all user-facing text in `src/copy/`, keyed by tone where it varies. Latin phrases stay short and sit in quotes inside sentences (`earn "Resurgo" (I rise again)`); every Latin word has a plain label nearby.
 - **Logic:** pure functions in `src/features/`; screens call them. Records in SQLite via `src/db/`.
 - **State:** app/UI state in `src/stores/` (Zustand, persisted). Never mirror database records into a store.
@@ -99,19 +104,21 @@ Dark (Basalt) by default, light (Marble) available, both from the one Vinco core
 
 ### Vocabulary (Roman name and plain label)
 
-Cross the Rubicon (Begin your arc), Campaign (days in a row), Hold the line (minimum), Conquer (full goal), Truce (rest day), Resurgo (comeback), Aurora (alarm), the Vigil (reel counter), Contubernium (squad), the Armory (task ideas), the Senate report (weekly review), Denarii (coins), the Forum (shop), Tributum (over-budget fee), Decorations (achievements). Ranks: Tiro, Miles, Optio, Centurion, Tribune, Legate, Consul, Caesar.
+Cross the Rubicon (Begin your arc), Campaign (days in a row), Free training (the open plan: no streak, no fall; arc kind `ludus` in code), Hold the line (minimum), Conquer (full goal), Truce (rest day), Resurgo (comeback), Aurora (alarm), Venia (alarm pass), the Vigil (reel counter), Pax, Custos and Imperium (guard levels), Contubernium (squad), the Armory (task ideas), the Senate report (weekly review), Denarii (coins), the Forum (shop), the Aerarium (ways to earn), Tributum (over-budget fee), Decorations (achievements), Castra (Settings tab). Ranks: Tiro, Miles, Optio, Centurion, Tribune, Legate, Consul, Caesar.
 
 ## Product rules (don't break these)
 
 - **Orders decide the day; tasks plan it** ([docs/ORDERS-AND-TASKS.md](../docs/ORDERS-AND-TASKS.md)). Orders are Vinco's four plus up to 4 of the user's own; every order has a minimum and a full goal, and every order must hold its minimum for the day to be held. Daily tasks and day tasks never affect sealing.
 - **Sealed days never change.** A day's result is stored when sealed; adding or standing down orders never rewrites history.
 - **Sick day:** from the dawn card, "Feeling sick today" calls a Truce for today in advance. The orders stay open; if every order is held anyway, the Truce comes back at midnight. "I'm feeling better" takes it back the same day.
-- **Truces are called by the user**, never applied automatically. A missed day breaks the campaign unless the user calls a Truce before the next day ends. Truces are earned (one when an arc begins, one every 7 days of campaign, at most 3 held) or bought with denarii at the moment of need.
+- **Free training** is the open plan (arc kind `ludus` in code): same orders, stamp and proof, but no campaign, no loss screen, no Truces, no weekly bonus. Moving between a campaign and free training is never a wipe; the record stays in Past arcs.
+- **Truces are called by the user**, never applied automatically. A missed day breaks the campaign unless the user calls a Truce before the next day ends. Truces are earned (one when an arc begins, one every 7 days of campaign, at most 3 held) or bought with denarii: at the moment of need, or ahead in the Forum (one a day).
 - **Three tones:** Philosopher (calm Stoic), Centurion (firm coach), Roast me (unhinged friend: properly savage about the phone, the scroll and the excuse, never vulgar). Every notification and empty state is written all three ways.
 - **Humour rule:** roast the habit, the phone and the excuse, never the person. Selfie, weight and slip screens stay neutral in every tone. Every sarcastic line ends with a way forward.
 - **At most three nudges a day**, plus the alarm.
 - **Selfies never leave the phone.**
-- **Denarii, ranks and decorations are earned, never sold for real money.**
+- **Denarii, ranks and decorations are earned, never sold for real money.** The Forum sells for denarii only: a Truce (max 3 held, one a day), the alarm pass (max 2), day card styles and app icons (cosmetic).
+- **Signature sounds always play:** the DAY I seal and the VINCO stamp sound even with Sounds off (`feedback.essential`); the phone's silent mode still wins. The tab whoosh is the quietest cue.
 - The app is for adults (18+).
 
 ## Commands (PowerShell)

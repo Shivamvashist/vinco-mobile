@@ -83,19 +83,34 @@ function DailySelfieContent() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        <SelfieCapture
-          day={today}
-          ghostUri={selfie.ghostPath}
-          ghostOpacity={ghostOpacity}
-          ghostOpacityMax={GHOST_OPACITY_MAX}
-          onGhostOpacityChange={setGhostOpacity}
-          confirmAlignment
-          existingUri={selfie.todayPath}
-          onCaptured={selfie.saveSelfie}
-        />
+      {/* Before the shot the screen doesn't scroll: the camera fills what's left, so the
+          shutter is on screen on every phone. Afterwards the strip and weight need room. */}
+      {!selfie.todayPath ? (
+        <View style={styles.cameraOnly}>
+          <SelfieCapture
+            day={today}
+            ghostUri={selfie.ghostPath}
+            ghostOpacity={ghostOpacity}
+            ghostOpacityMax={GHOST_OPACITY_MAX}
+            onGhostOpacityChange={setGhostOpacity}
+            confirmAlignment
+            onCaptured={selfie.saveSelfie}
+            fill
+          />
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+          <SelfieCapture
+            day={today}
+            ghostUri={selfie.ghostPath}
+            ghostOpacity={ghostOpacity}
+            ghostOpacityMax={GHOST_OPACITY_MAX}
+            onGhostOpacityChange={setGhostOpacity}
+            confirmAlignment
+            existingUri={selfie.todayPath}
+            onCaptured={selfie.saveSelfie}
+          />
 
-        {selfie.todayPath ? (
           <View style={styles.after}>
             <View style={styles.saved}>
               <Icon name="check" color="accent" />
@@ -145,8 +160,8 @@ function DailySelfieContent() {
             ) : null}
             <Button label={copy.done} cue="confirm" onPress={finish} />
           </View>
-        ) : null}
-      </ScrollView>
+        </ScrollView>
+      )}
     </Screen>
   );
 }
@@ -156,6 +171,7 @@ const useStyles = createStyles((theme) => ({
   title: { flex: 1, textAlign: 'center', letterSpacing: 2 },
   headerSpacer: { width: theme.layout.minTouchTarget },
   body: { padding: theme.space.lg, paddingBottom: theme.space.xxxl, gap: theme.space.lg },
+  cameraOnly: { flex: 1, padding: theme.space.lg, paddingBottom: theme.space.md },
   after: { gap: theme.space.md },
   saved: { flexDirection: 'row', alignItems: 'center', gap: theme.space.sm },
   savedText: { flex: 1 },

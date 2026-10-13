@@ -7,8 +7,8 @@ import { Txt } from '../Txt';
 
 type SettingsRowBase = {
   label: string;
-  /** Draws the divider above; false for the first row. */
-  hasDivider?: boolean;
+  /** A short line under the label, such as what a switch does. */
+  detail?: string;
 };
 
 export type SettingsRowProps = SettingsRowBase &
@@ -21,23 +21,31 @@ export type SettingsRowProps = SettingsRowBase &
     | { toggle: { value: boolean; onChange: (value: boolean) => void }; value?: never; onPress?: never }
   );
 
-/** One row in Vici's settings card: a label with a value (and chevron), or a switch. */
+/**
+ * One row in a settings card: a label (and optional detail) with a value and chevron, or a
+ * switch. Rows sit in a SettingsGroup, which draws the lines between them.
+ */
 export function SettingsRow(props: SettingsRowProps) {
   const theme = useTheme();
   const styles = useStyles();
   const play = useFeedback();
-  const { label, hasDivider = true } = props;
-  const rowStyle = [styles.row, hasDivider && styles.divider];
+  const { label, detail } = props;
+  const rowStyle = styles.row;
+  const labelBlock = (
+    <View style={styles.label}>
+      <Txt variant="body">{label}</Txt>
+      {detail ? <Txt variant="caption">{detail}</Txt> : null}
+    </View>
+  );
 
   if (props.toggle) {
     const { value, onChange } = props.toggle;
     return (
       <View style={rowStyle}>
-        <Txt variant="body" style={styles.label}>
-          {label}
-        </Txt>
+        {labelBlock}
         <Switch
           accessibilityLabel={label}
+          accessibilityHint={detail}
           value={value}
           onValueChange={(next) => {
             play('toggle');
@@ -53,9 +61,7 @@ export function SettingsRow(props: SettingsRowProps) {
   const { value, onPress } = props;
   const content = (
     <>
-      <Txt variant="body" style={styles.label}>
-        {label}
-      </Txt>
+      {labelBlock}
       <Txt variant="body" color="textMuted" numberOfLines={1} style={styles.value}>
         {value}
       </Txt>
@@ -76,7 +82,7 @@ export function SettingsRow(props: SettingsRowProps) {
       accessibilityRole="button"
       accessibilityLabel={`${label}, ${value}`}
       onPress={onPress}
-      style={({ pressed }) => [...rowStyle, pressed && styles.pressed]}
+      style={({ pressed }) => [rowStyle, pressed && styles.pressed]}
     >
       {content}
     </Pressable>
@@ -90,9 +96,9 @@ const useStyles = createStyles((theme) => ({
     gap: theme.space.sm,
     minHeight: theme.layout.buttonHeight,
     paddingHorizontal: theme.space.lg,
+    paddingVertical: theme.space.sm,
   },
-  divider: { borderTopWidth: theme.layout.hairline, borderTopColor: theme.colors.border },
-  label: { flex: 1 },
+  label: { flex: 1, gap: theme.space.xxs },
   value: { flexShrink: 1, textAlign: 'right' },
   pressed: { backgroundColor: theme.colors.surfaceRaised },
 }));

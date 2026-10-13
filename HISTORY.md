@@ -4,15 +4,15 @@ The memory of this project. Any AI model or developer joining should read this, 
 
 ---
 
-## Snapshot (as of 9 Oct 2026)
+## Snapshot (as of 10 Oct 2026)
 
 **Phase:** Early Access (tracker only, all on the phone, no backend). Closed-test build due **12 Oct 2026**, Early Access **2 Nov 2026**.
 
-**Done:** Steps 1 to 5 and 7 to 11, plus Step 13's day card, own orders and the to-do list (daily and day tasks, carry-over), user-called Truces, "Sound the retreat" (journey reset), a persistent "Seal the day" card and dev mode. Every prototype screen in Early Access scope exists on real data except the to-do list and step one (Step 12).
+**Done:** Steps 1 to 5 and 7 to 11, most of 12 and 13, and **Wave 2** ([docs/WAVE-2.md](docs/WAVE-2.md)): the Ludus (open training), own orders and to-dos switched on with one "How often?" sheet, the Forum and the Aerarium on the local ledger, a fourth tab (Castra, Settings), Vici rebuilt (record, treasury, decorations, past arcs, what next), quieter tab sound with the seal and stamp always on, layouts that fit every phone, the guard levels and Aurora in preview with native bridges, and the backend plan ([docs/BACKEND-PLAN.md](docs/BACKEND-PLAN.md)).
 
-**Next:** Step 12 (local nudges with a three-a-day cap, bedtime and the sleep chart, to-do list with carry-over, step one card), then Step 13 decorations and Step 14 hardening. Step 6 (first Play build) is blocked on the questions below.
+**Next:** the native parts (development build, Aurora then the Vigil: [docs/GUARDIANS.md](docs/GUARDIANS.md)), local nudges with the three-a-day cap and step one (Step 12), hardening (Step 14). Step 6 (first Play build) is blocked on the Play account. Before any backend: UUIDs, `updated_at`, `deleted_at` and an outbox on the synced tables (BACKEND-PLAN section 8).
 
-**What runs today:** first launch opens onboarding (Rubicon, arc length, orders, tone, oath recording, first selfie with the DAY I stamp); finishing creates the arc in SQLite and opens Today, which shows "DAY I OF LX", the tuned orders (tap to add, long-press to undo, workout sheet, VINCO stamp once a day) and saves everything. Vidi shows stats, the arc calendar and timelapse progress. Today lists Vinco's four orders and the user's own (one tap: minimum, then full goal), an "Add an order" button, and a to-do tile that opens the to-do list (every-day tasks, today, tomorrow, carry over or drop). Vici has "Your orders" (stand an order down: it counts today, gone tomorrow). Once every order holds, a "Seal the day" card stays on Today (the stamp can be dismissed without losing the day card). Vici shows the journey, rank, denarii and working settings (tone, appearance, sounds, vibration, Truces in reserve, oath playback from Day X, "Sound the retreat"). A broken campaign opens the "campaign lost" screen once: if yesterday was missed and there was a campaign to save, it offers a Truce (from the reserve, or bought with denarii), otherwise Resurgo; Today keeps a Truce banner until the day ends. Dev builds: a "Dev mode" switch in Vici shows dev tools (simulated next day, hold or conquer today, theme lab, reset everything); long-pressing Vici still opens the theme lab.
+**What runs today:** first launch opens onboarding (Rubicon; a 30, 60 or 90 day campaign or the Ludus; orders with wake time; tone; oath; first selfie with the DAY I stamp). Four tabs: **Veni** (dawn card and wake sheet, orders with own orders, seal card and VINCO stamp on a conquered day, proof, the to-do inline, chips including the purse), **Vidi** (stats, calendar, Commentarii), **Vici** (the arc or the Ludus, rank, record, treasury, decorations, every selfie, past arcs, moving between a campaign and the Ludus), **Castra** (tone, appearance, sounds, vibration, selfie outline, orders and to-dos, wake-up time, guard level, Aurora, oath, version, the retreat, dev mode). Other screens: `/forum`, `/plan`, `/guard`, `/aurora`, `/selfie`, `/timelapse`, `/day-card`, `/campaign-lost`. A broken campaign opens the campaign-lost screen once; the Ludus never does.
 
 ### Architecture
 
@@ -33,28 +33,33 @@ The memory of this project. Any AI model or developer joining should read this, 
 
 ### Key decisions
 
-| Date  | Decision                                                                                                                        | Why                                                                                         |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| 9 Oct | Colour tokens named by role, not brand (`accent` not `gold`)                                                                    | Switching core themes must not leave misleading names                                       |
-| 9 Oct | Light scheme (Marble) built now, dark stays default                                                                             | Theme switching is a stated requirement; contrast tests keep both readable                  |
-| 9 Oct | `app.json` `userInterfaceStyle` stays `automatic`                                                                               | Lets `colorMode: 'system'` work; the app's own default is still dark                        |
-| 9 Oct | Sounds generated as WAV from the prototype recipes                                                                              | Matches the design exactly; a new theme can ship its own set                                |
-| 9 Oct | Fonts imported per weight from subpaths                                                                                         | Package index would bundle all 14 Figtree weights                                           |
-| 9 Oct | Android package `com.ninjavashist.vinco` (placeholder), test APKs from EAS "preview" profile                                    | Developer's choice; permanent only once uploaded to Play                                    |
-| 9 Oct | Play closed-test build moved to Step 6 (before the database)                                                                    | The 14-day closed test must start by 12 Oct to make 2 Nov                                   |
-| 9 Oct | State: Zustand for app/UI state (persisted), SQLite + Drizzle live queries for records, never mirrored; TanStack Query from 1.0 | Developer's decision. One source of truth per kind of data                                  |
-| 9 Oct | Zustand persisted to expo-sqlite kv-store with its sync API                                                                     | One storage engine for the app; synchronous restore means no flash of default theme or tone |
-| 9 Oct | ThemeProvider made controlled (no internal copy of preferences)                                                                 | One source of truth: the store                                                              |
-| 9 Oct | Custom tab bar instead of styling the default one                                                                               | The prototype's two-line Latin/plain labels don't fit the default label slot cleanly        |
-| 9 Oct | Default tone before onboarding: Centurion                                                                                       | The app's core voice ("orders", "soldier"); onboarding sets the real choice                 |
-| 9 Oct | Theme lab opened by long-pressing the Vici tab, dev only                                                                        | Keeps dev tools out of real screens                                                         |
-| 9 Oct | Three kinds of to-do: orders (decide the day, min and full goal), daily tasks, day tasks (never affect sealing)                 | Developer's structure; spec in docs/ORDERS-AND-TASKS.md                                     |
-| 9 Oct | Own orders: one tap per level (minimum, then full), max 4, start today, stand down from tomorrow                                | Keeps the core job one tap; removing an order can never rescue the day in progress          |
-| 9 Oct | Day results stored at sealing (`day_logs.result`)                                                                               | Changing orders must never rewrite history                                                  |
-| 9 Oct | Truces called by the user; earned (1 at arc start, 1 per 7-day campaign, max 3) or bought (50 denarii) when needed              | Developer's decision. A Truce is a choice and a reward, not a silent weekly pass            |
-| 9 Oct | A Truce covers only the missed run ending yesterday, one Truce per missed day                                                   | Simple rule ("before the next day ends"); never rewrites history past sealed days           |
-| 9 Oct | Journey reset wipes records, selfies and oath; keeps preferences. Confirmed by typing RETREAT                                   | Developer's request; typed word stops an accidental wipe                                    |
-| 9 Oct | Dev mode: a persisted day offset in `useDevStore`, read by `useToday` (dev builds only), only ever moves forward                | Tests history and sealing on a real phone; going back would leave sealed future days        |
+| Date   | Decision                                                                                                                        | Why                                                                                         |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| 9 Oct  | Colour tokens named by role, not brand (`accent` not `gold`)                                                                    | Switching core themes must not leave misleading names                                       |
+| 9 Oct  | Light scheme (Marble) built now, dark stays default                                                                             | Theme switching is a stated requirement; contrast tests keep both readable                  |
+| 9 Oct  | `app.json` `userInterfaceStyle` stays `automatic`                                                                               | Lets `colorMode: 'system'` work; the app's own default is still dark                        |
+| 9 Oct  | Sounds generated as WAV from the prototype recipes                                                                              | Matches the design exactly; a new theme can ship its own set                                |
+| 9 Oct  | Fonts imported per weight from subpaths                                                                                         | Package index would bundle all 14 Figtree weights                                           |
+| 9 Oct  | Android package `com.ninjavashist.vinco` (placeholder), test APKs from EAS "preview" profile                                    | Developer's choice; permanent only once uploaded to Play                                    |
+| 9 Oct  | Play closed-test build moved to Step 6 (before the database)                                                                    | The 14-day closed test must start by 12 Oct to make 2 Nov                                   |
+| 9 Oct  | State: Zustand for app/UI state (persisted), SQLite + Drizzle live queries for records, never mirrored; TanStack Query from 1.0 | Developer's decision. One source of truth per kind of data                                  |
+| 9 Oct  | Zustand persisted to expo-sqlite kv-store with its sync API                                                                     | One storage engine for the app; synchronous restore means no flash of default theme or tone |
+| 9 Oct  | ThemeProvider made controlled (no internal copy of preferences)                                                                 | One source of truth: the store                                                              |
+| 9 Oct  | Custom tab bar instead of styling the default one                                                                               | The prototype's two-line Latin/plain labels don't fit the default label slot cleanly        |
+| 9 Oct  | Default tone before onboarding: Centurion                                                                                       | The app's core voice ("orders", "soldier"); onboarding sets the real choice                 |
+| 9 Oct  | Theme lab opened by long-pressing the Vici tab, dev only                                                                        | Keeps dev tools out of real screens                                                         |
+| 9 Oct  | Three kinds of to-do: orders (decide the day, min and full goal), daily tasks, day tasks (never affect sealing)                 | Developer's structure; spec in docs/ORDERS-AND-TASKS.md                                     |
+| 9 Oct  | Own orders: one tap per level (minimum, then full), max 4, start today, stand down from tomorrow                                | Keeps the core job one tap; removing an order can never rescue the day in progress          |
+| 9 Oct  | Day results stored at sealing (`day_logs.result`)                                                                               | Changing orders must never rewrite history                                                  |
+| 9 Oct  | Truces called by the user; earned (1 at arc start, 1 per 7-day campaign, max 3) or bought (50 denarii) when needed              | Developer's decision. A Truce is a choice and a reward, not a silent weekly pass            |
+| 9 Oct  | A Truce covers only the missed run ending yesterday, one Truce per missed day                                                   | Simple rule ("before the next day ends"); never rewrites history past sealed days           |
+| 9 Oct  | Journey reset wipes records, selfies and oath; keeps preferences. Confirmed by typing RETREAT                                   | Developer's request; typed word stops an accidental wipe                                    |
+| 9 Oct  | Dev mode: a persisted day offset in `useDevStore`, read by `useToday` (dev builds only), only ever moves forward                | Tests history and sealing on a real phone; going back would leave sealed future days        |
+| 10 Oct | Open plan named the **Ludus** (Training ground), stored as `arcs.kind`, length 3650 so ranges keep working                      | Themed and plain; the sentinel avoids touching every date range                             |
+| 10 Oct | The Forum ships on the local ledger in Early Access; Truces can be bought ahead (one a day, max 3)                              | Developer's request; the server ledger replaces it with accounts (BACKEND-PLAN)             |
+| 10 Oct | Settings move to a fourth tab, Castra                                                                                           | Developer's request; Vici becomes the record of the journey                                 |
+| 10 Oct | Seal and stamp sounds play with Sounds off (`feedback.essential`); the phone's silent mode still mutes them                     | Developer's request: the two signature moments                                              |
+| 10 Oct | Native features go through bridge contracts (`guardBridge`, `auroraBridge`) with stubs                                          | Runs in Expo Go now; the Kotlin modules replace one line each later                         |
 
 ### Questions for the developer (parked while working)
 
@@ -87,12 +92,74 @@ Answer when convenient; work continues with the safe default shown.
 - `assets/images/android-icon-background.png` is no longer referenced (the adaptive icon uses a background colour). Delete with the other template leftovers.
 - Thud-based cues (stamp, cross, seal) put most energy at 40 to 140 Hz, which phone speakers barely play. Kept as the prototype has it; lifting the brass layers or adding an octave-up layer would make the stamp fuller on a phone. Ask the developer.
 - **File size:** every source file is under the 500-line ceiling (largest: `veni.tsx`, 498). Leave as is for now (developer, 9 Oct). Split `veni.tsx` before it grows further. `src/__tests__/routes.test.tsx` (974) can be split by area when convenient.
+- Decorations are computed for the current arc only and pay no denarii yet (they'd need ledger awards; easy once the set is final).
+- The Forum's app icons are owned but can't switch until a development build adds alternate icons (GUARDIANS.md, order of work 5).
+- Notifications, the error boundary and the accessibility pass are still open (Steps 12 and 14).
 - `npm audit` reports 30 advisories in the dependency tree (mostly dev tooling). Review before the production build.
 - `README.md` is now a short project readme.
 
 ---
 
 ## Milestone log
+
+### 10 Oct 2026: "Free training", done tasks to the bottom
+
+- **Renamed the open plan** from "the Ludus" to **Free training** on every screen (developer: something simple). Onboarding card "Free training", Today "Free training · Day XII", Vici title "Free training" with "Since 3 Oct · Day XII", day card "FREE TRAINING · DAY XII", buttons "Switch to free training". The code and database keep the arc kind `ludus` (and names like `isLudus`), so no migration; comments say "free training (the 'ludus' kind)".
+- **Done tasks move to the bottom:** `sortDoneLast` (`src/features/tasks`) orders open tasks first, done ones last, each in the order added; `useTasks` applies it to every list and Today's combined list does the same. Unticking brings a task back up. `TaskItemRow` slides to its new place (`LinearTransition`, 220 ms, off with reduced motion).
+- Tests: `sortDoneLast` unit tests; a route test ticks and unticks a task on Today and checks the order.
+
+### 10 Oct 2026: Wave 2 (9/9): backend plan, docs, polish
+
+- [docs/BACKEND-PLAN.md](docs/BACKEND-PLAN.md): principles (local first, selfies never leave, the server decides money), stack, table-by-table mapping with sync rules, outbox sync (bootstrap, push, pull), v1 endpoints, anti-cheat, the ten features that need a backend, order of work, and what the app changes.
+- Docs updated: CLAUDE.md (doc table, Ludus, Forum, essential sounds, bridges, vocabulary, four tabs), DESIGN-SYSTEM (whisper tier, essential cues), DAY-FLOW (sounds), UI-KIT (new components and kit changes), BUILD-STEPS (Wave 2), PLAN (Forum in Early Access, Ludus).
+- Polish: Ludus wording on the orders step, the timelapse ("Your training"), Forum Truces ("Kept for your next campaign"), Vici's Ludus record (days since Day I); new chip variants in the theme lab.
+- Verified: `npm run check` green (417 tests, 46 suites), no console warnings, Android bundle exports.
+
+### 10 Oct 2026: Wave 2 (8/9): guard levels and Aurora, base
+
+- Plan and native integration guide: [docs/GUARDIANS.md](docs/GUARDIANS.md) (levels, rules, what needs Kotlin, permissions, Play declaration, order of work).
+- `src/features/guard/`: `GUARD_LEVELS` (pax, vigil, guard, imperium), `GUARD_LEVEL_SHIPS`, `GUARD_RULES` (budget 30 in 5 to 200, milestone every 25, Tributum 15 doubling three times, Clementia 10 min, 24-hour cool-off), `getReelMilestone`, `getTributumPrice`, `getReelAllowance`, `getImperiumGate`, `levelIncludes`. `GuardBridge` contract and `unsupportedGuardBridge` (`guardBridge` is the one place to swap in the native module).
+- `src/features/aurora/`: `AuroraSettings` (on, minutes, Monday-first days, mission: march, sky, post), `getNextRing`, `sanitizeAuroraSettings`, `AURORA_RULES`. `AuroraBridge` contract and stub.
+- `useGuardStore` (persisted `vinco.guard`: level, reel budget, Aurora). Reset by dev "reset everything", kept by the retreat (it's a preference).
+- UI: Settings group "Guard" (Guard level, Aurora alarm with its time or Off). `/guard` (four levels with version badges, reel budget stepper, privacy promise) and `/aurora` (on, time defaulting to the wake-up time, days as multi-select chips, mission, next ring, alarm passes held), both with a `PreviewNotice` ("Arrives with the Vinco build").
+- `ChoiceChip` gained `isMulti` (checkbox, can be turned off, 44 wide) and `accessibilityLabel`.
+- Tests: guard and Aurora rules, store, `src/__tests__/guard.test.tsx`.
+
+### 10 Oct 2026: Wave 2 (7/9): own to-dos and orders, switched on
+
+- `FEATURES.customOrders` and `FEATURES.tasks` are **on**. Spec updated: [docs/ORDERS-AND-TASKS.md](docs/ORDERS-AND-TASKS.md), "Screens".
+- **One sheet for everything** (`components/tasks/TaskSheet.tsx`, replaces `AddTaskSheet`): what, then "How often?" (Just today, Tomorrow, Every day, An order). "An order" hands the name to `AddOrderSheet` (`initialName`). The same sheet edits a task (rename, how often, make it an order, remove). `TaskSheets` wires the two together for Today and `/plan` (targets: add, edit, order).
+- **Today:** `TodayTodo` replaces the to-do tile: every-day and today tasks inline (5 max), tap to tick, hold or pencil to edit, carry-over line, "Add to your day", "See all (n)" / "Manage". "Add an order" opens the order step through the same sheets.
+- **`/plan` ("Orders and to-dos")**: segments Orders and To-do (`OrdersPanel`, `TodoPanel` in `components/plan/`, moved from the old screens). `/orders` and `/tasks` redirect. Settings has "Orders and to-dos" under Your day.
+- DB: `changeTask` (remove from today on, add again; keeps today's tick when it still shows today), `convertTaskToOrder` (one transaction). Hooks: `useTasks.change`, `useOwnOrderActions.convertTask`. `TaskItemRow` takes `onEdit` (long press, accessibility action) and an optional `onRemove`.
+- Removed: `TodoTile`, `todayCopy.todoTile`.
+- Tests: `src/__tests__/todo.test.tsx`; task change and conversion in `src/db/__tests__/tasks.test.ts`. Verified: `npm run check` green, 402 tests.
+
+### 10 Oct 2026: Wave 2 (6/9): Vici rebuilt
+
+- Vici is now the record of the journey: header (arc or "The Ludus" with "Training ground since ..."), journey line (campaigns only), the campaign choice, rank, **Your record** (`RecordGrid`: campaign, best, conquered, held, Truces called, selfies; Ludus: days trained instead), **Treasury** (`TreasuryCard`: denarii, Truces (opens the Truce rules), alarm passes, "Visit the Forum"), **Decorations** (`DecorationGrid`, earned gold, locked dashed with how to earn), all your proof, **Past arcs** (`PastArcList`), and a quiet "Train in the Ludus instead" at the bottom of an active campaign.
+- Decorations: `src/features/campaign/decorations.ts` (`getDecorations`): First seal, Conqueror, Iron week (campaign only), "Resurgo", Halfway to Rome (30 days trained in the Ludus), Proof keeper (7 selfies), Oath keeper (Day X with an oath). Computed from the current arc's records, no storage. They don't pay denarii yet.
+- Arc history: `summarizePastArcs` (`src/features/arc/history.ts`) and `useArcHistory` (`selectAllArcs`, new `selectSealedResults`). An arc ends where the next began.
+- Switching: `useArcChoice` (`beginCampaign`, `trainInLudus`, both via `startNextArc`), `ArcChoiceCard` (Ludus, finished, active), `BeginCampaignSheet` (30/60/90), `LudusSheet` ("This is not a retreat: nothing is wiped"). Today shows a "Campaign complete" card after the last day, leading to Vici.
+- `RankCard` no longer shows denarii (the treasury does).
+- Tests: `src/__tests__/vici.test.tsx`.
+
+### 10 Oct 2026: Wave 2 (4/9 and 5/9): the Ludus, the Forum
+
+- **Ludus (Training ground):** open training with no streak and no fall. `arcs.kind` (`campaign` or `ludus`, migration `0007_arc_kind`). A Ludus stores `LUDUS_LENGTH_DAYS` (3650) so date ranges keep working; code branches on `kind` only. `createArc` grants no starting Truce for a Ludus; any active arc ends first (`endActiveArc`: finished if past its last day, else abandoned). `startNextArc` moves to a new arc today carrying the four goals, wake time, oath and active own orders (with today's progress). `selectAllArcs` for history. Sealing in the Ludus pays day denarii but no weekly bonus or Truce. `useCampaign.isLudus`; no Truce offer; `useLossNotice` ignores the Ludus.
+  - UI: step I has a fourth card "Ludus · Training ground" (store `arcKind`, `chooseLudus`); step V copy without a day count. Today: eyebrow "Ludus · Day XII", chip "N days trained", no sick-day button. Vidi: Days trained, Full-goal days, Selfies. Day card: "LUDUS · DAY XII" and days trained.
+  - `veni.tsx` helpers moved to `components/today/describeArcHeader.ts` and `describeOrderRow.ts` (498 to about 430 lines).
+- **Forum and the economy:** `src/features/forum/` (catalogue `FORUM_ITEMS`, `checkPurchase`, `denariiShort`, `EARN_WAYS`). Items: Truce (50, max 3 held, one a day), Alarm pass "Venia" (40, max 2, used when Aurora arrives), Aurum and Nox day card styles (150, work now), Laurel and Marble app icons (200, switch once native icon switching ships). Tables `purchases` and `item_uses` (migration `0008_forum`). Balance = ledger minus purchases (`getDenariiBalance` moved to `db/forum.ts`; `useCampaign` subtracts purchases too). `buyItem` (one transaction, checks again, Truce goes into the reserve with reason `forum`), `useItem`, `toHoldings`. Hook `useForum` (balance, earned this week, holdings, history, buy).
+  - UI: `/forum` with the purse, segments Shop, Earn ("Aerarium") and History. `ForumItemCard`, `ItemArt`, `PurchaseSheet` (the button says why not: "Need 30 more", "Reserve full", "One a day. Back tomorrow"), `EarnList`, `TreasuryHistory`. Today has a silver purse chip that opens the Forum (`StatChip` can now be pressed). The day card shows bought styles and "More card styles in the Forum". New icons: coin, shield, bell, card, laurel, medal, history, alarm, eye, block, dove, plus, edit.
+- Verified: 380 tests across 38 suites.
+
+### 10 Oct 2026: Wave 2 (1/9 to 3/9): sounds, fit every phone, Settings tab
+
+- Plan for the whole wave: [docs/WAVE-2.md](docs/WAVE-2.md) (Ludus, to-dos, Forum, Settings and Vici, sounds, responsive, guard levels and Aurora, backend).
+- **Sounds:** new `whisper` tier (-17 dBFS) for the tab whoosh, shorter and narrower. `FeedbackSet.essential` (`seal`, `stamp`) play even with Sounds off; the phone's silent mode still mutes them. Test: `src/theme/__tests__/feedback.test.tsx`.
+- **Fit every phone:** onboarding step II stacks the minimum and the "Conquer" stepper below 420 dp (divided by font scale); stepper values shrink to fit instead of "2...". `SelfieCapture` has `fill` (frame flexes, shutter always visible) and otherwise a frame height from the window (50%, 220 to 420). Onboarding step V (`FlowLayout scroll={false}`) and the daily selfie (before the shot) don't scroll. The timelapse frame flexes. Rule added to CONVENTIONS section 7.
+- **Settings tab:** fourth tab "Castra · Settings" (`(tabs)/settings.tsx`, `settingsCopy`). Groups: You (tone, appearance, sounds with the always-on note, vibration, selfie outline), Your day (wake-up time, new `setArcWakeTime`), Your oath, About (version, dev mode), Journey (Sound the retreat), dev tools. `components/settings/`: `SettingsGroup` (draws the lines between rows), `SettingsRow` (moved from `arc/`, now with `detail`), `ToneSheet`, `AppearanceSheet`, `OutlineSheet`, `WakeTimeSheet`. Vici lost its settings (rebuilt later in this wave).
+- Tests: shared route helpers moved to `src/testing/routeKit.ts`; settings, retreat and dev mode tests in `src/__tests__/settings.test.tsx`.
 
 ### 9 Oct 2026: Loss notice fix, sick day, stamp on conquest, timelapse
 

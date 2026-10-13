@@ -157,6 +157,11 @@ export type FeedbackSet = {
   /** null means the cue is silent in this theme. */
   sounds: Record<FeedbackCue, AudioSource | null>;
   haptics: Record<FeedbackCue, HapticPattern>;
+  /**
+   * Cues that play even with Sounds off: the app's signature moments (the DAY I seal, the
+   * VINCO stamp). The phone's own silent mode still mutes them.
+   */
+  essential: readonly FeedbackCue[];
 };
 
 /** A complete core theme: both colour schemes plus fonts and feedback. */

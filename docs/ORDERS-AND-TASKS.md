@@ -55,28 +55,29 @@ Tasks never affect sealing, the campaign, ranks, denarii or Truces. They're a pl
 
 ## Screens
 
+All three kinds are added through **one sheet** that first asks **"How often?"**: Just today, Tomorrow, Every day, or An order. An order then goes on to its minimum and full goal (the name carries over). Own orders and to-dos are on (`FEATURES`, switched on 10 Oct).
+
 ### Today (Veni)
 
-1. Header, chips, tone line (unchanged).
-2. **Your orders:** Vinco's four, then the user's own orders, in the order they were added. A ghost "Add an order" row closes the list while there's room. The ring shows held orders out of all orders (for example 5/6).
-3. Seal card (once every order holds), selfie tile, **to-do tile**: "To-do · 2 of 5 done · 1 to carry over", or "Plan your day" when empty. The tile opens the to-do list.
+1. Header, chips (campaign or days trained, Truces, rank, the purse), tone line.
+2. **Your orders:** Vinco's four, then the user's own, in the order added. A ghost "Add an order" row closes the list while there's room (opens the order step straight away). The ring shows held orders out of all orders (for example 5/6).
+3. Seal card (once every order holds), Proof (selfie, weight, timelapse).
+4. **To-do:** every-day tasks, then today's, up to 5 inline. Tap to tick; **press and hold to edit**; the pencil does the same. Leftovers from earlier days are one line ("1 task left from an earlier day · Sort it out") that opens the full list. "Add to your day", and "See all (8)" or "Manage".
 
-### The to-do list (`/tasks`)
+### Orders and to-dos (`/plan`)
 
-- Header "To-do" with the date.
-- Carry-over card, when there is anything to carry over.
-- **Every day** section: daily tasks, each a row with a check circle; tap to tick or untick.
-- **Today** section: day tasks, same rows, carried-over tasks marked "carried over".
-- **Tomorrow** section, only when something is planned for tomorrow.
-- Each row has a remove button (labelled for screen readers). Removing asks nothing: it's a plan, not a record.
-- "Add a task" button opens a sheet: the task, and when ("Every day", "Today", "Tomorrow").
-- Empty state: a tone line and the add button.
+One place to control everything, from Settings ("Orders and to-dos") and from Today's to-do. Segments **Orders | To-do** (`?tab=orders|todo`; the old `/orders` and `/tasks` links redirect here).
 
-### Your orders (`/orders`, from Vici)
+- **Orders:** Vinco's four with their minimum and full goal, marked "Set by Vinco"; the user's own with "Stand down" (confirmed: "It still counts today, and is gone from tomorrow"); "Add an order" while there's room.
+- **To-do:** carry-over card, Every day, Today, Tomorrow. Each row: tap to tick, the cross to remove, hold to edit.
 
-- Vinco's four with their minimum and full goal, marked "Set by Vinco".
-- The user's own orders with their goals and a "Stand down" button (confirmed in a sheet: "It still counts today, and is gone from tomorrow.").
-- "Add an order" button while there's room.
+### The task sheet (add and edit)
+
+- **Add** ("Add to your day"): what, and how often. Stays open after each save so several can be added; "Done" closes it.
+- **Edit** (hold a task): rename, change how often (Just today, Tomorrow, Every day), **make it an order** (the order step opens with the name; saving adds the order and removes the task in one transaction), or remove.
+- Changing how often removes the task from today on and adds it again as asked (one transaction), so the usual limits apply; a tick for today stays when the task still shows today.
+- In free training, every-day tasks run until removed (it has no end).
+- **Done tasks sink to the bottom** of their list (Today and the full list), open ones first in the order added; unticking brings a task back up. The row slides to its place (no motion with reduced motion on).
 
 ## Data (SQLite)
 

@@ -5,11 +5,16 @@
  */
 export {
   createArc,
+  endActiveArc,
   getActiveArc,
   type NewArc,
   selectActiveArc,
+  selectAllArcs,
   selectArcOrders,
+  setArcWakeTime,
+  startNextArc,
   toOrderTargets,
+  type NextArc,
 } from './arcs';
 export { db } from './client';
 export { type AppDatabase, nowIso } from './database';
@@ -33,6 +38,7 @@ export {
 } from './orderLogs';
 export {
   addCustomOrder,
+  convertTaskToOrder,
   CustomOrderError,
   getCustomOrderAmount,
   getCustomOrdersWithAmounts,
@@ -53,13 +59,16 @@ export type {
   CustomOrderRow,
   DayLogRow,
   LedgerRow,
+  ItemUseRow,
   OrderLogRow,
+  PurchaseRow,
   TaskCompletionRow,
   TaskRow,
   TruceRow,
 } from './schema';
 export {
   addTask,
+  changeTask,
   removeTask,
   resolveCarryOver,
   selectTaskCompletionsBetween,
@@ -74,16 +83,26 @@ export {
   selectDayLogsBetween,
   selectLedger,
   selectOrderLogsBetween,
+  selectSealedResults,
   toDayRecords,
 } from './sealing';
 export {
   callSickDay,
   callTruce,
   cancelSickDay,
-  getDenariiBalance,
   getTruceReserve,
   grantTruce,
   selectTruces,
   TruceError,
 } from './truces';
+export {
+  buyItem,
+  ForumError,
+  getDenariiBalance,
+  getForumSpend,
+  selectItemUses,
+  selectPurchases,
+  toHoldings,
+  useItem,
+} from './forum';
 export { useDatabaseMigrations } from './useDatabaseMigrations';

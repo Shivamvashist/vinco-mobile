@@ -76,9 +76,27 @@ export default function VidiScreen() {
       <Screen>
         {header}
         <View style={[styles.section, styles.stats]}>
-          <StatTile value={String(campaign.campaign)} label={progressCopy.stats.campaign} color="accent" />
-          <StatTile value={`${conqueredDays}/${daysSoFar}`} label={progressCopy.stats.fullGoalDays} />
-          <StatTile value={String(daysToGo)} label={progressCopy.stats.daysToGo} />
+          {campaign.isLudus ? (
+            <>
+              <StatTile
+                value={String(campaign.completedDays)}
+                label={progressCopy.stats.daysTrained}
+                color="accent"
+              />
+              <StatTile value={`${conqueredDays}/${daysSoFar}`} label={progressCopy.stats.fullGoalDays} />
+              <StatTile value={String(campaign.selfieDays)} label={progressCopy.stats.selfies} />
+            </>
+          ) : (
+            <>
+              <StatTile
+                value={String(campaign.campaign)}
+                label={progressCopy.stats.campaign}
+                color="accent"
+              />
+              <StatTile value={`${conqueredDays}/${daysSoFar}`} label={progressCopy.stats.fullGoalDays} />
+              <StatTile value={String(daysToGo)} label={progressCopy.stats.daysToGo} />
+            </>
+          )}
         </View>
         <View style={styles.segments}>
           <SegmentedControl options={SEGMENTS} value={segment} onChange={setSegment} />

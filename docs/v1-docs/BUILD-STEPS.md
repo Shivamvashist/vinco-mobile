@@ -244,6 +244,7 @@ From an empty folder to Early Access on **2 November 2026**. Each step lists its
 - [x] Proof tiles on Today: selfie and body weight calls to action; selfie review step and ghost slider (0 to 60%)
 - [x] Amounts past the full goal (capped), exact workout minutes
 - [x] Own orders and to-do list switched off behind `FEATURES` until their UX is settled
+- [x] Wave 2 (10 Oct): switched back on with one "How often?" sheet, the inline to-do on Today, and "Orders and to-dos" (`/plan`)
 
 - [ ] `expo-notifications`, local only; permission asked when first needed
 - [ ] Scheduler: morning brief, evening check (only if something's open), wind-down; at most three a day (tested)
@@ -254,7 +255,17 @@ From an empty folder to Early Access on **2 November 2026**. Each step lists its
 ## Step 13: Day card and honours
 
 - [x] Day card (`/day-card`, opened by "Seal the day"): laurel, DAY XII OF LX, the day number, today's real order values, campaign and rank, in three styles (`DAY_CARD_STYLES` in the theme; Marble's gold deepened for contrast); "Share to story" captures the card (`react-native-view-shot`) and opens the share sheet (`expo-sharing`), with toasts for done, unavailable and failed. The prototype's reel count is left out (1.0)
-- [ ] Starting decorations; denarii shown on Vici (earning only, no shop in Early Access)
+- [x] Starting decorations (computed from records) and the treasury on Vici
+- [x] Wave 2 (10 Oct): the Forum on the local ledger (Truce, alarm pass, card styles, app icons), the Aerarium (ways to earn), treasury history
+
+## Wave 2 (10 Oct): see [docs/WAVE-2.md](../WAVE-2.md)
+
+- [x] Free training (open plan, no streak) in onboarding and Vici; moving between a campaign and free training
+- [x] Castra (Settings) tab; Vici rebuilt (record, treasury, decorations, past arcs, what next)
+- [x] Quieter tab whoosh; seal and stamp always sound
+- [x] Fits every phone: orders step stacks, selfie and timelapse frames flex
+- [x] Guard levels and Aurora: rules, store, bridges and preview screens ([docs/GUARDIANS.md](../GUARDIANS.md)); native modules next
+- [x] Backend plan ([docs/BACKEND-PLAN.md](../BACKEND-PLAN.md))
 
 ## Step 14: Hardening and release
 

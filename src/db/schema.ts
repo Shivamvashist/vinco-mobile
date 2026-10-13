@@ -11,14 +11,21 @@ import { sql } from 'drizzle-orm';
 import { index, integer, primaryKey, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 import type { DayResult, LedgerReason, TruceReason } from '@/features/campaign';
+import type { ForumItemId } from '@/features/forum';
 import type { OrderKind } from '@/features/orders';
 import type { TaskRepeat } from '@/features/tasks';
 
-/** A 30, 60 or 90 day campaign. One is active at a time. */
+/**
+ * A 30, 60 or 90 day campaign, or the Ludus (open training: no streak, no end).
+ * One is active at a time. A Ludus stores LUDUS_LENGTH_DAYS as its length.
+ */
 export const arcs = sqliteTable(
   'arcs',
   {
     id: integer('id').primaryKey({ autoIncrement: true }),
+    kind: text('kind', { enum: ['campaign', 'ludus'] })
+      .notNull()
+      .default('campaign'),
     lengthDays: integer('length_days').notNull(),
     /** Day I of the arc. */
     startDay: text('start_day').notNull(),
@@ -187,6 +194,37 @@ export const taskCompletions = sqliteTable(
   (table) => [primaryKey({ columns: [table.taskId, table.day] })],
 );
 
+/**
+ * Forum purchases: one row per item bought, with the denarii it cost. The balance is the
+ * ledger's sum minus these prices. Earned denarii only: nothing here is bought with real money.
+ */
+export const purchases = sqliteTable(
+  'purchases',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    itemId: text('item_id').$type<ForumItemId>().notNull(),
+    price: integer('price').notNull(),
+    day: text('day').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [index('purchases_item_idx').on(table.itemId)],
+);
+
+/**
+ * A consumable used up (an alarm pass spent on Aurora). Held = bought minus used.
+ * Truces are not here: they have their own table.
+ */
+export const itemUses = sqliteTable(
+  'item_uses',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    itemId: text('item_id').$type<ForumItemId>().notNull(),
+    day: text('day').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (table) => [index('item_uses_item_idx').on(table.itemId)],
+);
+
 export type ArcRow = typeof arcs.$inferSelect;
 export type ArcOrderRow = typeof arcOrders.$inferSelect;
 export type OrderLogRow = typeof orderLogs.$inferSelect;
@@ -197,3 +235,5 @@ export type CustomOrderRow = typeof customOrders.$inferSelect;
 export type CustomOrderLogRow = typeof customOrderLogs.$inferSelect;
 export type TaskRow = typeof tasks.$inferSelect;
 export type TaskCompletionRow = typeof taskCompletions.$inferSelect;
+export type PurchaseRow = typeof purchases.$inferSelect;
+export type ItemUseRow = typeof itemUses.$inferSelect;

@@ -87,6 +87,15 @@ describe('sealFinishedDays', () => {
     expect(ledgerTotal(db)).toBe(7 * 5 + 25);
   });
 
+  it('pays day denarii in the Ludus, but no weekly bonus and no Truce', () => {
+    const db = createTestDatabase();
+    for (let day = 12; day <= 18; day += 1) logDay(db, `2026-10-${day}`, HELD);
+    sealFinishedDays(db, { ...ARC, kind: 'ludus' }, DEFAULT_ORDER_TARGETS, '2026-10-19');
+    expect(results(db, '2026-10-18')).toEqual(Array(7).fill('held'));
+    expect(ledgerTotal(db)).toBe(7 * 5);
+    expect(getTruceReserve(db)).toBe(0);
+  });
+
   it('stops at the end of the arc', () => {
     const db = createTestDatabase();
     sealFinishedDays(db, { startDay: '2026-10-12', lengthDays: 3 }, DEFAULT_ORDER_TARGETS, '2026-10-30');

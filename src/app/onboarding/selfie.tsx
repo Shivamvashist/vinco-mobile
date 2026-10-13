@@ -21,6 +21,7 @@ export default function SelfieScreen() {
   const today = useToday();
   const reduceMotion = useReduceMotion();
   const arcLength = useOnboardingStore((state) => state.arcLength);
+  const arcKind = useOnboardingStore((state) => state.arcKind);
   const setLastStep = useOnboardingStore((state) => state.setLastStep);
   const completeOnboarding = useCompleteOnboarding();
   const [selfiePath, setSelfiePath] = useState<string | null>(null);
@@ -47,7 +48,8 @@ export default function SelfieScreen() {
       totalSteps={ONBOARDING_STEPS.length}
       backHref="/onboarding/oath"
       title={copy.title}
-      subtitle={copy.body(toRoman(arcLength))}
+      subtitle={arcKind === 'ludus' ? copy.bodyLudus : copy.body(toRoman(arcLength))}
+      scroll={false}
       footer={
         <>
           {hasFinishError ? (
@@ -69,6 +71,7 @@ export default function SelfieScreen() {
           day={today}
           stamp={{ text: copy.stamp, caption: stampCaption }}
           onCaptured={setSelfiePath}
+          fill
         />
       </SchemeOverride>
       {selfiePath ? (

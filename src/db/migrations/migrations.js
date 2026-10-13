@@ -8,6 +8,8 @@ import m0003 from './0003_day_weight.sql';
 import m0004 from './0004_truces.sql';
 import m0005 from './0005_orders_and_tasks.sql';
 import m0006 from './0006_day_sleep.sql';
+import m0007 from './0007_arc_kind.sql';
+import m0008 from './0008_forum.sql';
 
   export default {
     journal,
@@ -18,7 +20,9 @@ m0002,
 m0003,
 m0004,
 m0005,
-m0006
+m0006,
+m0007,
+m0008
     }
   }
   
