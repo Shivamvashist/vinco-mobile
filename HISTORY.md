@@ -6,6 +6,8 @@ The memory of this project. Any AI model or developer joining should read this, 
 
 ## Snapshot (as of 14 Oct 2026)
 
+**Version:** 1.1.0 in progress (Wave 3); 1.0.0 is the baseline up to 12 Oct. Every change is logged in [docs/releases/](docs/releases/README.md).
+
 **Phase:** Early Access (tracker only, all on the phone, no backend). Closed-test build due **12 Oct 2026**, Early Access **2 Nov 2026**.
 
 **Done:** Steps 1 to 5 and 7 to 11, most of 12 and 13, and **Wave 2** ([docs/docs-v1.0.0/WAVE-2.md](docs/docs-v1.0.0/WAVE-2.md), archived): the Ludus (open training), own orders and to-dos switched on with one "How often?" sheet, the Forum and the Aerarium on the local ledger, a fourth tab (Castra, Settings), Vici rebuilt (record, treasury, decorations, past arcs, what next), quieter tab sound with the seal and stamp always on, layouts that fit every phone, the guard levels and Aurora in preview with native bridges, and the backend plan ([docs/BACKEND-PLAN.md](docs/BACKEND-PLAN.md)).
@@ -105,6 +107,13 @@ Answer when convenient; work continues with the safe default shown.
 ---
 
 ## Milestone log
+
+### 14 Oct 2026: version system
+
+- `docs/releases/`: semantic versioning rules (MINOR for features and changed flows, PATCH for fixes), one file per version with front matter for a later backend import, release notes (users, 500 characters at most) and a changelog (team: Added, Changed, Removed, Fixed, Data).
+- `v1.0.0.md`: the baseline, every feature up to 12 Oct. `v1.1.0.md`: Wave 3, in progress, with a was-and-now table of changed flows.
+- `app.json` and `package.json` at 1.1.0; the version code stays with EAS (remote, auto-increment). New working rule 11 in CLAUDE.md.
+- Flagged: the product plan calls the 1 January 2027 release "Vinco 1.0", which clashes with the app's version numbers (releases README, last section).
 
 ### 14 Oct 2026: docs brought up to Wave 3
 

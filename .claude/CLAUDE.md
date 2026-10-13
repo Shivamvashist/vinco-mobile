@@ -10,6 +10,7 @@ Read this before every task. Then read [HISTORY.md](../HISTORY.md) for the curre
 | [docs/ORDERS-AND-TASKS.md](../docs/ORDERS-AND-TASKS.md)       | Orders (decide the day) vs daily and day tasks (the plan): rules, screens, data         |
 | [docs/DAY-FLOW.md](../docs/DAY-FLOW.md)                       | The day screen by screen: dawn and wake sheet, orders, proof, Commentarii, sounds       |
 | [docs/docs-v1.0.0/](../docs/docs-v1.0.0/)                     | Archived plans, done and partly superseded: WAVE-2.md (Forum, Aerarium, Vici, 10 Oct)   |
+| [docs/releases/](../docs/releases/README.md)                  | Versions: numbering rules, one file per version (features, changes, release notes)      |
 | [docs/TASKS-2026-10-13.md](../docs/TASKS-2026-10-13.md)       | Wave 3: orders-first onboarding, clean Today, user menu, calories, day summary (13 Oct) |
 | [docs/GUARDIANS.md](../docs/GUARDIANS.md)                     | Pax, Vigil, Guard, Imperium and Aurora: built base, native plan, permissions            |
 | [docs/BACKEND-PLAN.md](../docs/BACKEND-PLAN.md)               | vinco-backend: data, sync, endpoints, trust, and features that need the server          |
@@ -29,6 +30,7 @@ Read this before every task. Then read [HISTORY.md](../HISTORY.md) for the curre
 8. **Follow the naming and export conventions** (CONVENTIONS sections 2 and 3). Lint enforces most of them.
 9. **Check the Expo SDK 57 docs** before using an Expo or React Native API (see [AGENTS.md](../AGENTS.md)). Install with `npx expo install <pkg>`.
 10. **Keep files small.** Aim for under 250 lines per file. Up to 500 is fine when a file genuinely needs it; past 500, split by responsibility unless there is truly no clean split (CONVENTIONS section 5).
+11. **Log every version change** in the version marked "in progress" in [docs/releases/](../docs/releases/README.md): Added, Changed (was and now), Removed, Fixed, Data. MINOR for features and changed flows, PATCH for fixes. Releasing sets `version` in `app.json` and `package.json`; EAS sets the version code.
 
 ## What Vinco is
 
