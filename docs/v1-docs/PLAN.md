@@ -183,7 +183,7 @@ Early Access: ranks, decorations, denarii earning and the Forum on the local led
 
 | Layer                | Choice                                                                           |
 | -------------------- | -------------------------------------------------------------------------------- |
-| Repos                | Two: `vinco-mobile` (this) and `vinco-api` (later)                               |
+| Repos                | Two: `vinco-mobile` (this) and `vinco-backend`                                   |
 | App                  | React Native, Expo, TypeScript, Expo Router, npm                                 |
 | Native parts (later) | Kotlin modules via the Expo Modules API: Vigil, badge overlay, Aurora, timelapse |
 | Phone database       | expo-sqlite                                                                      |

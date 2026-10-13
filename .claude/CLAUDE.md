@@ -11,7 +11,7 @@ Read this before every task. Then read [HISTORY.md](../HISTORY.md) for the curre
 | [docs/DAY-FLOW.md](../docs/DAY-FLOW.md)                       | The day screen by screen: dawn and wake sheet, orders, proof, Commentarii, sounds              |
 | [docs/WAVE-2.md](../docs/WAVE-2.md)                           | Free training, to-dos, Forum, Settings tab and Vici, sounds, fitting every phone (10 Oct plan) |
 | [docs/GUARDIANS.md](../docs/GUARDIANS.md)                     | Pax, Vigil, Guard, Imperium and Aurora: built base, native plan, permissions                   |
-| [docs/BACKEND-PLAN.md](../docs/BACKEND-PLAN.md)               | vinco-api: data, sync, endpoints, trust, and features that need the server                     |
+| [docs/BACKEND-PLAN.md](../docs/BACKEND-PLAN.md)               | vinco-backend: data, sync, endpoints, trust, and features that need the server                 |
 | [docs/v1-docs/BUILD-STEPS.md](../docs/v1-docs/BUILD-STEPS.md) | The step-by-step plan and what's next                                                          |
 | [docs/v1-docs/PLAN.md](../docs/v1-docs/PLAN.md)               | Full product plan                                                                              |
 | `docs/v1-reference/Vinco app UI.html`                         | Clickable prototype of all 18 screens: exact layouts, copy, motion and sounds                  |
@@ -66,7 +66,7 @@ Tagline: **Veni, vidi, vici.** The three words are the app's first three tabs: V
 | Quality         | ESLint (Expo + Prettier + project rules), Prettier, Jest (`jest-expo`)                                                                                                                                                              |
 | Runtime         | Expo Go for now. Development builds only when custom native code is needed (Vigil, Nov)                                                                                                                                             |
 
-Two repos: `vinco-mobile` (this one) and `vinco-api` (later: Hono, OpenAPI spec as the contract, all endpoints under `/v1/`).
+Two repos: `vinco-mobile` (this one) and `vinco-backend` (`../vinco-backend`, plan written 13 Oct: Hono, Zod OpenAPI, Drizzle on Supabase Postgres, Better Auth, all endpoints under `/v1/`; its `.claude/CLAUDE.md` and `docs/PLAN.md` are the source of truth for the server).
 
 ## Code rules (short version; details in CONVENTIONS.md)
 

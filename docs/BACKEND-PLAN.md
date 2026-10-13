@@ -1,13 +1,15 @@
-# Backend plan (vinco-api)
+# Backend plan (vinco-backend)
 
 What the server and its database will need, built from what the app already keeps on the phone, and which features can only exist once it does. Written 10 Oct 2026 for when the UI prototype is final. Stack from [v1-docs/PLAN.md](v1-docs/PLAN.md) section 11.
+
+**13 Oct update:** the server repo is `vinco-backend` (sibling folder), and its `docs/PLAN.md` now leads. Its first scope is auth, accounts and sessions, installs and app usage, and admin stats (phases 0 to 5 there); this page stays the long-range plan for what moves to the server after that. Changes from below: sign-in is email code first, then Google, with Apple when iOS ships; the admin dashboard is a separate `vinco-admin` single-page app rather than Next.js.
 
 ## 1. Principles
 
 1. **Local first.** The phone stays the source of truth for the day. Opening the app, ticking orders and sealing never wait for the network. The server is backup, the shared world (squads), and the referee for anything worth cheating at (denarii).
 2. **Selfies never leave the phone.** Not uploaded, not analysed. An opt-in encrypted backup (1.1) stores ciphertext only; the key stays with the user.
 3. **The server decides money.** Denarii, the Forum and the Tributum are recomputed and stored on the server once accounts exist. The phone shows a cached balance and sends facts (orders logged, days sealed), never amounts.
-4. **One contract.** An OpenAPI spec in `vinco-api` is the contract; the app generates its client and types from it. All routes under `/v1/`.
+4. **One contract.** An OpenAPI spec in `vinco-backend` is the contract; the app generates its client and types from it. All routes under `/v1/`.
 5. **Degrade quietly.** With no network, everything that doesn't need the server keeps working; social features show "Offline" and retry.
 
 ## 2. Stack

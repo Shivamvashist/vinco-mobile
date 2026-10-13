@@ -102,6 +102,13 @@ Answer when convenient; work continues with the safe default shown.
 
 ## Milestone log
 
+### 13 Oct 2026: backend plan, `vinco-backend` repo laid out
+
+- The server repo is **`vinco-backend`** (sibling folder; was `vinco-api` in these docs). Its `.claude/CLAUDE.md`, `HISTORY.md` and `docs/` (PLAN, ARCHITECTURE, AUTH, DATA-MODEL, API, CONVENTIONS, SETUP) hold the plan. No server code yet.
+- First scope: auth (Better Auth: email code, Google, Apple with iOS), accounts and sessions, anonymous installs and app usage (sessions with a 60 s heartbeat, a short event allow-list), admin stats (users, installs, live now, daily actives).
+- One API for Android, iOS and web (`/v1/...`), admin at `/v1/admin/...`. Hono, `@hono/zod-openapi`, Drizzle on Supabase Postgres (Mumbai), pino, Sentry, Vitest with PGlite, Cloud Run.
+- **For this app (Phase 4 of that plan):** flags `FEATURES.account` and `FEATURES.usage`, recommended off for the 2 Nov Early Access build. Accounts stay optional; usage calls are queued and never awaited, so the core job doesn't change.
+
 ### 10 Oct 2026: "Free training", done tasks to the bottom
 
 - **Renamed the open plan** from "the Ludus" to **Free training** on every screen (developer: something simple). Onboarding card "Free training", Today "Free training · Day XII", Vici title "Free training" with "Since 3 Oct · Day XII", day card "FREE TRAINING · DAY XII", buttons "Switch to free training". The code and database keep the arc kind `ludus` (and names like `isLudus`), so no migration; comments say "free training (the 'ludus' kind)".
