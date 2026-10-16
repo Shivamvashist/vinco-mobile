@@ -37,7 +37,8 @@ export const onboardingCopy = {
     ownSection: 'Your own',
     ownEmpty: 'Reading, steps, study: anything you count. Give it a unit and how many a day.',
     addOwn: 'Add your own order',
-    ownLine: (count: number, unit: string): string => `${count}${unit ? ` ${unit}` : ''} a day`,
+    ownLine: (count: number, unit: string): string =>
+      count === 1 && !unit ? 'Once a day, done or not' : `${count}${unit ? ` ${unit}` : ''} a day`,
     removeOwn: (name: string): string => `Remove ${name}`,
     noneYet: 'No orders yet? That is fine. Add them from Today whenever you are ready.',
     continue: (count: number): string =>

@@ -13,7 +13,7 @@ import Svg, { Ellipse, Path } from 'react-native-svg';
 
 import { proofCopy } from '@/copy';
 import type { DayKey } from '@/lib/dates';
-import { deleteMediaFile, saveSelfie } from '@/media';
+import { deleteMediaFile, saveSelfie, shrinkPhoto } from '@/media';
 import { createStyles, useFeedback, useReduceMotion, useTheme } from '@/theme';
 
 import { Button } from './Button';
@@ -103,6 +103,8 @@ export function SelfieCapture({
   const [pendingUri, setPendingUri] = useState<string | null>(null);
   const [hasSaveFailed, setHasSaveFailed] = useState(false);
   const [facing, setFacing] = useState<CameraType>('front');
+  /** The shutter waits for the preview: a shot asked for before it starts fails on Android. */
+  const [isCameraReady, setIsCameraReady] = useState(false);
 
   /** Moves a shot into the selfie folder and reports it. */
   const keep = async (uri: string) => {
@@ -114,7 +116,7 @@ export function SelfieCapture({
   };
 
   const capture = async () => {
-    if (phase === 'capturing' || !camera.current) return;
+    if (phase === 'capturing' || !camera.current || !isCameraReady) return;
     setPhase('capturing');
     setHasSaveFailed(false);
     try {
@@ -122,12 +124,14 @@ export function SelfieCapture({
       if (!photo?.uri) throw new Error('No photo returned');
       // The stamp plays its own sound on impact; a plain selfie gets the shutter.
       if (!stamp) play('shutter');
+      // Full camera size is 3000 px or more; a few of those at once can run a phone out of memory.
+      const uri = await shrinkPhoto(photo.uri, photo.width);
       if (confirmAlignment) {
-        setPendingUri(photo.uri);
+        setPendingUri(uri);
         setPhase('review');
         return;
       }
-      await keep(photo.uri);
+      await keep(uri);
     } catch (error) {
       if (__DEV__) console.warn('[selfie] Capture failed.', error);
       setPhase('failed');
@@ -149,6 +153,8 @@ export function SelfieCapture({
   const retake = () => {
     // A shot rejected in review was never saved: drop it from the cache.
     if (pendingUri) deleteMediaFile(pendingUri);
+    // From a saved photo the camera mounts again, so wait for it once more.
+    if (phase === 'captured') setIsCameraReady(false);
     setPendingUri(null);
     setHasSaveFailed(false);
     setPhotoUri(null);
@@ -193,11 +199,19 @@ export function SelfieCapture({
       <View style={[styles.frame, frameSize]}>
         {isCaptured ? (
           <Image source={{ uri: photoUri }} style={styles.fill} accessibilityIgnoresInvertColors />
-        ) : isReviewing ? (
-          <Image source={{ uri: pendingUri }} style={styles.fill} accessibilityIgnoresInvertColors />
         ) : (
-          <CameraView ref={camera} style={styles.fill} facing={facing} mirror={facing === 'front'} />
+          // Stays mounted under the review, so "Retake" doesn't restart the camera.
+          <CameraView
+            ref={camera}
+            style={styles.fill}
+            facing={facing}
+            mirror={facing === 'front'}
+            onCameraReady={() => setIsCameraReady(true)}
+          />
         )}
+        {isReviewing ? (
+          <Image source={{ uri: pendingUri }} style={styles.fill} accessibilityIgnoresInvertColors />
+        ) : null}
         {showGhost ? (
           <Image
             source={{ uri: ghostUri }}
@@ -282,10 +296,10 @@ export function SelfieCapture({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={copy.takeSelfie}
-            accessibilityState={{ busy: phase === 'capturing' }}
-            disabled={phase === 'capturing'}
+            accessibilityState={{ busy: phase === 'capturing', disabled: !isCameraReady }}
+            disabled={phase === 'capturing' || !isCameraReady}
             onPress={() => void capture()}
-            style={({ pressed }) => [styles.shutter, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.shutter, (pressed || !isCameraReady) && styles.pressed]}
           >
             <View style={styles.shutterCore} />
           </Pressable>

@@ -1,0 +1,1 @@
+ALTER TABLE `custom_orders` ADD `replaces_id` integer;

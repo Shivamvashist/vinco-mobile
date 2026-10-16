@@ -15,6 +15,18 @@ import { Button } from '../Button';
 import { TextField } from '../TextField';
 import { Txt } from '../Txt';
 
+/** An existing order being edited: its values fill the fields. */
+export type OrderEditValues = {
+  name: string;
+  unit: string;
+  /** How many a day; null for a done-or-not order (the field starts empty). */
+  count: number | null;
+  /** Today's minimum: a lower number waits for tomorrow, and the sheet says so. Null if it applies at once. */
+  todayMin: number | null;
+  /** An older order with a separate minimum and full goal, which saving turns into one number. */
+  isTwoLevel: boolean;
+};
+
 export type AddOrderSheetProps = {
   visible: boolean;
   onClose: () => void;
@@ -22,6 +34,10 @@ export type AddOrderSheetProps = {
   onSave: (draft: CustomOrderDraft) => CustomOrderError | 'failed' | null;
   /** The name to start with (a task becoming an order). Remount with a key to reset it. */
   initialName?: string;
+  /** Edit an existing order instead of adding one. Remount with a key per order. */
+  editing?: OrderEditValues;
+  /** Edit mode: stands the order down (the caller confirms). */
+  onStandDown?: () => void;
 };
 
 /** Longest number typed into the count field (9999). */
@@ -34,23 +50,35 @@ export function parseCount(text: string): number {
 }
 
 /**
- * Adds one of the user's own orders: what, its unit, and how many a day ("Drink water", "glass",
- * 12). Errors show under the fields; the sheet only closes once the order is saved.
+ * Adds or edits one of the user's own orders: what, its unit, and how many a day ("Drink water",
+ * "glass", 12). Unit and number are optional: left empty, it is a done-or-not order. Errors show
+ * under the fields; the sheet only closes once the order is saved.
  */
-export function AddOrderSheet({ visible, onClose, onSave, initialName = '' }: AddOrderSheetProps) {
+export function AddOrderSheet({
+  visible,
+  onClose,
+  onSave,
+  initialName = '',
+  editing,
+  onStandDown,
+}: AddOrderSheetProps) {
   const styles = useStyles();
   const play = useFeedback();
   const copy = ordersCopy.add;
-  const [name, setName] = useState(initialName);
-  const [unit, setUnit] = useState('');
-  const [count, setCount] = useState('');
+  const editCopy = ordersCopy.edit;
+  const [name, setName] = useState(editing?.name ?? initialName);
+  const [unit, setUnit] = useState(editing?.unit ?? '');
+  const [count, setCount] = useState(editing?.count != null ? String(editing.count) : '');
   const [error, setError] = useState<string | null>(null);
-  const parsed = parseCount(count);
+  const isCountEmpty = count.trim() === '';
+  const parsed = isCountEmpty ? null : parseCount(count);
+  const goal = parsed ?? 1;
+  const isLowered = editing?.todayMin != null && Number.isFinite(goal) && goal > 0 && goal < editing.todayMin;
 
   const reset = () => {
-    setName('');
-    setUnit('');
-    setCount('');
+    setName(editing?.name ?? '');
+    setUnit(editing?.unit ?? '');
+    setCount(editing?.count != null ? String(editing.count) : '');
     setError(null);
   };
 
@@ -63,7 +91,8 @@ export function AddOrderSheet({ visible, onClose, onSave, initialName = '' }: Ad
     const result = onSave(toCustomOrderDraft(name, unit, parsed));
     if (result === null) {
       play('confirm');
-      reset();
+      // Adding stays ready for the next one; an edit is closed by the caller.
+      if (!editing) reset();
       return;
     }
     play('denied');
@@ -76,8 +105,8 @@ export function AddOrderSheet({ visible, onClose, onSave, initialName = '' }: Ad
   };
 
   return (
-    <BottomSheet visible={visible} onClose={close} title={copy.title}>
-      <Txt variant="caption">{copy.body}</Txt>
+    <BottomSheet visible={visible} onClose={close} title={editing ? editCopy.title : copy.title}>
+      <Txt variant="caption">{editing ? editCopy.body : copy.body}</Txt>
       <View style={styles.fields}>
         <TextField
           label={copy.nameLabel}
@@ -111,11 +140,15 @@ export function AddOrderSheet({ visible, onClose, onSave, initialName = '' }: Ad
             />
           </View>
         </View>
-        {Number.isFinite(parsed) && parsed > 0 ? (
-          <Txt variant="caption" color="accent">
-            {copy.preview(parsed, unit.trim())}
-          </Txt>
-        ) : null}
+        <Txt variant="caption" color={Number.isFinite(goal) && goal > 0 ? 'accent' : 'textMuted'}>
+          {isCountEmpty && unit.trim() === ''
+            ? copy.previewCheck
+            : Number.isFinite(goal) && goal > 0
+              ? copy.preview(goal, unit.trim())
+              : copy.optionalHint}
+        </Txt>
+        {isLowered ? <Txt variant="caption">{editCopy.lowerNote}</Txt> : null}
+        {editing?.isTwoLevel ? <Txt variant="caption">{editCopy.twoLevelNote}</Txt> : null}
       </View>
       {error ? (
         <Txt variant="caption" color="danger" accessibilityRole="alert" style={styles.error}>
@@ -123,7 +156,10 @@ export function AddOrderSheet({ visible, onClose, onSave, initialName = '' }: Ad
         </Txt>
       ) : null}
       <View style={styles.actions}>
-        <Button label={copy.save} cue={null} onPress={save} />
+        <Button label={editing ? editCopy.save : copy.save} cue={null} onPress={save} />
+        {editing && onStandDown ? (
+          <Button label={editCopy.standDown} variant="ghost" cue={null} onPress={onStandDown} />
+        ) : null}
         <Button label={copy.cancel} variant="ghost" cue={null} onPress={close} />
       </View>
     </BottomSheet>

@@ -143,6 +143,11 @@ export const customOrders = sqliteTable(
     firstDay: text('first_day').notNull(),
     lastDay: text('last_day'),
     createdAt: text('created_at').notNull(),
+    /**
+     * The order this one carries on from, when its goal was lowered: the lower goal counts from
+     * the next day, so lowering a goal can never rescue the day in progress (migration 0010).
+     */
+    replacesId: integer('replaces_id'),
   },
   (table) => [index('custom_orders_arc_idx').on(table.arcId)],
 );

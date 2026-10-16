@@ -45,7 +45,11 @@ describe('todayCopy orders', () => {
     expect(todayCopy.customOrder.line(3, 12, 12, 'glass', 'none')).toBe('3 of 12 glass');
     expect(todayCopy.customOrder.line(12, 12, 12, 'glass', 'full')).toBe('12 glass · done');
     expect(todayCopy.customOrder.line(10, 10, 30, 'pages', 'min')).toBe('10 of 30 pages · minimum held');
-    expect(todayCopy.customOrder.line(0, 1, 1, '', 'none')).toBe('0 of 1');
+    expect(todayCopy.customOrder.line(0, 1, 1, 'hour', 'none')).toBe('0 of 1 hour');
+    // Done or not: no unit, once a day.
+    expect(todayCopy.customOrder.line(0, 1, 1, '', 'none')).toBe('Not done yet');
+    expect(todayCopy.customOrder.line(1, 1, 1, '', 'full')).toBe('Done');
+    expect(todayCopy.customOrder.action('check')).toBe('Done');
   });
 
   it('words water and meal lines for each status', () => {

@@ -17,8 +17,14 @@ export const ordersCopy = {
     goals: (min: string, full: string): string => `Hold the line: ${min} · Conquer: ${full}`,
     /** An own order whose minimum is its goal: "12 glass a day". */
     daily: (full: string): string => `${full} a day`,
+    /** A done-or-not order (no unit, once a day). */
+    check: 'Once a day, done or not',
     standDown: 'Stand down',
     standsDownTomorrow: 'Counts today, gone from tomorrow',
+    edit: 'Edit',
+    editLabel: (name: string): string => `Edit ${name}`,
+    /** A lower goal waiting for tomorrow, under today's: "From tomorrow: 8 glass a day". */
+    fromTomorrow: (line: string): string => `From tomorrow: ${line}`,
     back: 'Back',
   },
 
@@ -41,12 +47,15 @@ export const ordersCopy = {
     body: 'Something you do every day, no matter what. It counts from today.',
     nameLabel: 'What',
     namePlaceholder: 'Drink water',
-    unitLabel: 'Unit',
+    unitLabel: 'Unit (optional)',
     unitPlaceholder: 'glass',
-    countLabel: 'How many a day',
+    countLabel: 'How many a day (optional)',
     countPlaceholder: '12',
+    /** Under the fields: what leaving both empty means. */
+    optionalHint: 'Leave both empty for a simple done or not done.',
     /** "12 glass a day" under the fields, as the order will read. */
     preview: (count: number, unit: string): string => `${count}${unit ? ` ${unit}` : ''} a day`,
+    previewCheck: 'Once a day: done or not done',
     save: 'Add to my orders',
     cancel: 'Not now',
     limit: (max: number): string =>
@@ -58,6 +67,29 @@ export const ordersCopy = {
       tooMany: `You already have ${CUSTOM_ORDER_LIMITS.maxActive} own orders.`,
     } satisfies Record<CustomOrderError, string>,
     failed: "The order couldn't be saved. Try again.",
+  },
+
+  /** Editing one of the user's own orders. */
+  edit: {
+    title: 'Edit order',
+    body: 'A new name or unit shows straight away. A bigger number counts from today.',
+    save: 'Save changes',
+    standDown: 'Stand it down',
+    lowerNote: "That is lower than today's goal, so it counts from tomorrow. Today keeps its goal.",
+    twoLevelNote: 'This order has a minimum and a full goal. Saving makes it one number a day.',
+  },
+
+  /** Editing one of Vinco's orders: only the full goal (or the wake time) can change. */
+  vincoEdit: {
+    minimum: (min: string): string => `Hold the line: ${min}, set by Vinco`,
+    conquer: 'Conquer',
+    adjust: (name: string): string => `${name} full goal`,
+    wakeLabel: 'Planned wake-up',
+    note: 'The new goal counts from today. Days already sealed keep their results.',
+    save: 'Save',
+    cancel: 'Cancel',
+    remove: (name: string): string => `Remove ${name.toLowerCase()}`,
+    failed: "That couldn't be saved. Try again.",
   },
 
   /** Setting an own order's amount by typing (big goals, or a quick fix). */

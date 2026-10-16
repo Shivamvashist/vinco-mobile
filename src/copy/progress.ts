@@ -133,7 +133,11 @@ export const progressCopy = {
     workout: (minutes: number, full: number): string => `${minutes} of ${full} min`,
     wake: (isUp: boolean): string => (isUp ? 'Up' : 'Not logged'),
     own: (amount: number, full: number, unit: string): string =>
-      `${amount} of ${full}${unit ? ` ${unit}` : ''}`,
+      full === 1 && !unit
+        ? amount >= 1
+          ? 'Done'
+          : 'Not done'
+        : `${amount} of ${full}${unit ? ` ${unit}` : ''}`,
     bodyTitle: 'Body and rest',
     sleep: 'Sleep',
     wokeAt: (time: string): string => `Up at ${time}`,

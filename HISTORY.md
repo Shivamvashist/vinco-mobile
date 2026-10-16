@@ -63,6 +63,9 @@ The memory of this project. Any AI model or developer joining should read this, 
 | 10 Oct | The Forum ships on the local ledger in Early Access; Truces can be bought ahead (one a day, max 3)                              | Developer's request; the server ledger replaces it with accounts (BACKEND-PLAN)             |
 | 10 Oct | Settings move to a fourth tab, Castra                                                                                           | Developer's request; Vici becomes the record of the journey                                 |
 | 10 Oct | Seal and stamp sounds play with Sounds off (`feedback.essential`); the phone's silent mode still mutes them                     | Developer's request: the two signature moments                                              |
+| 17 Oct | Own orders: unit and number optional (done or not); every order editable; a lower own goal starts tomorrow (successor row)      | Lowering can never rescue the day in progress, same rule as standing down                   |
+| 17 Oct | Vinco's full goals editable from today; minimums stay fixed                                                                     | Holding a day never gets easier, so no need to wait a day                                   |
+| 17 Oct | Selfies shrunk to 1080 px on capture                                                                                            | Memory on retake, and a year of selfies in megabytes, not gigabytes                         |
 | 10 Oct | Native features go through bridge contracts (`guardBridge`, `auroraBridge`) with stubs                                          | Runs in Expo Go now; the Kotlin modules replace one line each later                         |
 
 ### Questions for the developer (parked while working)
@@ -107,6 +110,15 @@ Answer when convenient; work continues with the safe default shown.
 ---
 
 ## Milestone log
+
+### 17 Oct 2026: bug fixes and editing orders (still 1.1.0)
+
+- **Free training sealing (bug):** `useSealFinishedDays` called `toOrderTargets` without the arc's kind, so free-training days were judged on all four Vinco orders and sealed as missed. Now passes `arc.kind`. Days already sealed wrongly stay (sealed days never change); only the developer's own phone had any.
+- **Day card (bug):** rows come from `orderKindsIn(targets)`, so free training shows only its orders; done-or-not orders read "Done".
+- **Selfie retake (bug report: blank white screen):** not reproducible in tests. Most likely cause: full-size shots (3000 px or more) held several at a time running the phone out of memory. Fixes: `shrinkPhoto` (`expo-image-manipulator`, 1080 px, JPEG 0.82, native memory released) before review; `CameraView` stays mounted under the review image; the shutter waits for `onCameraReady`. If it still happens, note whether it's Expo Go or the APK and whether a red error shows.
+- **Done-or-not orders:** unit and number optional (`toCustomOrderDraft(name, unit, null)` = once a day); `isCheckOrder`, `customOrderMode` ('check', 'tap', 'typed'); copy on Today, plan, onboarding, day card and day summary.
+- **Editing:** `editCustomOrder` (higher or equal: today; lower: from tomorrow via a successor row with `replaces_id`, migration 0010; editing again changes the successor; raising drops it), `standDownCustomOrder` also removes a waiting successor, `addCustomOrder` counts waiting successors toward the limit, `startNextArc` carries today's progress for a successor. `setArcOrderFull` for Vinco's full goals (fitted to the onboarding ranges; minimums fixed, so applies today). `OrdersPanel` rebuilt with Edit on every order; tasks on `/plan` show the pencil.
+- Tests: new `src/__tests__/plan.test.tsx`; edit rules in `db/__tests__/customOrders.test.ts`; goals in `arcs.test.ts`; selfie retake from the check. 49 suites, 463 tests.
 
 ### 14 Oct 2026: version system
 

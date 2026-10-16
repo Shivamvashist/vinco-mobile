@@ -64,9 +64,9 @@ describe('Free training', () => {
     startLudus(0, { water: DEFAULT_ORDER_TARGETS.water, workout: DEFAULT_ORDER_TARGETS.workout });
     renderRouter(APP_DIR, { initialUrl: '/plan' });
     expect(await screen.findByText(ordersCopy.screen.introFree)).toBeTruthy();
-    const removes = screen.getAllByLabelText(ordersCopy.screen.remove);
-    expect(removes).toHaveLength(2);
-    fireEvent.press(removes[0]!);
+    // Removing is in each order's edit sheet.
+    press(ordersCopy.screen.editLabel(ordersCopy.vincoNames.water));
+    press(ordersCopy.vincoEdit.remove(ordersCopy.vincoNames.water));
     press(ordersCopy.removeSheet.confirm);
     expect(
       await screen.findByLabelText(ordersCopy.screen.addSuggestion(ordersCopy.vincoNames.water)),

@@ -8,6 +8,7 @@ import {
   removeArcOrder,
   selectAllArcs,
   selectArcOrders,
+  setArcOrderFull,
   setArcWakeTime,
   startNextArc,
   toOrderTargets,
@@ -144,5 +145,27 @@ describe('toOrderTargets', () => {
     const id = createArc(db, NEW_ARC);
     expect(() => removeArcOrder(db, id, 'water')).toThrow();
     expect(selectArcOrders(db, id).all()).toHaveLength(4);
+  });
+});
+
+describe("changing Vinco's goals", () => {
+  it('fits a new full goal to its range and keeps the minimum', () => {
+    const db = createTestDatabase();
+    const id = createArc(db, NEW_ARC);
+    setArcOrderFull(db, id, 'water', 4.3);
+    setArcOrderFull(db, id, 'meal', 9);
+    setArcOrderFull(db, id, 'workout', 60);
+    const targets = toOrderTargets(selectArcOrders(db, id).all());
+    expect(targets.water).toEqual({ ...DEFAULT_ORDER_TARGETS.water, full: 4.5 });
+    expect(targets.meal?.full).toBe(3);
+    // A workout's step is its goal: one log of the full session conquers it.
+    expect(targets.workout).toMatchObject({ min: DEFAULT_ORDER_TARGETS.workout.min, full: 60, step: 60 });
+  });
+
+  it('does nothing for an order free training does not have', () => {
+    const db = createTestDatabase();
+    const id = createArc(db, { ...NEW_ARC, kind: 'ludus', targets: { water: DEFAULT_ORDER_TARGETS.water } });
+    setArcOrderFull(db, id, 'meal', 2);
+    expect(Object.keys(toOrderTargets(selectArcOrders(db, id).all(), 'ludus'))).toEqual(['water']);
   });
 });

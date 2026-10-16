@@ -1,7 +1,7 @@
 import { commonCopy, todayCopy } from '@/copy';
 import {
   type CustomOrder,
-  isTapCounted,
+  customOrderMode,
   type OrderKind,
   type OrderStatus,
   targetFor,
@@ -73,13 +73,15 @@ export function describeCustomOrderRow(
   status: OrderStatus,
 ): OrderRowContent {
   const copy = todayCopy.customOrder;
-  const isTapped = isTapCounted(order);
+  const mode = customOrderMode(order);
   return {
     name: order.name,
     line: copy.line(amount, order.min, order.full, order.unit, status),
-    action: copy.action(isTapped),
-    hint: copy.hint(isTapped),
+    action: copy.action(mode),
+    hint: copy.hint(mode),
     segments:
-      isTapped && order.full > 1 ? { total: order.full, filled: Math.min(order.full, amount) } : undefined,
+      mode === 'tap' && order.full > 1
+        ? { total: order.full, filled: Math.min(order.full, amount) }
+        : undefined,
   };
 }

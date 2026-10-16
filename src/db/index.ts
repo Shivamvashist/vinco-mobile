@@ -13,6 +13,7 @@ export {
   selectAllArcs,
   removeArcOrder,
   selectArcOrders,
+  setArcOrderFull,
   setArcWakeTime,
   startNextArc,
   toOrderTargets,
@@ -43,15 +44,18 @@ export {
   addCustomOrder,
   convertTaskToOrder,
   CustomOrderError,
+  editCustomOrder,
   getCustomOrderAmount,
   getCustomOrdersWithAmounts,
   saveCustomOrderAmount,
   selectCustomOrderLogsBetween,
   selectCustomOrders,
   selectCustomOrdersOn,
+  selectPendingCustomOrders,
   standDownCustomOrder,
   toCustomAmounts,
   toCustomOrder,
+  type OrderEditStart,
 } from './customOrders';
 export { getDayStanding } from './dayStanding';
 export { clearJourney } from './reset';

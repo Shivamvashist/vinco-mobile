@@ -176,4 +176,4 @@ These are specific to one screen, so they live with it: `today/` (`OrderList`: h
 
 Kit changes in Wave 2: `StatChip` can be pressed (`onPress`, `currency` emphasis); `ChoiceChip` has `isMulti` (checkbox chips, 44 wide) and `accessibilityLabel`; `Stepper` values shrink to fit; `SelfieCapture` has `fill` and a window-based frame height; `Icon` gained coin, shield, bell, card, laurel, medal, history, alarm, eye, block, dove, plus, edit.
 
-Kit changes in Wave 3 (13 Oct): every size comes from the scaled theme; `TextField` takes `autoFocus`; `Icon` gained user, settings, plate, key.
+Kit changes in Wave 3 (13 Oct): every size comes from the scaled theme; `TextField` takes `autoFocus`; `Icon` gained user, settings, plate, key. 17 Oct: `Button` takes `accessibilityLabel` ("Edit" reads "Edit Water"); `AddOrderSheet` also edits (`editing`, `onStandDown`; unit and number optional); new `orders/VincoGoalSheet` (full goal stepper, Remove in free training); `SelfieCapture` keeps the camera mounted under the review and waits for `onCameraReady`.

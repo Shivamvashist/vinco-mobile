@@ -3,11 +3,14 @@ import { and, desc, eq, isNull } from 'drizzle-orm';
 import { arcEndDay, type ArcKind, LUDUS_LENGTH_DAYS } from '@/features/arc';
 import {
   DEFAULT_ORDER_TARGETS,
+  FULL_GOAL_RANGES,
+  fitToRange,
   ORDER_KINDS,
   type OrderKind,
   orderKindsIn,
   type OrderTarget,
   type OrderTargets,
+  type TunableOrder,
 } from '@/features/orders';
 import { daysBetween, type DayKey } from '@/lib/dates';
 
@@ -118,10 +121,13 @@ export function startNextArc(db: AppDatabase, next: NextArc, now: Date = new Dat
         })
         .returning({ id: customOrders.id })
         .get();
+      // A lower goal waiting for tomorrow has no log yet: today's progress is on the order it replaces.
+      const logOrderId =
+        order.firstDay > next.startDay && order.replacesId != null ? order.replacesId : order.id;
       const todayLog = tx
         .select()
         .from(customOrderLogs)
-        .where(and(eq(customOrderLogs.orderId, order.id), eq(customOrderLogs.day, next.startDay)))
+        .where(and(eq(customOrderLogs.orderId, logOrderId), eq(customOrderLogs.day, next.startDay)))
         .get();
       if (todayLog) {
         tx.insert(customOrderLogs)
@@ -155,6 +161,19 @@ export function getActiveArc(db: AppDatabase): ArcRow | undefined {
 export function setArcWakeTime(db: AppDatabase, arcId: number, wakeTime: string): void {
   if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(wakeTime)) throw new Error(`Bad wake time: ${wakeTime}`);
   db.update(arcs).set({ wakeTime }).where(eq(arcs.id, arcId)).run();
+}
+
+/**
+ * Changes the full goal ("Conquer") of one of Vinco's orders, fitted to its tuning range. The
+ * minimum is fixed by the product, so holding a day never gets easier; the new goal counts from
+ * today. Does nothing if the arc doesn't have that order. A workout's step is its goal.
+ */
+export function setArcOrderFull(db: AppDatabase, arcId: number, kind: TunableOrder, full: number): void {
+  const fitted = fitToRange(full, FULL_GOAL_RANGES[kind], DEFAULT_ORDER_TARGETS[kind].full);
+  db.update(arcOrders)
+    .set(kind === 'workout' ? { full: fitted, step: fitted } : { full: fitted })
+    .where(and(eq(arcOrders.arcId, arcId), eq(arcOrders.kind, kind)))
+    .run();
 }
 
 /** The query for an arc's orders. Pass to useLiveQuery. */

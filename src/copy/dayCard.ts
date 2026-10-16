@@ -15,6 +15,7 @@ export const dayCardCopy = {
     meals: (count: number): string => String(count),
     minutes: (minutes: number): string => `${minutes} min`,
     notDone: 'Not yet',
+    done: 'Done',
   },
   campaign: (days: number): string => `Campaign ${days}`,
   trained: (days: number): string => `${days} ${days === 1 ? 'day' : 'days'} trained`,

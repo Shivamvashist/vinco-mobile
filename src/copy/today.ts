@@ -1,4 +1,4 @@
-import type { OrderKind, OrderStatus } from '@/features/orders';
+import type { CustomOrderMode, OrderKind, OrderStatus } from '@/features/orders';
 
 import { tabsCopy } from './tabs';
 
@@ -196,19 +196,25 @@ export const todayCopy = {
 
   /** The user's own orders on Today. */
   customOrder: {
-    /** "3 of 12 glass", "12 glass · done", or "10 of 30 pages · minimum held" for older orders. */
+    /**
+     * "3 of 12 glass", "12 glass · done", or "10 of 30 pages · minimum held" for older orders.
+     * A done-or-not order (once a day, no unit) reads "Done" or "Not done yet".
+     */
     line: (amount: number, min: number, full: number, unit: string, status: OrderStatus): string => {
+      if (full === 1 && !unit) return status === 'full' ? 'Done' : 'Not done yet';
       const goal = unit ? `${full} ${unit}` : String(full);
       if (status === 'full') return `${goal} · done`;
       if (status === 'min' && min < full) return `${amount} of ${goal} · minimum held`;
       return `${amount} of ${goal}`;
     },
-    /** A small count adds one per tap; a big one (steps) is typed in. */
-    action: (isTapCounted: boolean): string => (isTapCounted ? '+1' : 'Log'),
-    hint: (isTapCounted: boolean): string =>
-      isTapCounted
-        ? 'Double tap to add one. Long press to take one back.'
-        : "Double tap to type today's amount.",
+    /** Done-or-not is one tap; a small count adds one per tap; a big one (steps) is typed in. */
+    action: (mode: CustomOrderMode): string => ({ check: 'Done', tap: '+1', typed: 'Log' })[mode],
+    hint: (mode: CustomOrderMode): string =>
+      ({
+        check: 'Double tap once it is done. Long press to undo.',
+        tap: 'Double tap to add one. Long press to take one back.',
+        typed: "Double tap to type today's amount.",
+      })[mode],
   },
 
   addOrder: 'Add an order',

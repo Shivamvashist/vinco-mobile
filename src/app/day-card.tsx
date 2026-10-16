@@ -13,7 +13,7 @@ import { Txt } from '@/components/Txt';
 import { dayCardCopy } from '@/copy';
 import { getArcPosition } from '@/features/arc';
 import { type ForumItemId } from '@/features/forum';
-import { type OrderKind } from '@/features/orders';
+import { isCheckOrder, type OrderKind, orderKindsIn } from '@/features/orders';
 import { useActiveArc } from '@/hooks/useActiveArc';
 import { useCampaign } from '@/hooks/useCampaign';
 import { useForum } from '@/hooks/useForum';
@@ -148,30 +148,32 @@ export default function DayCardScreen() {
   );
 }
 
-/** Today's orders as card rows: Vinco's four, then the user's own. */
+/** Today's orders as card rows: the arc's Vinco orders, then the user's own. */
 function describeRows(orders: TodayOrders): DayCardRow[] {
+  const values = dayCardCopy.values;
   const custom = orders.customOrders.map(({ order, amount, status }): DayCardRow => ({
     label: order.name,
-    value: status === 'none' ? dayCardCopy.values.notDone : dayCardCopy.customValue(amount, order.unit),
+    value:
+      status === 'none'
+        ? values.notDone
+        : isCheckOrder(order)
+          ? values.done
+          : dayCardCopy.customValue(amount, order.unit),
     isDone: status !== 'none',
   }));
-  const values = dayCardCopy.values;
-  const row = (kind: OrderKind, label: string, value: string): DayCardRow => ({
-    label,
-    value,
+  const valueOf: Record<OrderKind, string> = {
+    water: values.litres(orders.amounts.water),
+    wake: orders.wokeAt ? formatClockTime(orders.wokeAt) : values.notDone,
+    meal: values.meals(orders.amounts.meal),
+    workout: orders.amounts.workout > 0 ? values.minutes(orders.amounts.workout) : values.notDone,
+  };
+  // Only the arc's own Vinco orders: free training may have some, or none.
+  const vinco = orderKindsIn(orders.targets).map((kind): DayCardRow => ({
+    label: dayCardCopy.rows[kind],
+    value: valueOf[kind],
     isDone: orders.statuses[kind] !== 'none',
-  });
-  return [
-    row('water', dayCardCopy.rows.water, values.litres(orders.amounts.water)),
-    row('wake', dayCardCopy.rows.wake, orders.wokeAt ? formatClockTime(orders.wokeAt) : values.notDone),
-    row('meal', dayCardCopy.rows.meal, values.meals(orders.amounts.meal)),
-    row(
-      'workout',
-      dayCardCopy.rows.workout,
-      orders.amounts.workout > 0 ? values.minutes(orders.amounts.workout) : values.notDone,
-    ),
-    ...custom,
-  ];
+  }));
+  return [...vinco, ...custom];
 }
 
 const useStyles = createStyles((theme) => ({

@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, inArray, isNull, lte, or } from 'drizzle-orm';
+import { and, asc, eq, gt, gte, inArray, isNull, lte, or } from 'drizzle-orm';
 
 import {
   type CustomOrder,
@@ -8,7 +8,7 @@ import {
   validateCustomOrder,
 } from '@/features/orders';
 import { FEATURES } from '@/config/features';
-import type { DayKey } from '@/lib/dates';
+import { addDays, type DayKey } from '@/lib/dates';
 
 import { type AppDatabase, nowIso } from './database';
 import { type CustomOrderLogRow, customOrderLogs, type CustomOrderRow, customOrders } from './schema';
@@ -39,6 +39,18 @@ export function selectCustomOrdersOn(db: AppDatabase, arcId: number, day: DayKey
         or(isNull(customOrders.lastDay), gte(customOrders.lastDay, day)),
       ),
     )
+    .orderBy(asc(customOrders.id));
+}
+
+/**
+ * The query for an arc's own orders that start after today: the lower goals waiting for
+ * tomorrow (see editCustomOrder). Pass to useLiveQuery.
+ */
+export function selectPendingCustomOrders(db: AppDatabase, arcId: number, today: DayKey) {
+  return db
+    .select()
+    .from(customOrders)
+    .where(and(eq(customOrders.arcId, arcId), gt(customOrders.firstDay, today)))
     .orderBy(asc(customOrders.id));
 }
 
@@ -95,9 +107,12 @@ export function addCustomOrder(
   today: DayKey,
 ): number {
   return db.transaction((tx) => {
-    const activeCount = selectCustomOrdersOn(tx, arcId, today)
-      .all()
-      .filter((row) => row.lastDay == null).length;
+    // Orders still going: today's, and lower goals waiting for tomorrow (one order each).
+    const activeCount = tx
+      .select({ id: customOrders.id })
+      .from(customOrders)
+      .where(and(eq(customOrders.arcId, arcId), isNull(customOrders.lastDay)))
+      .all().length;
     const error = validateCustomOrder(draft, activeCount);
     if (error) throw new CustomOrderError(error);
     const clean = normalizeCustomOrder(draft);
@@ -116,14 +131,92 @@ export function addCustomOrder(
 export function standDownCustomOrder(db: AppDatabase, orderId: number, today: DayKey): void {
   db.transaction((tx) => {
     const row = tx.select().from(customOrders).where(eq(customOrders.id, orderId)).get();
-    if (!row || !isCustomOrderActiveOn(row, today) || row.lastDay != null) return;
+    if (!row || !isCustomOrderActiveOn(row, today)) return;
+    // A lower goal waiting for tomorrow goes with it.
+    const successor = findSuccessor(tx, orderId, today);
+    if (successor) deleteOrder(tx, successor.id);
+    else if (row.lastDay != null) return;
     if (row.firstDay === today) {
-      tx.delete(customOrderLogs).where(eq(customOrderLogs.orderId, orderId)).run();
-      tx.delete(customOrders).where(eq(customOrders.id, orderId)).run();
+      deleteOrder(tx, orderId);
       return;
     }
     tx.update(customOrders).set({ lastDay: today }).where(eq(customOrders.id, orderId)).run();
   });
+}
+
+/** When an edit to an own order counts from. */
+export type OrderEditStart = 'today' | 'tomorrow';
+
+/**
+ * Changes an own order's name, unit and how many a day. A goal that keeps today at least as
+ * hard counts from today. A lower goal counts from tomorrow, so it can never rescue the day in
+ * progress: today's order ends tonight and a copy with the new goal starts tomorrow (its
+ * `replacesId` points back). Editing again before then changes that copy. Throws
+ * CustomOrderError if the draft is refused, or an Error if the order can't be edited.
+ */
+export function editCustomOrder(
+  db: AppDatabase,
+  orderId: number,
+  draft: CustomOrderDraft,
+  today: DayKey,
+): OrderEditStart {
+  return db.transaction((tx) => {
+    const row = tx.select().from(customOrders).where(eq(customOrders.id, orderId)).get();
+    if (!row || !isCustomOrderActiveOn(row, today)) throw new Error('No such order today.');
+    const successor = findSuccessor(tx, orderId, today);
+    if (row.lastDay != null && !successor) throw new Error('The order is standing down.');
+    // Editing never adds an order, so the limit doesn't apply.
+    const error = validateCustomOrder(draft, 0);
+    if (error) throw new CustomOrderError(error);
+    const clean = normalizeCustomOrder(draft);
+
+    // Holding today never gets easier: an order added today, or a goal at or above today's
+    // minimum, changes now (and replaces any lower goal waiting for tomorrow).
+    if (row.firstDay === today || clean.min >= row.min) {
+      if (successor) deleteOrder(tx, successor.id);
+      tx.update(customOrders)
+        .set({ ...clean, lastDay: null })
+        .where(eq(customOrders.id, orderId))
+        .run();
+      return 'today';
+    }
+
+    // Lower: today keeps its goal and unit (only the name follows); the new goal starts tomorrow.
+    tx.update(customOrders)
+      .set({ name: clean.name, lastDay: today })
+      .where(eq(customOrders.id, orderId))
+      .run();
+    if (successor) {
+      tx.update(customOrders).set(clean).where(eq(customOrders.id, successor.id)).run();
+    } else {
+      tx.insert(customOrders)
+        .values({
+          arcId: row.arcId,
+          ...clean,
+          firstDay: addDays(today, 1),
+          lastDay: null,
+          replacesId: orderId,
+          createdAt: nowIso(),
+        })
+        .run();
+    }
+    return 'tomorrow';
+  });
+}
+
+/** The lower goal waiting for tomorrow that carries an order on, if any. */
+function findSuccessor(db: AppDatabase, orderId: number, today: DayKey): CustomOrderRow | undefined {
+  return db
+    .select()
+    .from(customOrders)
+    .where(and(eq(customOrders.replacesId, orderId), gt(customOrders.firstDay, today)))
+    .get();
+}
+
+/** Deletes an own order and its logs. */
+function deleteOrder(db: AppDatabase, orderId: number): void {
+  db.delete(customOrderLogs).where(eq(customOrderLogs.orderId, orderId)).run();
+  db.delete(customOrders).where(eq(customOrders.id, orderId)).run();
 }
 
 /** Saves an own order's amount on a day. Creates the row if needed. */

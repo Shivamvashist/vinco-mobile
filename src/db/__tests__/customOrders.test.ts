@@ -5,9 +5,11 @@ import { createArc } from '../arcs';
 import {
   addCustomOrder,
   CustomOrderError,
+  editCustomOrder,
   getCustomOrdersWithAmounts,
   saveCustomOrderAmount,
   selectCustomOrders,
+  selectPendingCustomOrders,
   standDownCustomOrder,
 } from '../customOrders';
 import { getDayLog } from '../dayLogs';
@@ -124,5 +126,92 @@ describe('sealing with own orders', () => {
       DEFAULT_ORDER_TARGETS,
     );
     expect(records.map((record) => record.result)).toEqual(['missed', 'held']);
+  });
+});
+
+describe('editing own orders', () => {
+  const TODAY = '2026-10-14';
+  const TOMORROW = '2026-10-15';
+  const GLASSES = { name: 'Water', unit: 'glass', min: 12, full: 12 };
+  const goalsOn = (db: ReturnType<typeof createTestDatabase>, arcId: number, day: string) =>
+    getCustomOrdersWithAmounts(db, arcId, day).map(({ order }) => [order.name, order.unit, order.full]);
+
+  it('changes the name, unit and a higher goal from today', () => {
+    const { db, arcId } = setup();
+    addCustomOrder(db, arcId, GLASSES, START);
+    const id = firstOrderId(db, arcId);
+    expect(editCustomOrder(db, id, { name: 'Drink water', unit: 'cup', min: 14, full: 14 }, TODAY)).toBe(
+      'today',
+    );
+    expect(goalsOn(db, arcId, TODAY)).toEqual([['Drink water', 'cup', 14]]);
+    expect(selectCustomOrders(db, arcId).all()).toHaveLength(1);
+  });
+
+  it('starts a lower goal tomorrow, so it can never rescue today', () => {
+    const { db, arcId } = setup();
+    addCustomOrder(db, arcId, GLASSES, START);
+    const id = firstOrderId(db, arcId);
+    saveCustomOrderAmount(db, id, TODAY, 8);
+    expect(editCustomOrder(db, id, { name: 'Hydrate', unit: 'litre', min: 8, full: 8 }, TODAY)).toBe(
+      'tomorrow',
+    );
+    // Today: the old goal and unit under the new name, with today's progress; still not held.
+    expect(goalsOn(db, arcId, TODAY)).toEqual([['Hydrate', 'glass', 12]]);
+    expect(getCustomOrdersWithAmounts(db, arcId, TODAY)[0]?.amount).toBe(8);
+    expect(getDayStanding(db, arcId, TODAY, DEFAULT_ORDER_TARGETS)).toBe('missed');
+    // Tomorrow: the new goal, carried on from the old order.
+    expect(goalsOn(db, arcId, TOMORROW)).toEqual([['Hydrate', 'litre', 8]]);
+    expect(selectPendingCustomOrders(db, arcId, TODAY).all()[0]?.replacesId).toBe(id);
+  });
+
+  it('changes the waiting goal on a second edit, and drops it when raised again', () => {
+    const { db, arcId } = setup();
+    addCustomOrder(db, arcId, GLASSES, START);
+    const id = firstOrderId(db, arcId);
+    editCustomOrder(db, id, { ...GLASSES, min: 8, full: 8 }, TODAY);
+    editCustomOrder(db, id, { ...GLASSES, min: 6, full: 6 }, TODAY);
+    expect(selectPendingCustomOrders(db, arcId, TODAY).all()).toHaveLength(1);
+    expect(goalsOn(db, arcId, TOMORROW)).toEqual([['Water', 'glass', 6]]);
+
+    expect(editCustomOrder(db, id, { ...GLASSES, min: 15, full: 15 }, TODAY)).toBe('today');
+    expect(selectPendingCustomOrders(db, arcId, TODAY).all()).toEqual([]);
+    expect(goalsOn(db, arcId, TOMORROW)).toEqual([['Water', 'glass', 15]]);
+  });
+
+  it('lowers an order added today straight away', () => {
+    const { db, arcId } = setup();
+    addCustomOrder(db, arcId, GLASSES, TODAY);
+    expect(editCustomOrder(db, firstOrderId(db, arcId), { ...GLASSES, min: 4, full: 4 }, TODAY)).toBe(
+      'today',
+    );
+    expect(goalsOn(db, arcId, TODAY)).toEqual([['Water', 'glass', 4]]);
+  });
+
+  it('stands down an order and the goal waiting for tomorrow together', () => {
+    const { db, arcId } = setup();
+    addCustomOrder(db, arcId, GLASSES, START);
+    const id = firstOrderId(db, arcId);
+    editCustomOrder(db, id, { ...GLASSES, min: 8, full: 8 }, TODAY);
+    standDownCustomOrder(db, id, TODAY);
+    expect(goalsOn(db, arcId, TODAY)).toHaveLength(1);
+    expect(goalsOn(db, arcId, TOMORROW)).toEqual([]);
+  });
+
+  it('counts a waiting goal toward the limit, so tomorrow never has one too many', () => {
+    const { db, arcId } = setup();
+    for (let index = 0; index < CUSTOM_ORDER_LIMITS.maxActive; index += 1) {
+      addCustomOrder(db, arcId, { ...GLASSES, name: `Order ${index}` }, START);
+    }
+    editCustomOrder(db, firstOrderId(db, arcId), { ...GLASSES, min: 8, full: 8 }, TODAY);
+    expect(() => addCustomOrder(db, arcId, READ, TODAY)).toThrow(CustomOrderError);
+  });
+
+  it('refuses a bad draft and an order that is standing down', () => {
+    const { db, arcId } = setup();
+    addCustomOrder(db, arcId, GLASSES, START);
+    const id = firstOrderId(db, arcId);
+    expect(() => editCustomOrder(db, id, { ...GLASSES, name: ' ' }, TODAY)).toThrow(CustomOrderError);
+    standDownCustomOrder(db, id, TODAY);
+    expect(() => editCustomOrder(db, id, GLASSES, TODAY)).toThrow('standing down');
   });
 });

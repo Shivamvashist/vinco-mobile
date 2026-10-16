@@ -15,7 +15,8 @@ export function useSealFinishedDays(): void {
     try {
       const arc = getActiveArc(db);
       if (!arc) return;
-      const targets = toOrderTargets(selectArcOrders(db, arc.id).all());
+      // The arc's kind matters: free training is judged only on the orders it has.
+      const targets = toOrderTargets(selectArcOrders(db, arc.id).all(), arc.kind);
       sealFinishedDays(db, arc, targets, today);
     } catch (error) {
       // Sealing runs again on the next open or midnight; nothing is lost.

@@ -7,6 +7,8 @@ import {
   nextCustomAmount,
   normalizeCustomOrder,
   previousCustomAmount,
+  customOrderMode,
+  isCheckOrder,
   toCustomOrderDraft,
   validateCustomOrder,
 } from '..';
@@ -64,5 +66,22 @@ describe('own orders', () => {
     expect(clampCustomAmount(-4, { full: 30 })).toBe(0);
     expect(clampCustomAmount(99, { full: 30 })).toBe(30);
     expect(clampCustomAmount(Number.NaN, { full: 30 })).toBe(0);
+  });
+});
+
+describe('done-or-not orders', () => {
+  it('reads an empty number as once a day', () => {
+    expect(toCustomOrderDraft('Meditate', '', null)).toEqual({ name: 'Meditate', unit: '', min: 1, full: 1 });
+    // A typed number that isn't valid is kept, so validation refuses it.
+    expect(Number.isNaN(toCustomOrderDraft('Read', '', Number.NaN).full)).toBe(true);
+  });
+
+  it('is done or not only with no unit and a goal of one', () => {
+    expect(isCheckOrder({ full: 1, unit: '' })).toBe(true);
+    expect(isCheckOrder({ full: 1, unit: 'hour' })).toBe(false);
+    expect(isCheckOrder({ full: 2, unit: '' })).toBe(false);
+    expect(customOrderMode({ full: 1, unit: '' })).toBe('check');
+    expect(customOrderMode({ full: 12, unit: 'glass' })).toBe('tap');
+    expect(customOrderMode({ full: 10000, unit: 'steps' })).toBe('typed');
   });
 });

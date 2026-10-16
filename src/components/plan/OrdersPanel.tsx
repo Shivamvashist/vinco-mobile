@@ -1,13 +1,18 @@
+import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { useState } from 'react';
 import { View } from 'react-native';
 
 import { ordersCopy } from '@/copy';
+import { db, selectPendingCustomOrders, toCustomOrder } from '@/db';
 import {
   CUSTOM_ORDER_LIMITS,
   type CustomOrder,
+  DEFAULT_WAKE_MINUTES,
+  isCheckOrder,
   type OrderKind,
   orderKindsIn,
   type OrderTarget,
+  type TunableOrder,
 } from '@/features/orders';
 import { useActiveArc } from '@/hooks/useActiveArc';
 import { useOwnOrderActions } from '@/hooks/useOwnOrderActions';
@@ -17,7 +22,10 @@ import { createStyles, useFeedback } from '@/theme';
 
 import { BottomSheet } from '../BottomSheet';
 import { Button } from '../Button';
+import { AddOrderSheet } from '../orders/AddOrderSheet';
+import { VincoGoalSheet } from '../orders/VincoGoalSheet';
 import { SectionHeader } from '../SectionHeader';
+import { WakeTimeSheet } from '../settings/WakeTimeSheet';
 import { Txt } from '../Txt';
 
 export type OrdersPanelProps = {
@@ -28,37 +36,61 @@ export type OrdersPanelProps = {
 /** Vinco's orders free training can add back, in the order they're offered. */
 const ADDABLE_KINDS: readonly OrderKind[] = ['water', 'workout', 'meal'];
 
+/** An own order on the plan, with the lower goal waiting for tomorrow if one was set. */
+type OwnItem = { order: CustomOrder; next: CustomOrder | null };
+
 /**
- * Vinco's orders and the user's own. A campaign keeps Vinco's four (fixed); free training keeps
- * only the ones picked, each removable, with the rest offered to add. Own orders stand down.
- * Every order must hold for the day to count. See docs/ORDERS-AND-TASKS.md.
+ * Vinco's orders and the user's own, each editable. A campaign keeps Vinco's four (their full
+ * goals and the wake time can change); free training keeps only the ones picked, each
+ * removable, with the rest offered to add. Own orders change name, unit and number, or stand
+ * down. Every order must hold for the day to count. See docs/ORDERS-AND-TASKS.md.
  */
 export function OrdersPanel({ onAdd }: OrdersPanelProps) {
   const styles = useStyles();
   const play = useFeedback();
   const { arc, targets } = useActiveArc();
   const orders = useTodayOrders(targets, arc?.id ?? null);
-  const ownOrders = useOwnOrderActions(arc?.id ?? null);
+  const actions = useOwnOrderActions(arc?.id ?? null);
+  const pending = useLiveQuery(selectPendingCustomOrders(db, arc?.id ?? -1, orders.today), [
+    arc?.id,
+    orders.today,
+  ]);
+  const [editingOwn, setEditingOwn] = useState<OwnItem | null>(null);
   const [standingDown, setStandingDown] = useState<CustomOrder | null>(null);
+  const [editingVinco, setEditingVinco] = useState<TunableOrder | null>(null);
+  const [isEditingWake, setIsEditingWake] = useState(false);
   const [removing, setRemoving] = useState<OrderKind | null>(null);
   const isFree = arc?.kind === 'ludus';
   const kinds = orderKindsIn(targets);
   const addable = isFree ? ADDABLE_KINDS.filter((kind) => !kinds.includes(kind)) : [];
-  const own = orders.customOrders.map((item) => item.order);
-  const activeCount = own.filter((order) => order.lastDay == null).length;
+  const own: OwnItem[] = orders.customOrders.map(({ order }) => {
+    const row = pending.data.find((candidate) => candidate.replacesId === order.id);
+    return { order, next: row ? toCustomOrder(row) : null };
+  });
+  // Still going: not standing down, or carried on by a lower goal from tomorrow.
+  const isGoing = (item: OwnItem) => item.order.lastDay == null || item.next != null;
+  const activeCount = own.filter(isGoing).length;
   const canAdd = arc != null && activeCount < CUSTOM_ORDER_LIMITS.maxActive;
+  const wakeMinutes = (arc ? parseClockMinutes(arc.wakeTime) : null) ?? DEFAULT_WAKE_MINUTES;
+
+  const editVinco = (kind: OrderKind) => {
+    if (kind === 'wake') setIsEditingWake(true);
+    else setEditingVinco(kind);
+  };
 
   const confirmRemove = () => {
     if (!removing) return;
-    play(ownOrders.removeVinco(removing) ? 'stepDown' : 'denied');
+    play(actions.removeVinco(removing) ? 'stepDown' : 'denied');
     setRemoving(null);
   };
 
   const confirmStandDown = () => {
     if (!standingDown) return;
-    play(ownOrders.standDown(standingDown.id) ? 'stepDown' : 'denied');
+    play(actions.standDown(standingDown.id) ? 'stepDown' : 'denied');
     setStandingDown(null);
   };
+
+  const editing = editingOwn ? (editingOwn.next ?? editingOwn.order) : null;
 
   return (
     <>
@@ -73,29 +105,42 @@ export function OrdersPanel({ onAdd }: OrdersPanelProps) {
           />
         ) : null}
         <View style={styles.list}>
-          {kinds.map((kind) => (
-            <View key={kind} style={[styles.card, styles.ownCard]}>
-              <View style={styles.ownText}>
-                <Txt variant="label">{ordersCopy.vincoNames[kind]}</Txt>
-                <Txt variant="caption">{describeVincoGoals(kind, targets[kind], arc?.wakeTime ?? null)}</Txt>
-              </View>
-              {isFree ? (
+          {kinds.map((kind) => {
+            const name = ordersCopy.vincoNames[kind];
+            return (
+              <View key={kind} style={styles.card}>
+                <View style={styles.text}>
+                  <Txt variant="label">{name}</Txt>
+                  <Txt variant="caption">
+                    {describeVincoGoals(kind, targets[kind], arc?.wakeTime ?? null)}
+                  </Txt>
+                </View>
                 <Button
-                  label={ordersCopy.screen.remove}
+                  label={ordersCopy.screen.edit}
+                  accessibilityLabel={ordersCopy.screen.editLabel(name)}
                   variant="ghost"
                   size="compact"
-                  onPress={() => setRemoving(kind)}
+                  onPress={() => editVinco(kind)}
                 />
-              ) : null}
-            </View>
-          ))}
+                {/* Wake-up has no goal sheet to hold its Remove, so it keeps the button here. */}
+                {isFree && kind === 'wake' ? (
+                  <Button
+                    label={ordersCopy.screen.remove}
+                    variant="ghost"
+                    size="compact"
+                    onPress={() => setRemoving(kind)}
+                  />
+                ) : null}
+              </View>
+            );
+          })}
           {addable.map((kind) => (
             <Button
               key={kind}
               label={ordersCopy.screen.addSuggestion(ordersCopy.vincoNames[kind])}
               variant="secondary"
               size="compact"
-              onPress={() => play(ownOrders.addVinco(kind) ? 'confirm' : 'denied')}
+              onPress={() => play(actions.addVinco(kind) ? 'confirm' : 'denied')}
             />
           ))}
         </View>
@@ -103,23 +148,28 @@ export function OrdersPanel({ onAdd }: OrdersPanelProps) {
         <SectionHeader title={ordersCopy.screen.ownSection} />
         <View style={styles.list}>
           {own.length === 0 ? <Txt variant="caption">{ordersCopy.screen.ownEmpty}</Txt> : null}
-          {own.map((order) => (
-            <View key={`own-${order.id}`} style={[styles.card, styles.ownCard]}>
-              <View style={styles.ownText}>
-                <Txt variant="label">{order.name}</Txt>
-                <Txt variant="caption">{describeOwnGoals(order)}</Txt>
-                {order.lastDay != null ? (
+          {own.map((item) => (
+            <View key={`own-${item.order.id}`} style={styles.card}>
+              <View style={styles.text}>
+                <Txt variant="label">{item.order.name}</Txt>
+                <Txt variant="caption">{describeOwnGoals(item.order)}</Txt>
+                {item.next ? (
+                  <Txt variant="caption" color="accent">
+                    {ordersCopy.screen.fromTomorrow(describeOwnGoals(item.next))}
+                  </Txt>
+                ) : item.order.lastDay != null ? (
                   <Txt variant="caption" color="danger">
                     {ordersCopy.screen.standsDownTomorrow}
                   </Txt>
                 ) : null}
               </View>
-              {order.lastDay == null ? (
+              {isGoing(item) ? (
                 <Button
-                  label={ordersCopy.screen.standDown}
+                  label={ordersCopy.screen.edit}
+                  accessibilityLabel={ordersCopy.screen.editLabel(item.order.name)}
                   variant="ghost"
                   size="compact"
-                  onPress={() => setStandingDown(order)}
+                  onPress={() => setEditingOwn(item)}
                 />
               ) : null}
             </View>
@@ -136,6 +186,59 @@ export function OrdersPanel({ onAdd }: OrdersPanelProps) {
           </Txt>
         ) : null}
       </View>
+
+      <AddOrderSheet
+        key={editingOwn ? `edit-${editingOwn.order.id}` : 'edit'}
+        visible={editingOwn != null}
+        onClose={() => setEditingOwn(null)}
+        editing={
+          editingOwn && editing
+            ? {
+                name: editing.name,
+                unit: editing.unit,
+                count: isCheckOrder(editing) ? null : editing.full,
+                // Added today, it changes at once whatever the number.
+                todayMin: editingOwn.order.firstDay === orders.today ? null : editingOwn.order.min,
+                isTwoLevel: editing.min < editing.full,
+              }
+            : undefined
+        }
+        onSave={(draft) => {
+          if (!editingOwn) return 'failed';
+          const result = actions.edit(editingOwn.order.id, draft);
+          if ('error' in result) return result.error;
+          setEditingOwn(null);
+          return null;
+        }}
+        onStandDown={() => {
+          if (!editingOwn) return;
+          setStandingDown(editingOwn.order);
+          setEditingOwn(null);
+        }}
+      />
+
+      <VincoGoalSheet
+        key={editingVinco ?? 'vinco'}
+        kind={editingVinco}
+        target={editingVinco ? targets[editingVinco] : undefined}
+        onClose={() => setEditingVinco(null)}
+        onSave={actions.setVincoFull}
+        onRemove={
+          isFree
+            ? (kind) => {
+                setEditingVinco(null);
+                setRemoving(kind);
+              }
+            : undefined
+        }
+      />
+
+      <WakeTimeSheet
+        visible={isEditingWake}
+        onClose={() => setIsEditingWake(false)}
+        minutes={wakeMinutes}
+        onSave={actions.setWakeTime}
+      />
 
       <BottomSheet
         visible={removing != null}
@@ -212,8 +315,9 @@ function describeVincoGoals(
   }
 }
 
-/** "12 glass a day", or "Hold the line: 10 pages · Conquer: 30 pages" for an older own order. */
+/** "12 glass a day", "Once a day, done or not", or both goals for an older own order. */
 function describeOwnGoals(order: CustomOrder): string {
+  if (isCheckOrder(order)) return ordersCopy.screen.check;
   const withUnit = (value: number) => (order.unit ? `${value} ${order.unit}` : String(value));
   if (order.min === order.full) return ordersCopy.screen.daily(withUnit(order.full));
   return ordersCopy.screen.goals(withUnit(order.min), withUnit(order.full));
@@ -223,13 +327,14 @@ const useStyles = createStyles((theme) => ({
   intro: { marginTop: theme.space.sm },
   list: { gap: theme.space.sm },
   card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.space.sm,
     padding: theme.layout.cardPadding,
     borderRadius: theme.radius.md,
     backgroundColor: theme.colors.surface,
-    gap: theme.space.xxs,
   },
-  ownCard: { flexDirection: 'row', alignItems: 'center', gap: theme.space.sm },
-  ownText: { flex: 1, minWidth: 0, gap: theme.space.xxs },
+  text: { flex: 1, minWidth: 0, gap: theme.space.xxs },
   add: { marginTop: theme.space.xxl, marginBottom: theme.space.lg },
   sheetActions: { marginTop: theme.space.lg, gap: theme.space.xs },
 }));

@@ -72,9 +72,27 @@ export function getCustomOrderStatus(amount: number, order: Pick<CustomOrder, 'm
   return amount < order.full ? 'min' : 'full';
 }
 
-/** A draft from the add form: one number, "how many a day", is both the minimum and the goal. */
-export function toCustomOrderDraft(name: string, unit: string, count: number): CustomOrderDraft {
-  return { name, unit, min: count, full: count };
+/**
+ * A draft from the add form: one number, "how many a day", is both the minimum and the goal.
+ * No number (null, the field left empty) means a simple done-or-not order: once a day.
+ * A typed number that isn't valid stays as it is, so validation refuses it.
+ */
+export function toCustomOrderDraft(name: string, unit: string, count: number | null): CustomOrderDraft {
+  const goal = count ?? 1;
+  return { name, unit, min: goal, full: goal };
+}
+
+/** A done-or-not order: no unit, once a day ("Meditate"). Shown as done or not, never "0 of 1". */
+export function isCheckOrder(order: Pick<CustomOrder, 'full' | 'unit'>): boolean {
+  return order.full === 1 && order.unit.trim() === '';
+}
+
+/** How an own order is logged on Today: done or not, a tap per unit, or a typed amount. */
+export type CustomOrderMode = 'check' | 'tap' | 'typed';
+
+export function customOrderMode(order: Pick<CustomOrder, 'full' | 'unit'>): CustomOrderMode {
+  if (isCheckOrder(order)) return 'check';
+  return isTapCounted(order) ? 'tap' : 'typed';
 }
 
 /** Whether a tap adds one (a small count, like glasses), or the amount is typed in (steps). */

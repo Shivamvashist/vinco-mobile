@@ -5,6 +5,7 @@
  */
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
+import { ImageManipulator } from 'expo-image-manipulator';
 import * as Sharing from 'expo-sharing';
 import { renderRouter } from 'expo-router/testing-library';
 
@@ -720,10 +721,14 @@ describe('Own orders', () => {
     addCustomOrder(db, arc.id, READ, addDays(toDayKey(new Date()), -1));
     renderRouter(APP_DIR, { initialUrl: '/orders' });
     expect(await screen.findByText(ordersCopy.screen.vincoSection)).toBeTruthy();
-    fireEvent.press(await screen.findByLabelText(ordersCopy.screen.standDown));
+    // Stand down lives in the order's edit sheet.
+    fireEvent.press(await screen.findByLabelText(ordersCopy.screen.editLabel('Read')));
+    act(() => jest.advanceTimersByTime(600));
+    fireEvent.press(await screen.findByLabelText(ordersCopy.edit.standDown));
+    act(() => jest.advanceTimersByTime(600));
     fireEvent.press(await screen.findByLabelText(ordersCopy.standDownSheet.confirm));
     expect(await screen.findByText(ordersCopy.screen.standsDownTomorrow)).toBeTruthy();
-    expect(screen.queryByLabelText(ordersCopy.screen.standDown)).toBeNull();
+    expect(screen.queryByLabelText(ordersCopy.screen.editLabel('Read'))).toBeNull();
   });
 });
 
@@ -769,6 +774,20 @@ describe('Selfie retake', () => {
     fireEvent.press(await screen.findByLabelText(proofCopy.camera.looksRight));
     await waitFor(() => expect(getDayLog(db, toDayKey(new Date()))?.selfiePath).not.toBe(first));
     expect(getDayLog(db, toDayKey(new Date()))?.selfiePath).toMatch(/selfies\/\d{4}-\d{2}-\d{2}-\d+\.jpg$/);
+  });
+  it('retakes from the check without restarting the camera, and keeps each shot small', async () => {
+    jest.mocked(ImageManipulator.manipulate).mockClear();
+    startArc();
+    markAwake();
+    renderRouter(APP_DIR, { initialUrl: '/selfie' });
+    fireEvent.press(await screen.findByLabelText(proofCopy.camera.takeSelfie));
+    fireEvent.press(await screen.findByLabelText(proofCopy.camera.retake));
+    fireEvent.press(await screen.findByLabelText(proofCopy.camera.takeSelfie));
+    fireEvent.press(await screen.findByLabelText(proofCopy.camera.looksRight));
+    await screen.findByText(proofCopy.daily.saved('I', 1, 60));
+    // Every shot went through the resize (the fake camera shoots 3024 px wide).
+    expect(ImageManipulator.manipulate).toHaveBeenCalledTimes(2);
+    expect(getDayLog(db, toDayKey(new Date()))?.selfiePath).toMatch(/selfies\/.*\.jpg$/);
   });
 });
 

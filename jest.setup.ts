@@ -31,13 +31,29 @@ jest.mock('expo-camera', () => {
   const { View } = require('react-native');
   return {
     // Takes a "photo" when asked, like the real camera's ref.
-    CameraView: React.forwardRef((props: object, ref: unknown) => {
+    // Full camera size, so the app shrinks it (expo-image-manipulator, faked below).
+    CameraView: React.forwardRef((props: { onCameraReady?: () => void }, ref: unknown) => {
       React.useImperativeHandle(ref, () => ({
-        takePictureAsync: async () => ({ uri: 'file:///cache/photo.jpg', width: 1080, height: 1440 }),
+        takePictureAsync: async () => ({ uri: 'file:///cache/photo.jpg', width: 3024, height: 4032 }),
       }));
+      // Like the real preview: ready once it has started.
+      const { onCameraReady } = props;
+      React.useEffect(() => onCameraReady?.(), [onCameraReady]);
       return React.createElement(View, props);
     }),
     useCameraPermissions: () => [{ granted: true, canAskAgain: true }, jest.fn()],
+  };
+});
+
+jest.mock('expo-image-manipulator', () => {
+  const image = {
+    saveAsync: jest.fn(async () => ({ uri: 'file:///cache/shrunk.jpg', width: 1080, height: 1440 })),
+    release: jest.fn(),
+  };
+  const context = { resize: jest.fn(), renderAsync: jest.fn(async () => image), release: jest.fn() };
+  return {
+    ImageManipulator: { manipulate: jest.fn(() => context) },
+    SaveFormat: { JPEG: 'jpeg', PNG: 'png' },
   };
 });
 

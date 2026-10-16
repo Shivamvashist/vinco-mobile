@@ -19,8 +19,8 @@ export type TodoPanelProps = {
 };
 
 /**
- * The whole to-do list: every day, today (unfinished ones from earlier days included), tomorrow. Tap to tick, the cross to
- * remove, press and hold to edit (rename, how often, make it an order). Never affects sealing.
+ * The whole to-do list: every day, today (unfinished ones from earlier days included), tomorrow. Tap to tick, and
+ * edit (the pencil, or press and hold: rename, how often, make it an order, remove). Never affects sealing.
  */
 export function TodoPanel({ tasks, onAdd, onEdit }: TodoPanelProps) {
   const styles = useStyles();
@@ -42,7 +42,7 @@ export function TodoPanel({ tasks, onAdd, onEdit }: TodoPanelProps) {
         }
         canTick={kind !== 'tomorrow'}
         onToggle={() => tasks.toggle(item)}
-        onRemove={() => tasks.remove(item.task.id)}
+        // The pencil opens the sheet, which renames, changes how often, or removes.
         onEdit={() => onEdit(item)}
       />
     ));

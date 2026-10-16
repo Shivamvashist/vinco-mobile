@@ -27,13 +27,15 @@ In one sentence: **orders decide the day; tasks help plan it.**
 
 Water, wake-up, a protein meal, a workout. Which of them an arc has is stored per arc (`arc_orders` rows):
 
-- **Campaign:** all four, tuned in onboarding. They can't be removed.
+- **Campaign:** all four, tuned in onboarding. They can't be removed. Their full goals (water, meals, workout, within the onboarding ranges) and the wake time can be edited; the new goal counts from today. The minimums are Vinco's and never change, so a day never gets easier to hold.
 - **Free training:** only the ones the user picked (onboarding suggests water and workout). They can be removed and added back in "Orders and to-dos". Wake-up is not offered as an order here; the dawn card still logs sleep every morning.
 
 ### The user's own orders
 
 - **Added** in onboarding ("Your daily orders", the +), from Today, or from "Orders and to-dos".
 - **Fields:** what ("Drink water"), a unit ("glass") and how many a day (12). Whole numbers from 1 to 9999. Saved as minimum = full goal = how many, so an own order is simply done or not yet. Orders saved before 13 Oct keep their separate minimum.
+- **Unit and number are optional.** Left empty, the order is **done or not** ("Meditate"): once a day, shown as "Not done yet" or "Done", one tap to finish. (Stored as no unit and a goal of 1.)
+- **Editing** ("Orders and to-dos", Edit): name, unit, how many, or stand down. A new name or unit, or a number at or above today's, counts from today. **A lower number counts from tomorrow**: today's order ends tonight and a copy with the new goal starts tomorrow (`replaces_id` links them), so lowering can never rescue the day in progress. An order added today changes at once.
 - **Logging on Today:** a tap adds one unit, up to goals of 20 a day ("3 of 12 glass"); a long press takes one back. A goal over 20 (steps) opens a sheet to type the amount. One tap is enough for small goals, so the core job stays fast.
 - **Starts today.** Adding an order makes today harder, never easier. If the stamp already landed today and a new order is added, today is open again until the new order is done (the stamp doesn't land twice).
 - **Standing an order down** ("Orders and to-dos"): it still counts today and is gone from tomorrow. Removing an order can never rescue the day in progress. An order added and stood down on the same day is removed entirely.
@@ -72,8 +74,8 @@ All three kinds are added through **one sheet** that first asks **"How often?"**
 
 One place to control everything, from the user menu ("Orders and to-dos") and from Today's to-do. Segments **Orders | To-do** (`?tab=orders|todo`; the old `/orders` and `/tasks` links redirect here).
 
-- **Orders:** Vinco's with their minimum and full goal, marked "Set by Vinco" (in free training each can be removed, confirmed in a sheet, and the missing ones are offered back); the user's own with "Stand down" (confirmed: "It still counts today, and is gone from tomorrow"); "Add an order" while there's room.
-- **To-do:** Every day, Today, Tomorrow. Each row: tap to tick, the cross to remove, hold to edit.
+- **Orders:** every order has **Edit**. Vinco's open a goal sheet (full goal stepper; in free training also "Remove", confirmed, and the missing ones are offered back) or the wake time. The user's own open the order sheet (name, unit, how many, "Stand it down", confirmed: "It still counts today, and is gone from tomorrow"); a lower goal waiting shows "From tomorrow: 8 glass a day". "Add an order" while there's room (a waiting goal counts toward the limit).
+- **To-do:** Every day, Today, Tomorrow. Each task has a pencil (and press and hold) to edit: rename, how often, make it an order, or remove. Each row: tap to tick, the cross to remove, hold to edit.
 
 ### The task sheet (add and edit)
 

@@ -22,6 +22,8 @@ export type ButtonProps = {
   loading?: boolean;
   /** Sound and haptic on press. null for silent. */
   cue?: FeedbackCue | null;
+  /** What a screen reader says, when the label alone is ambiguous ("Edit" says "Edit Water"). */
+  accessibilityLabel?: string;
   accessibilityHint?: string;
 };
 
@@ -34,6 +36,7 @@ export function Button({
   disabled = false,
   loading = false,
   cue = 'tap',
+  accessibilityLabel,
   accessibilityHint,
 }: ButtonProps) {
   const theme = useTheme();
@@ -65,7 +68,7 @@ export function Button({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={showSublabel ? `${label}, ${sublabel}` : label}
+      accessibilityLabel={accessibilityLabel ?? (showSublabel ? `${label}, ${sublabel}` : label)}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled, busy: loading }}
       disabled={isInactive}
