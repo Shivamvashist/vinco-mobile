@@ -1,3 +1,5 @@
+import type { FocusGuard } from '@/features/focus';
+
 import type { GuardLevel } from './guard';
 
 /**
@@ -24,6 +26,13 @@ export type GuardBridge = {
   getTodayCount: () => Promise<number>;
   /** Live count updates. Returns the unsubscribe. */
   onReel: (listener: (count: number) => void) => () => void;
+  /**
+   * Guards the phone for a focus ("Acies") until `endsAt`: custos allows marked apps for
+   * `allowanceMinutes` in all, imperium blocks them, silentium blocks all but calls, messages and Vinco.
+   */
+  startFocus: (config: { mode: FocusGuard; endsAt: Date; allowanceMinutes: number }) => Promise<void>;
+  /** Lifts the focus guard (completed or given up). Safe to call when none is on. */
+  endFocus: () => Promise<void>;
 };
 
 /** Used until the native module exists: everything reports "not available", nothing throws. */
@@ -34,6 +43,8 @@ export const unsupportedGuardBridge: GuardBridge = {
   configure: async () => undefined,
   getTodayCount: async () => 0,
   onReel: () => () => undefined,
+  startFocus: async () => undefined,
+  endFocus: async () => undefined,
 };
 
 /** The bridge the app uses. Swap for the native module's implementation when it ships. */

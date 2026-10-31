@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -12,17 +12,20 @@ import { CaloriesSheet } from '@/components/proof/CaloriesSheet';
 import { WeightSheet } from '@/components/proof/WeightSheet';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { StatChip } from '@/components/StatChip';
+import { Toast } from '@/components/Toast';
 import { TaskSheets, type TaskSheetTarget } from '@/components/tasks/TaskSheets';
 import { buildOrderRows } from '@/components/today/buildOrderRows';
 import { describeArcHeader } from '@/components/today/describeArcHeader';
 import { DawnCard } from '@/components/today/DawnCard';
+import { TodayHero } from '@/components/today/hero/TodayHero';
+import { DaySummarySheet } from '@/components/progress/DaySummarySheet';
 import { OrderList } from '@/components/today/OrderList';
 import { QuickLogs } from '@/components/today/QuickLogs';
 import { SealDayCard } from '@/components/today/SealDayCard';
 import { SickDayCard } from '@/components/today/SickDayCard';
 import { SickDaySheet } from '@/components/today/SickDaySheet';
 import { StampOverlay } from '@/components/today/StampOverlay';
+import { RunPaySheet } from '@/components/today/RunPaySheet';
 import { TodayTodo } from '@/components/today/TodayTodo';
 import { TruceBanner } from '@/components/today/TruceBanner';
 import { WakeSheet } from '@/components/today/WakeSheet';
@@ -32,20 +35,15 @@ import { commonCopy, proofCopy, todayCopy } from '@/copy';
 import { FEATURES } from '@/config/features';
 import { arcEndDay } from '@/features/arc';
 import { planTrucePayment } from '@/features/campaign';
-import {
-  type CustomOrder,
-  CUSTOM_ORDER_LIMITS,
-  isTapCounted,
-  maxAmountFor,
-  type OrderKind,
-  type OrderStatus,
-  targetFor,
-} from '@/features/orders';
+import { type CustomOrder, CUSTOM_ORDER_LIMITS, maxAmountFor, targetFor } from '@/features/orders';
 import { toWakeMoments } from '@/features/sleep';
 import { useActiveArc } from '@/hooks/useActiveArc';
 import { useCampaign } from '@/hooks/useCampaign';
 import { useDailySelfie } from '@/hooks/useDailySelfie';
+import { useDenariiToast } from '@/hooks/useDenariiToast';
 import { useLatestBedtime } from '@/hooks/useLatestBedtime';
+import { useLiveAwards } from '@/hooks/useLiveAwards';
+import { useOrderTaps } from '@/hooks/useOrderTaps';
 import { useOwnOrderActions } from '@/hooks/useOwnOrderActions';
 import { useSickDay } from '@/hooks/useSickDay';
 import { useTasks } from '@/hooks/useTasks';
@@ -53,7 +51,7 @@ import { useTodayOrders } from '@/hooks/useTodayOrders';
 import { formatClockMinutes, parseClockMinutes, toDayKey, weekdayIndex } from '@/lib/dates';
 import { createStyles, useFeedback } from '@/theme';
 
-type Sheet = 'wake' | 'workout' | 'weight' | 'calories' | 'sick' | 'menu' | null;
+type Sheet = 'wake' | 'workout' | 'weight' | 'calories' | 'sick' | 'menu' | 'run' | 'summary' | null;
 
 /**
  * Veni: the day. The header (with the user menu), the quick logs, then one scroll: the orders
@@ -77,7 +75,10 @@ export default function VeniScreen() {
   const [sickError, setSickError] = useState<string | null>(null);
   const [todoTarget, setTodoTarget] = useState<TaskSheetTarget>(null);
   const [amountOrder, setAmountOrder] = useState<{ order: CustomOrder; amount: number } | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const hideToast = useCallback(() => setToast(null), []);
   const { today, targets, totalCount } = orders;
+  const run = campaign.campaign;
   const close = () => setSheet(null);
 
   const isLoaded = orders.isLoaded && activeArc.isLoaded;
@@ -97,62 +98,23 @@ export default function VeniScreen() {
   const wokeMinutes = orders.wokeAt ? orders.wokeAt.getHours() * 60 + orders.wokeAt.getMinutes() : null;
   const sleptMinutes = orders.sleptAt ? orders.sleptAt.getHours() * 60 + orders.sleptAt.getMinutes() : null;
 
-  const playForStatus = (status: OrderStatus) => play(status === 'full' ? 'win' : 'tap');
-
-  const handlePress = (kind: OrderKind) => {
-    if (kind === 'wake') {
-      play('tap');
-      setSheet('wake');
-      return;
-    }
-    // The full goal isn't a ceiling: only the cap stops more being logged.
-    if (orders.amounts[kind] >= maxAmountFor(kind, targetFor(targets, kind))) {
-      play('denied');
-      return;
-    }
-    if (kind === 'workout') {
-      play('tap');
-      setSheet('workout');
-      return;
-    }
-    playForStatus(orders.addOne(kind));
-  };
-
-  const handleLongPress = (kind: OrderKind) => {
-    if (orders.amounts[kind] <= 0) {
-      play('denied');
-      return;
-    }
-    play('stepDown');
-    orders.undoOne(kind);
-  };
-
-  // Small counts (glasses) go up one per tap; big ones (steps) are typed in.
-  const handleOwnPress = (order: CustomOrder, amount: number) => {
-    if (!isTapCounted(order)) {
-      play('tap');
-      setAmountOrder({ order, amount });
-      return;
-    }
-    if (amount >= order.full) {
-      play('denied');
-      return;
-    }
-    playForStatus(orders.addOneCustom(order.id));
-  };
-
-  const handleOwnLongPress = (order: CustomOrder, amount: number) => {
-    if (!isTapCounted(order)) {
-      setAmountOrder({ order, amount });
-      return;
-    }
-    if (amount <= 0) {
-      play('denied');
-      return;
-    }
-    play('stepDown');
-    orders.undoOneCustom(order.id);
-  };
+  const taps = useOrderTaps(orders, {
+    openSheet: setSheet,
+    openAmount: (order, amount) => setAmountOrder({ order, amount }),
+  });
+  const { playForStatus } = taps;
+  useLiveAwards(
+    arc != null,
+    targets,
+    today,
+    campaign.todayStatus,
+    campaign.todayStatus === 'open' ? run : run - 1,
+    isLoaded && campaign.isLoaded,
+  );
+  useDenariiToast(campaign.todayEarned, campaign.isLoaded, today, (message) => {
+    if (message.amount > 0) play('confirm');
+    setToast(message.text);
+  });
 
   const handleSickConfirm = () => {
     const problem = sickDay.call();
@@ -165,15 +127,7 @@ export default function VeniScreen() {
     setSickError(problem === 'cannotAfford' ? null : todayCopy.sickDay.failed);
   };
 
-  const rows = isLoaded
-    ? buildOrderRows(orders, {
-        onPress: handlePress,
-        onLongPress: handleLongPress,
-        onPressOwn: handleOwnPress,
-        onLongPressOwn: handleOwnLongPress,
-      })
-    : [];
-  const run = campaign.campaign;
+  const rows = isLoaded ? buildOrderRows(orders, taps) : [];
   const ordersNote = isDawn
     ? todayCopy.dawn.waiting
     : !isLoaded || totalCount === 0
@@ -228,26 +182,16 @@ export default function VeniScreen() {
           }
         />
 
-        {arc && campaign.isLoaded ? (
-          <View style={styles.chips}>
-            {isLudus ? (
-              run > 0 ? (
-                <StatChip icon="flame" label={todayCopy.run.chip(run)} emphasis="muted" />
-              ) : null
-            ) : (
-              <StatChip
-                icon="flame"
-                label={orders.isSickDay ? todayCopy.sickDay.chip : todayCopy.chips.campaign(run)}
-              />
-            )}
-            <StatChip
-              icon="coin"
-              label={todayCopy.chips.denarii(campaign.denarii)}
-              emphasis="currency"
-              accessibilityHint={todayCopy.chips.denariiHint}
-              onPress={() => router.push('/forum')}
-            />
-          </View>
+        {arc && isLoaded && campaign.isLoaded ? (
+          <TodayHero
+            orders={orders}
+            campaign={campaign}
+            isDawn={isDawn}
+            isFinished={header.isFinished}
+            plannedWakeMinutes={plannedWakeMinutes}
+            onOpenSummary={() => setSheet('summary')}
+            onOpenRun={() => setSheet('run')}
+          />
         ) : null}
 
         {arc && isLoaded ? (
@@ -381,6 +325,22 @@ export default function VeniScreen() {
       </Screen>
 
       <UserMenu visible={sheet === 'menu'} onClose={close} />
+      <RunPaySheet
+        visible={sheet === 'run'}
+        onClose={close}
+        nextReward={campaign.nextReward}
+        isLudus={isLudus}
+      />
+      {arc ? (
+        <DaySummarySheet
+          day={sheet === 'summary' ? today : null}
+          status={campaign.todayStatus}
+          isLudus={isLudus}
+          arcId={arc.id}
+          targets={targets}
+          onClose={close}
+        />
+      ) : null}
       <TaskSheets
         target={todoTarget}
         onClose={() => setTodoTarget(null)}
@@ -461,6 +421,7 @@ export default function VeniScreen() {
         }}
         onBack={orders.dismissStamp}
       />
+      <Toast message={toast} onHide={hideToast} />
     </>
   );
 }
@@ -477,7 +438,6 @@ const useStyles = createStyles((theme) => ({
     backgroundColor: theme.colors.accentTint,
   },
   pressed: { opacity: 0.8 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space.sm, marginTop: theme.space.md },
   notice: { marginTop: theme.space.lg },
   finished: { gap: theme.space.sm },
   noOrders: { gap: theme.space.sm },

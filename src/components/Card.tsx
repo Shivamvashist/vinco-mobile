@@ -25,6 +25,7 @@ export function Card({ children, variant = 'surface', bordered = false, style, .
 const useStyles = createStyles((theme) => ({
   base: {
     borderRadius: theme.radius.md,
+    borderCurve: 'continuous',
     paddingVertical: theme.layout.cardPadding,
     paddingHorizontal: theme.space.lg,
   },

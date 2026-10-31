@@ -1,7 +1,9 @@
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 
 import { createStyles, useFeedback, useReduceMotion, useTheme } from '@/theme';
+
+import { PressableScale } from '../PressableScale';
 
 import { Icon, type IconName } from '../Icon';
 import { Txt } from '../Txt';
@@ -40,7 +42,8 @@ export function QuickLogs({ logs }: QuickLogsProps) {
           layout={reduceMotion ? undefined : MOVE}
           style={log.isDone ? null : styles.pendingSlot}
         >
-          <Pressable
+          <PressableScale
+            scaleTo="button"
             accessibilityRole="button"
             accessibilityLabel={log.label}
             accessibilityHint={log.hint}
@@ -48,7 +51,8 @@ export function QuickLogs({ logs }: QuickLogsProps) {
               play('tap');
               log.onPress();
             }}
-            style={({ pressed }) => [log.isDone ? styles.done : styles.pending, pressed && styles.pressed]}
+            style={[log.isDone ? styles.done : styles.pending]}
+            pressedStyle={styles.pressed}
           >
             <Icon
               name={log.icon}
@@ -64,7 +68,7 @@ export function QuickLogs({ logs }: QuickLogsProps) {
                 {log.label}
               </Txt>
             )}
-          </Pressable>
+          </PressableScale>
         </Animated.View>
       ))}
     </View>
@@ -83,6 +87,7 @@ const useStyles = createStyles((theme) => ({
     minHeight: theme.layout.buttonHeightCompact,
     paddingHorizontal: theme.space.sm,
     borderRadius: theme.radius.md,
+    borderCurve: 'continuous',
     borderWidth: theme.layout.borderWidth,
     borderColor: theme.colors.accentBorder,
     backgroundColor: theme.colors.accentTint,

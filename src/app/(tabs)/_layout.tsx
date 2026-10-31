@@ -2,7 +2,9 @@ import { router, Tabs } from 'expo-router';
 
 import { TabBar } from '@/components/navigation/TabBar';
 import { tabsCopy } from '@/copy';
+import { useAuroraSchedule } from '@/hooks/useAuroraSchedule';
 import { useLossNotice } from '@/hooks/useLossNotice';
+import { useReminderSchedule } from '@/hooks/useReminderSchedule';
 import { useSealFinishedDays } from '@/hooks/useSealFinishedDays';
 import { IS_DEV_MODE_AVAILABLE } from '@/stores';
 import { useTheme } from '@/theme';
@@ -18,6 +20,10 @@ export default function TabsLayout() {
   useSealFinishedDays();
   // Then, once per break, the campaign-lost screen.
   useLossNotice();
+  // Keep Aurora's next ring set on the phone, and open the ring screen while it rings.
+  useAuroraSchedule();
+  // Keeps the day's reminders in step with the day, and follows tapped notifications.
+  useReminderSchedule();
 
   return (
     <Tabs

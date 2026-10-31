@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 
-import { clearJourney, db } from '@/db';
+import { clearJourney, db, getRunningFocus } from '@/db';
 import { deleteAllMedia } from '@/media';
+import { cancelFocusHeld } from '@/notifications';
 import {
   useDevStore,
   useGuardStore,
@@ -23,7 +24,10 @@ export type ResetScope = 'journey' | 'everything';
  */
 export function useResetJourney(): (scope: ResetScope) => void {
   return (scope) => {
+    // A running focus goes with the journey: its "Focus held" notice must not fire afterwards.
+    const running = getRunningFocus(db);
     clearJourney(db);
+    if (running) void cancelFocusHeld(running.id);
     deleteAllMedia();
     useOnboardingStore.getState().reset();
     useNoticesStore.getState().reset();

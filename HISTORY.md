@@ -4,17 +4,43 @@ The memory of this project. Any AI model or developer joining should read this, 
 
 ---
 
-## Snapshot (as of 14 Oct 2026)
+## Snapshot (as of 31 Oct 2026)
 
-**Version:** 1.1.0 in progress (Wave 3); 1.0.0 is the baseline up to 12 Oct. Every change is logged in [docs/releases/](docs/releases/README.md).
+**Version:** 1.1.0 in progress (Wave 3 and Wave 4); 1.0.0 is the baseline up to 12 Oct. Every change is logged in [docs/releases/](docs/releases/README.md).
 
-**Phase:** Early Access (tracker only, all on the phone, no backend). Closed-test build due **12 Oct 2026**, Early Access **2 Nov 2026**.
+**Phase:** Early Access (tracker only, all on the phone, no backend wired). The backend (`../vinco-backend`, 0.2.0) is built and tested but not deployed.
 
-**Done:** Steps 1 to 5 and 7 to 11, most of 12 and 13, and **Wave 2** ([docs/docs-v1.0.0/WAVE-2.md](docs/docs-v1.0.0/WAVE-2.md), archived): the Ludus (open training), own orders and to-dos switched on with one "How often?" sheet, the Forum and the Aerarium on the local ledger, a fourth tab (Castra, Settings), Vici rebuilt (record, treasury, decorations, past arcs, what next), quieter tab sound with the seal and stamp always on, layouts that fit every phone, the guard levels and Aurora in preview with native bridges, and the backend plan ([docs/BACKEND-PLAN.md](docs/BACKEND-PLAN.md)).
+**Wave 4 (31 Oct, [docs/TASKS-2026-10-31.md](docs/TASKS-2026-10-31.md)):**
 
-**Wave 3 (13 to 14 Oct, [docs/TASKS-2026-10-13.md](docs/TASKS-2026-10-13.md)):** onboarding starts from your own orders (free training) with a ready-made campaign as the second choice; a clean Today (user menu, quick logs for selfie, weight and calories, done orders sink, a run nudge in free training); Settings, permissions and the oath (twice a day) in the user menu, three tabs; to-dos carry over by themselves; Vidi's weight chart gains calories, and every calendar day opens a summary; sizes follow the phone's width; sounds off by default.
+- **Development build:** `expo-dev-client`, EAS `development` profile.
+- **Aurora rings natively:** local Kotlin module `modules/aurora`, ring screen `/alarm` with the march mission.
+- **Local reminders** ([docs/NOTIFICATIONS.md](docs/NOTIFICATIONS.md)).
+- **Palettes:** chosen per scheme on `/appearance`.
+- **Live denarii and run pay** (the Stipendium card on Today).
+- **Order rows:** minus and plus, or a check that toggles.
+- **Order charts** in Vidi, each with an on/off chip.
+- **Day card designs:** seven.
+- **Dev tools:** "Add 100 denarii".
 
-**Next:** try Wave 3 on the phone; local reminders with `expo-notifications`; the native parts (development build, Aurora then the Vigil: [docs/GUARDIANS.md](docs/GUARDIANS.md)), local nudges with the three-a-day cap and step one (Step 12), hardening (Step 14). Step 6 (first Play build) is blocked on the Play account. Before any backend: UUIDs, `updated_at`, `deleted_at` and an outbox on the synced tables (BACKEND-PLAN section 8).
+**Wave 3 (13 to 17 Oct, [docs/TASKS-2026-10-13.md](docs/TASKS-2026-10-13.md)):**
+
+- **Onboarding:** starts from your own orders (free training).
+- **Today:** a clean screen with the user menu and quick logs.
+- **To-dos:** carry over by themselves.
+- **Calories and day summary.**
+- **Sizing:** sizes follow the screen.
+- **Orders:** editing, and done-or-not orders.
+
+**Next:**
+
+1. The developer installs the development build and tests Aurora and reminders on the phone (steps in GUARDIANS.md, "Testing Aurora").
+2. The Vigil module (same dev build).
+3. Hardening (Step 14).
+4. FCM credentials for push.
+5. Wiring the app to the backend (backend Phase 4) when the developer says so.
+
+- **Blocked:** Step 6 (first Play build) waits on the Play account.
+- **Before any sync:** UUIDs, `updated_at`, `deleted_at` and an outbox on the synced tables (BACKEND-PLAN section 8).
 
 **What runs today:** first launch opens onboarding (Rubicon; **your daily orders**: suggested water and workout plus your own, then tone, oath, first selfie; or "Choose a ready-made campaign": 30, 60 or 90 days, Vinco's four tuned, then the same steps). Three tabs: **Veni** (user button and menu, chips, quick logs, dawn card and wake sheet, orders with done ones sinking, a water suggestion when there are none, seal card and VINCO stamp on a conquered day, the to-do), **Vidi** (stats, calendar with a day summary on tap, Commentarii with weight and calories), **Vici** (the arc or free training, rank, record, treasury, decorations, every selfie, past arcs). Stack screens: `/settings` (Castra), `/permissions`, `/forum`, `/plan`, `/guard`, `/aurora`, `/selfie`, `/timelapse`, `/day-card`, `/campaign-lost`. A broken campaign opens the campaign-lost screen once; the Ludus never does.
 
@@ -66,6 +92,13 @@ The memory of this project. Any AI model or developer joining should read this, 
 | 17 Oct | Own orders: unit and number optional (done or not); every order editable; a lower own goal starts tomorrow (successor row)      | Lowering can never rescue the day in progress, same rule as standing down                   |
 | 17 Oct | Vinco's full goals editable from today; minimums stay fixed                                                                     | Holding a day never gets easier, so no need to wait a day                                   |
 | 17 Oct | Selfies shrunk to 1080 px on capture                                                                                            | Memory on retake, and a year of selfies in megabytes, not gigabytes                         |
+| 31 Oct | Denarii paid live when today holds, taken back if it stops; the seal replaces the live rows (`LIVE_LEDGER_REASONS`)             | Developer's request; the seal can never pay twice, an undo can never keep the pay           |
+| 31 Oct | Run pay (Stipendium) replaces the weekly 25: days 3, 5, 7 of each week (10, 15, 25), milestones 14, 30, 60, 100                 | Developer's request for a streak manager; a reward is never more than three days away       |
+| 31 Oct | Free training earns run pay too (it had no weekly bonus); Truces stay campaign only                                             | The streak is the core loop in both plans; Truces would contradict "no fall"                |
+| 31 Oct | Truces from the run are granted only at the midnight seal, never live                                                           | A live Truce taken back after being spent would leave a negative reserve                    |
+| 31 Oct | Palettes chosen per scheme (dark and light picks), fonts and sounds stay the theme's                                            | Developer's request; one theme, many looks; contrast tests run on every palette             |
+| 31 Oct | Aurora asks for `SCHEDULE_EXACT_ALARM` (not `USE_EXACT_ALARM`), with an inexact fallback                                        | Play keeps `USE_EXACT_ALARM` for alarm-clock apps; Vinco is a tracker with an alarm         |
+| 31 Oct | Wave 4 joins 1.1.0 (nothing has shipped)                                                                                        | Release rule: one version in progress at a time                                             |
 | 10 Oct | Native features go through bridge contracts (`guardBridge`, `auroraBridge`) with stubs                                          | Runs in Expo Go now; the Kotlin modules replace one line each later                         |
 
 ### Questions for the developer (parked while working)
@@ -103,13 +136,74 @@ Answer when convenient; work continues with the safe default shown.
 - **File size:** every source file is under the 500-line ceiling (largest: `veni.tsx`, 498). Leave as is for now (developer, 9 Oct). Split `veni.tsx` before it grows further. `src/__tests__/routes.test.tsx` (974) can be split by area when convenient.
 - Decorations are computed for the current arc only and pay no denarii yet (they'd need ledger awards; easy once the set is final).
 - The Forum's app icons are owned but can't switch until a development build adds alternate icons (GUARDIANS.md, order of work 5).
-- Notifications, the error boundary and the accessibility pass are still open (Steps 12 and 14).
+- The error boundary and the accessibility pass are still open (Step 14). Local reminders are built (31 Oct).
+- Wave 4 helpers noticed:
+  - Classic day card still uses phone-scaled sizes; check Numeral's letter widths on a phone for long numerals (LXXXVIII).
+  - `useReminderSchedule` duplicates Today's live queries in the tabs layout (cheap; a shared context later).
+  - Reminders plan future days with today's order count.
+  - `reminder_opened` usage event is a TODO until the app is wired.
+  - `AURORA_RULES.firstTryDenarii` duplicates `AURORA_FIRST_TRY_DENARII`.
+  - The ring screen records no sleep time.
+  - The ringtone starts at full volume (a ramp would be kinder).
+  - Sky and post missions are not built.
+  - Play Console needs the foreground-service and full-screen-intent declarations.
+  - `.expo/types/router.d.ts` is regenerated by `expo start`.
+- Focus: the run tile has no "focus minutes today" footnote yet; focus components aren't in the theme lab; a focus ending while another screen is open shows its completion when Today is next shown (by design).
+- A Forum purchase made with today's live denarii, followed by an undo, can leave the purse below zero until the next held day. Rare and self-inflicted; left as is.
 - `npm audit` reports 30 advisories in the dependency tree (mostly dev tooling). Review before the production build.
 - `README.md` is now a short project readme.
 
 ---
 
 ## Milestone log
+
+### 31 Oct 2026: Today hero, spring motion, Focus (still 1.1.0)
+
+- **Spec:** [docs/TODAY-AND-FOCUS.md](docs/TODAY-AND-FOCUS.md). The developer's reference shot was taken as a mood (hero number, glows, CTA row), not copied.
+- **Today:**
+  - `components/today/hero/`: `DiesCard`, `DayPath`, `Glow`, `DayTiles`, `HeroTile` and `TodayHero`, with `RunPaySheet`.
+  - The chips and the StreakCard were removed.
+  - `useTodayOrders` exposes `heldAt` for the day path's notches.
+- **Motion:**
+  - `motion.spring` tokens, `themeSpring`.
+  - `PressableScale` (it uses `.set()`/`.get()` on shared values: the React Compiler lint refuses `.value =` inside handlers).
+  - `RollingNumber`.
+  - `radius.xl`, `layout.heroCardHeight` and `tileHeight`.
+- **Focus** (helper agent):
+  - `features/focus`, `db/focus.ts` (migration 0011), `hooks/useFocus.ts`.
+  - `components/focus/` (FocusLauncher, FocusMorph, FocusSetup, DurationRuler, GuardChoice, FocusRunning, CountdownRing, RollingClock, HoldToConfirm, FocusComplete).
+  - `notifications/focus.ts` (id prefix `vinco.focus.`, never cancelled by reminders).
+  - Guard bridge `startFocus` and `endFocus` (stubs).
+  - Reset journey cancels a running focus's notice.
+- 67 suites, 781 tests.
+
+### 31 Oct 2026: Wave 4 (still 1.1.0)
+
+- **Live denarii:**
+  - `db/awards.ts`: `syncTodayAwards` and `replaceDayAwards`.
+  - `hooks/useLiveAwards.ts` runs on any change to today's standing; `useDenariiToast` says when the pay changes.
+  - Sealing replaces the live rows.
+  - After an arc's last day nothing is paid live (it would never be sealed).
+- **Run pay:** `features/campaign/streak.ts` (`STREAK`, `getStreakAwards`, `getNextStreakReward`); `StreakCard` on Today. The Aerarium lists the steps.
+- **Order rows:** `TaskRow` has `controls`, either a stepper (minus and plus) or a check (the circle toggles). Screen readers get adjustable with increment and decrement, or a checkbox. Today's tap logic moved to `hooks/useOrderTaps.ts`.
+- **Order charts:** `hooks/useOrderCharts.ts` and `components/progress/OrderCharts.tsx`, plus the "Orders" log kind. Hidden charts are saved in `hiddenOrderCharts`.
+- **Palettes:**
+  - `theme/palettes/registry.ts` holds seven palettes; `buildTheme` takes a palette.
+  - Preferences gain `darkPaletteId` and `lightPaletteId`; `setPalette` in the theme controls.
+  - `SchemeOverride` uses the user's dark palette.
+  - `/appearance` with `PaletteCard` live previews. AppearanceSheet removed.
+- **Day card designs** (helper agent): `components/dayCard/designs/`, `features/dayCard/`, `stores/dayCardStore.ts`. Stamp and Memento are Forum items.
+- **Reminders** (helper agent):
+  - `features/notifications/` (pure planner) and `src/notifications/` (expo-notifications calls only).
+  - `useReminderSchedule` mounted in the tabs layout; `remindersStore`; `RemindersSheet`; the permission row is live.
+  - The push token is kept locally.
+- **Aurora native** (helper agent):
+  - `modules/aurora` (Kotlin: AlarmManager `setAlarmClock`, a foreground ring service, a full-screen notification, a reboot receiver, lock-screen flags only while ringing, a 10-minute safety stop).
+  - `/alarm` ring screen: march via Pedometer, with a tap fallback; "I'm sick"; alarm pass.
+  - `useAuroraSchedule` runs in the tabs layout.
+  - `:aurora:compileDebugKotlin` builds locally.
+- **Dev:** "Add 100 denarii" (`grantDevDenarii`, one `dev_grant` row per day that adds up).
+- **Tests:** new streak, awards, today, dayCard, notifications and aurora suites; existing expectations updated for run pay. Jest `testTimeout` raised to 15 s, because route suites boot the whole app and timed out under parallel load.
 
 ### 17 Oct 2026: bug fixes and editing orders (still 1.1.0)
 

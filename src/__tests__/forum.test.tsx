@@ -22,7 +22,7 @@ describe('Forum', () => {
     startArc();
     earn(120);
     const app = renderRouter(APP_DIR, { initialUrl: '/veni' });
-    fireEvent.press(await screen.findByLabelText(todayCopy.chips.denarii(120)));
+    fireEvent.press(await screen.findByLabelText(todayCopy.tiles.purse.label(120, 0)));
     expect(await screen.findByText(forumCopy.balance(120))).toBeTruthy();
     expect(app.getPathname()).toBe('/forum');
   });

@@ -19,6 +19,7 @@ export {
   toOrderTargets,
   type NextArc,
 } from './arcs';
+export { awardAuroraFirstTry, spendAlarmPass } from './aurora';
 export { db } from './client';
 export { type AppDatabase, nowIso } from './database';
 export {
@@ -65,6 +66,7 @@ export type {
   CustomOrderLogRow,
   CustomOrderRow,
   DayLogRow,
+  FocusSessionRow,
   LedgerRow,
   ItemUseRow,
   OrderLogRow,
@@ -112,4 +114,16 @@ export {
   toHoldings,
   useItem,
 } from './forum';
+export {
+  abandonFocus,
+  FocusError,
+  getRunningFocus,
+  type NewFocus,
+  selectFocusOn,
+  selectLatestFocus,
+  selectRunningFocus,
+  settleFocus,
+  startFocus,
+} from './focus';
 export { useDatabaseMigrations } from './useDatabaseMigrations';
+export { grantDevDenarii, replaceDayAwards, syncTodayAwards } from './awards';

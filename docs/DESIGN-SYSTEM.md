@@ -117,6 +117,25 @@ Tests (`src/theme/__tests__/themes.test.ts`) check that every scheme keeps reada
 
 ---
 
+### Palettes (31 Oct)
+
+A **theme** is fonts and sounds (Vinco). A **palette** is one full set of colour roles for dark or light (`src/theme/palettes/registry.ts`). The user picks a mode (dark, light, match phone), a dark palette and a light palette on the Appearance screen (`/appearance`, from Settings); "match phone" switches between the two picks. Forced-dark screens (camera, alarm) use the user's dark palette through `SchemeOverride`.
+
+| Palette | Scheme | Plain label     | Ground and accent                                   |
+| ------- | ------ | --------------- | --------------------------------------------------- |
+| Basalt  | dark   | Dark stone      | Warm basalt, laurel gold (default)                  |
+| Nox     | dark   | True black      | Pure black for OLED, laurel gold                    |
+| Purpura | dark   | Imperial purple | Deep violet, gold; danger leans rose                |
+| Aes     | dark   | Bronze green    | Dark slate, verdigris accent (the one without gold) |
+| Marble  | light  | Light stone     | Marble, deep gold (default)                         |
+| Papyrus | light  | Parchment       | Warm paper, sepia ink, laurel-leaf green            |
+| Calx    | light  | Limestone       | Cool limestone, near-black text, imperial purple    |
+
+- Every palette passes the same contrast pairs (`theme/__tests__/themes.test.ts`): text 7:1 on background, surface and sunk; muted text, accent, currency and danger 4.5:1; on-accent 4.5:1.
+- Saved as `darkPaletteId` and `lightPaletteId` in preferences; an unknown id, or one of the wrong scheme, falls back to the default on restore.
+- The day card keeps its own fixed styles (`palettes/dayCards.ts`), so a shared card looks the same everywhere.
+- **Adding one:** create `palettes/<id>.ts` (a `ColorScheme` with every role), add it to `PALETTES` with its scheme, add its plain label to `settingsCopy.palettes`. The tests cover it at once.
+
 ## 4. Typography
 
 Display face: **Marcellus**, for big moments only. Body face: **Figtree** (400, 500, 600, 700). Use through `<Txt variant="...">`.
@@ -152,6 +171,23 @@ Sizes are for a 412 dp wide phone; narrower phones get them a little smaller (se
 - **Scaling to the phone** (`tokens/scale.ts`, 13 Oct): all of the above are design sizes for a 412 dp wide phone. The theme multiplies space and layout by `sizeScale = clamp(width / 412, 0.84, 1)` and type by a gentler share of it, so a 360 dp phone gets the same layout a little smaller. `minTouchTarget`, border widths and stamp borders never shrink. Read `theme.sizeScale` for a one-off size; never use raw pixel sizes.
 - **Animating:** `withTiming(value, themeTiming('base'))` or `themeEasing('standard')` from `@/theme`. Check `useReduceMotion()` first; when true, set the final value directly.
 - **motion**: durations `instant 100, fast 200, base 350, slow 500, slower 800` ms; easing `standard (0.2, 0.8, 0.2, 1)`; `stagger 60` ms. Quick and quiet everywhere; the stamp is the one big moment. Respect the phone's reduce-motion setting.
+
+### Day card designs (31 Oct)
+
+The shareable "Day sealed" card has a **design** (the layout) and a **colour style** (`theme/palettes/dayCards.ts`), picked separately on `/day-card` and remembered in `useDayCardStore`. Every design draws only from the style's `background`, `foreground`, `accent`, `onAccent` and `frame`, so each works in every style. The card is a fixed 270 by 480 picture (captured with view-shot), so designs use exact sizes (`CardTxt` in `components/dayCard/designs/parts.tsx`) and ignore the phone's font scale and width scaling: a shared card looks the same from every phone. Text budget: about six words besides numbers and the wordmark; only Classic shows order rows, the others draw orders as marks.
+
+| Design (picker name)   | Idea                                                                       | Orders as        | Source |
+| ---------------------- | -------------------------------------------------------------------------- | ---------------- | ------ |
+| `classic` (Classic)    | Laurel, "DAY XII OF LX", big number, order rows, campaign and rank         | Rows with ticks  | Free   |
+| `numeral` (Numeral)    | The day carved as one huge gold Roman numeral, tens over units when larger | Tally strokes    | Free   |
+| `laurel` (Laurel)      | A full victor's wreath ringing the day number, campaign below              | Berries          | Free   |
+| `sol` (Sunrise)        | The sun on the horizon, the day number under its reflection                | Rays (long=done) | Free   |
+| `inscription` (Tablet) | A "tabula ansata" plaque cut with "DIES XII", "VENI · VIDI · VICI" above   | Interpuncts      | Free   |
+| `stamp` (Stamp)        | The seal slammed across a ghosted number, "VICI." (I conquered) beneath    | None             | Forum  |
+| `memento` (Memento)    | One line worth keeping, by tone and result, and almost nothing else        | None             | Forum  |
+
+- **Held is quieter:** Stamp slams (angled, double-ruled "VINCO") only on a conquered day; a held day gets a straight single-ruled "HELD" seal and "STETI." (I stood firm). An open day shows as held.
+- **Adding a design:** add the id to `DAY_CARD_DESIGN_IDS` (`features/dayCard`), a file in `components/dayCard/designs/`, its entry in `DayCard`'s map, a sketch in `DesignThumb`, and a name in `dayCardCopy.designs`. A Forum design also needs a Forum item, `DESIGN_FORUM_ITEMS`, and copy in `forumCopy.items`.
 
 ---
 
@@ -194,4 +230,4 @@ Sounds are generated from the prototype's own recipes by `scripts/generate-sound
 4. **Theme**: add `src/theme/themes/<theme-id>.ts` exporting a `ThemeDefinition`, then add it to `THEMES` in `themes/registry.ts`.
 5. **Check**: `npm run check` (contrast and completeness tests run on every registered theme), then review it in the theme lab in both schemes.
 
-Switching at runtime: `useThemeControls().setThemeId('<id>')`, `setColorMode('light' | 'dark' | 'system')`, `setSoundEnabled`, `setHapticsEnabled`. Changing the default for everyone: `DEFAULT_THEME_PREFERENCES` in `themes/registry.ts`. `ThemeProvider` is controlled: the root layout passes `preferences` from the persisted Zustand store (`src/stores/preferencesStore.ts`) and saves changes through `onPreferencesChange`. Saved values are validated on restore, so a corrupted or outdated save falls back to defaults.
+Switching at runtime: `useThemeControls().setThemeId('<id>')`, `setColorMode('light' | 'dark' | 'system')`, `setPalette(scheme, paletteId)`, `setSoundEnabled`, `setHapticsEnabled`. Changing the default for everyone: `DEFAULT_THEME_PREFERENCES` in `themes/registry.ts`. `ThemeProvider` is controlled: the root layout passes `preferences` from the persisted Zustand store (`src/stores/preferencesStore.ts`) and saves changes through `onPreferencesChange`. Saved values are validated on restore, so a corrupted or outdated save falls back to defaults.

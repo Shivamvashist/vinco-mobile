@@ -1,47 +1,50 @@
-import { forwardRef } from 'react';
+import { type ComponentType, forwardRef } from 'react';
 import { View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 
 import { dayCardCopy } from '@/copy';
+import { type DayCardDesignId, DEFAULT_DAY_CARD_DESIGN } from '@/features/dayCard';
 import { toRoman } from '@/lib/toRoman';
 import { createStyles, type DayCardStyle } from '@/theme';
 
-import { Laurel } from '../Laurel';
-import { Txt } from '../Txt';
+import { ClassicDesign } from './designs/ClassicDesign';
+import { InscriptionDesign } from './designs/InscriptionDesign';
+import { LaurelDesign } from './designs/LaurelDesign';
+import { MementoDesign } from './designs/MementoDesign';
+import { NumeralDesign } from './designs/NumeralDesign';
+import { SolDesign } from './designs/SolDesign';
+import { StampDesign } from './designs/StampDesign';
+import { CARD_HEIGHT, CARD_WIDTH, type DayCardContent, type DayCardDesignProps } from './designs/types';
 
-export type DayCardRow = { label: string; value: string; isDone: boolean };
+export type { DayCardRow } from './designs/types';
 
-export type DayCardProps = {
-  dayNumber: number;
-  lengthDays: number;
-  rows: readonly DayCardRow[];
-  /** The campaign, or in the Ludus the days trained. */
-  campaign: number;
-  /** The Ludus has no length: "LUDUS · DAY III" and days trained instead. */
-  isLudus?: boolean;
-  rankName: string | null;
+export type DayCardProps = DayCardContent & {
   cardStyle: DayCardStyle;
+  /** The layout. Defaults to the classic card with order rows. */
+  design?: DayCardDesignId;
 };
 
-const CARD_WIDTH = 270;
-const CARD_HEIGHT = 480;
-const TICK_SIZE = 18;
-/** Above this many orders, rows tighten so up to eight still fit the fixed card. */
-const COMPACT_AFTER_ROWS = 5;
+const DESIGNS: Record<DayCardDesignId, ComponentType<DayCardDesignProps>> = {
+  classic: ClassicDesign,
+  numeral: NumeralDesign,
+  laurel: LaurelDesign,
+  sol: SolDesign,
+  inscription: InscriptionDesign,
+  stamp: StampDesign,
+  memento: MementoDesign,
+};
 
 /**
- * The shareable day card: laurel, "DAY XII OF LX", the day number, today's orders, campaign and rank.
- * Uses its own fixed palette so a shared card looks the same on every phone. The ref is for capture.
+ * The shareable day card in one of its designs and colour styles. Fixed size and its own palette,
+ * so a shared card looks the same on every phone. The ref is for capture.
  */
 export const DayCard = forwardRef<View, DayCardProps>(function DayCard(
-  { dayNumber, lengthDays, rows, campaign, isLudus = false, rankName, cardStyle },
+  { design = DEFAULT_DAY_CARD_DESIGN, ...content },
   ref,
 ) {
   const styles = useStyles();
-  const ink = { color: cardStyle.foreground };
+  const { cardStyle, dayNumber, lengthDays, isLudus = false, rows } = content;
+  const Design = DESIGNS[design] ?? ClassicDesign;
   const heldCount = rows.filter((row) => row.isDone).length;
-  const isCompact = rows.length > COMPACT_AFTER_ROWS;
-  const rowVariant = isCompact ? 'caption' : 'body';
 
   return (
     <View
@@ -60,62 +63,7 @@ export const DayCard = forwardRef<View, DayCardProps>(function DayCard(
         rows.length,
       )}
     >
-      <Laurel width={96} strokeColor={cardStyle.accent} strokeWidth={1.6} />
-      <Txt variant="eyebrow" style={[styles.eyebrow, ink]}>
-        {isLudus
-          ? dayCardCopy.ludusEyebrow(toRoman(dayNumber))
-          : dayCardCopy.eyebrow(toRoman(dayNumber), toRoman(lengthDays))}
-      </Txt>
-      <Txt variant="numeral" style={ink}>
-        {dayNumber}
-      </Txt>
-
-      <View style={[styles.rows, isCompact && styles.rowsCompact]}>
-        {rows.map((row, index) => (
-          <View key={`${index}-${row.label}`} style={styles.row}>
-            <View
-              style={[
-                styles.tick,
-                row.isDone
-                  ? { backgroundColor: cardStyle.accent }
-                  : { borderColor: cardStyle.accent, borderWidth: 1.5 },
-              ]}
-            >
-              {row.isDone ? (
-                <Svg width={11} height={11} viewBox="0 0 24 24" fill="none">
-                  <Path
-                    d="M5 12.5l4.5 4.5L19 7.5"
-                    stroke={cardStyle.onAccent}
-                    strokeWidth={3.4}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </Svg>
-              ) : null}
-            </View>
-            <Txt variant={rowVariant} numberOfLines={1} style={[styles.rowLabel, ink]}>
-              {row.label}
-            </Txt>
-            <Txt variant={rowVariant} numberOfLines={1} style={[ink, styles.faded]}>
-              {row.value}
-            </Txt>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.footer}>
-        <Txt variant="micro" style={[ink, styles.faded]}>
-          {isLudus ? dayCardCopy.trained(campaign) : dayCardCopy.campaign(campaign)}
-        </Txt>
-        {rankName ? (
-          <Txt variant="micro" style={[ink, styles.faded]}>
-            {dayCardCopy.rank(rankName)}
-          </Txt>
-        ) : null}
-      </View>
-      <Txt variant="headingSmall" style={[styles.wordmark, { color: cardStyle.accent }]}>
-        {dayCardCopy.wordmark}
-      </Txt>
+      <Design {...content} />
     </View>
   );
 });
@@ -126,24 +74,7 @@ const useStyles = createStyles((theme) => ({
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
     alignSelf: 'center',
-    alignItems: 'center',
-    paddingVertical: theme.space.xxl + theme.space.xxs,
-    paddingHorizontal: theme.space.xl + theme.space.xxs,
+    overflow: 'hidden',
     borderRadius: theme.radius.lg - theme.space.xxs,
   },
-  eyebrow: { marginTop: theme.space.md, letterSpacing: 2.4 },
-  rows: { alignSelf: 'stretch', marginTop: theme.space.lg, gap: theme.space.sm },
-  rowsCompact: { marginTop: theme.space.md, gap: theme.space.xs },
-  row: { flexDirection: 'row', alignItems: 'center', gap: theme.space.sm },
-  tick: {
-    width: TICK_SIZE,
-    height: TICK_SIZE,
-    borderRadius: theme.radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rowLabel: { flex: 1 },
-  faded: { opacity: 0.75 },
-  footer: { marginTop: 'auto', alignSelf: 'stretch', flexDirection: 'row', justifyContent: 'space-between' },
-  wordmark: { marginTop: theme.space.md, letterSpacing: 5 },
 }));

@@ -21,7 +21,27 @@ export {
   type DecorationInput,
   getDecorations,
 } from './decorations';
-export { DENARII, getDayAwards, type LedgerAward, type LedgerReason } from './denarii';
+export {
+  AURORA_FIRST_TRY_DENARII,
+  DENARII,
+  DEV_GRANT_DENARII,
+  FOCUS_REASONS,
+  type FocusReason,
+  getDayAwards,
+  type LedgerAward,
+  type LedgerReason,
+  LIVE_LEDGER_REASONS,
+  type StreakReason,
+  sumAwards,
+} from './denarii';
+export {
+  dayOfStreakWeek,
+  getNextStreakReward,
+  getStreakAwards,
+  type NextStreakReward,
+  STREAK,
+  type StreakAward,
+} from './streak';
 export { CAESAR, CAESAR_ARC_LENGTH, getRankStatus, type Rank, RANKS, type RankStatus } from './ranks';
 export {
   earnsTruce,

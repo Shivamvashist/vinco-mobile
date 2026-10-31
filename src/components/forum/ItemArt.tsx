@@ -1,11 +1,15 @@
 import { View } from 'react-native';
 
+import { type DayCardDesignId, DESIGN_FORUM_ITEMS } from '@/features/dayCard';
 import type { ForumItemId } from '@/features/forum';
-import { createStyles, DAY_CARD_STYLES } from '@/theme';
+import { createStyles, DAY_CARD_STYLES, type DayCardStyle } from '@/theme';
 
+import { DesignThumb } from '../dayCard/designs/DesignThumb';
 import { Icon, type IconName } from '../Icon';
 import { Txt } from '../Txt';
 
+/** A card sketch about as tall as the tile (the card is 9 by 16). */
+const DESIGN_THUMB_WIDTH = 23;
 const ICONS: Partial<Record<ForumItemId, IconName>> = { truce: 'shield', venia: 'bell' };
 /** Day card items preview the card's own colours. */
 const CARD_STYLE_IDS: Partial<Record<ForumItemId, string>> = { cardAurum: 'aurum', cardNox: 'nox' };
@@ -15,11 +19,28 @@ const ICON_TILES: Partial<Record<ForumItemId, 'laurel' | 'marble'>> = {
   iconMarble: 'marble',
 };
 
+/** Day card design items preview a sketch of the design. */
+const DESIGN_IDS = Object.fromEntries(
+  Object.entries(DESIGN_FORUM_ITEMS).map(([designId, itemId]) => [itemId, designId]),
+) as Partial<Record<ForumItemId, DayCardDesignId>>;
+
 export type ItemArtProps = { itemId: ForumItemId };
 
-/** The small picture on a Forum item: an icon, a day card swatch or an app icon tile. Decorative. */
+/** The small picture on a Forum item: an icon, a day card swatch or design, or an app icon tile. Decorative. */
 export function ItemArt({ itemId }: ItemArtProps) {
   const styles = useStyles();
+  const designId = DESIGN_IDS[itemId];
+  if (designId) {
+    return (
+      <View style={styles.tile}>
+        <DesignThumb
+          designId={designId}
+          cardStyle={DAY_CARD_STYLES[0] as DayCardStyle}
+          width={DESIGN_THUMB_WIDTH}
+        />
+      </View>
+    );
+  }
   const cardStyle = DAY_CARD_STYLES.find((style) => style.id === CARD_STYLE_IDS[itemId]);
   if (cardStyle) {
     return (

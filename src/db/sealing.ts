@@ -17,12 +17,13 @@ import { addDays, type DayKey, daysBetween, eachDay } from '@/lib/dates';
 import { type AppDatabase, nowIso } from './database';
 import { getDayStanding } from './dayStanding';
 import { toOrderAmounts } from './orderLogs';
+import { replaceDayAwards } from './awards';
 import { type DayLogRow, dayLogs, ledger, type OrderLogRow, orderLogs } from './schema';
 import { grantTruce, refundTruce } from './truces';
 
 /**
  * The arc to seal. Without an id, only Vinco's four orders count (own orders belong to an arc).
- * A Ludus (no streak) earns day denarii but no campaign-week bonus or Truces.
+ * Free training (the ludus kind) earns day and run denarii, but never Truces.
  */
 type ArcRange = { id?: number; kind?: ArcKind; startDay: DayKey; lengthDays: number };
 
@@ -32,7 +33,8 @@ type ArcRange = { id?: number; kind?: ArcKind; startDay: DayKey; lengthDays: num
  * back if the day was held anyway. Each day's result (own orders included) is stored, so later
  * changes to orders never rewrite it. A missed day stays missed: Truces are called by the user
  * (callTruce). Awards denarii once per day and reason, and a Truce for every week of
- * campaign while the reserve has room. Safe to run any number of times.
+ * campaign while the reserve has room. Today's live pay (syncTodayAwards) is replaced by the final
+ * pay, never added to it. Safe to run any number of times.
  */
 export function sealFinishedDays(
   db: AppDatabase,
@@ -78,9 +80,8 @@ export function sealFinishedDays(
       const result = getDayStanding(tx, arc.id ?? null, day, targets);
       const hasSickDayTruce = log?.truceUsed === true;
       const recordResult = applyTruce(result, hasSickDayTruce);
-      // The Ludus keeps no campaign, so no weekly bonus or Truce is ever earned there.
-      const campaignAfter =
-        arc.kind === 'ludus' ? 0 : getCurrentCampaign(records, day, keepsCampaign(recordResult));
+      // The run pays in a campaign and in free training alike; Truces are campaign only.
+      const streak = getCurrentCampaign(records, day, keepsCampaign(recordResult));
       records.push({ day, result: recordResult });
 
       tx.insert(dayLogs)
@@ -88,13 +89,9 @@ export function sealFinishedDays(
         .onConflictDoUpdate({ target: dayLogs.day, set: { sealedAt, result } })
         .run();
       if (hasSickDayTruce && result !== 'missed') refundTruce(tx, day, now);
-      for (const award of getDayAwards(day, recordResult, campaignAfter)) {
-        tx.insert(ledger)
-          .values({ ...award, createdAt: sealedAt })
-          .onConflictDoNothing()
-          .run();
-      }
-      if (keepsCampaign(recordResult) && earnsTruce(campaignAfter)) {
+      // The final pay replaces what was paid live during the day, so nothing is paid twice.
+      replaceDayAwards(tx, day, getDayAwards(day, recordResult, streak), now);
+      if (arc.kind !== 'ludus' && keepsCampaign(recordResult) && earnsTruce(streak)) {
         grantTruce(tx, day, 'campaign_week', now);
       }
     }

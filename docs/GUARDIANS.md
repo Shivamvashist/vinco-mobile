@@ -65,6 +65,47 @@ All three need a **development build** (they can't run in Expo Go). Set up once:
 - **Missions:** sky (camera plus a brightness and colour check on the phone), post (barcode scanning with `expo-camera`), march (step counter via `expo-sensors` Pedometer).
 - `AuroraBridge` (`src/features/aurora/bridge.ts`) is the contract: `schedule`, `cancel`, `canScheduleExact`, `openExactAlarmSettings`.
 
+### Aurora as built (31 Oct)
+
+- **Native module:** `modules/aurora` (Kotlin), behind `auroraBridge` (the stub stays for Expo Go and Jest).
+- **Permission:** `SCHEDULE_EXACT_ALARM`, with an inexact fallback if refused.
+- **The ring:** a foreground service loops the alarm sound on the alarm stream, and a full-screen notification on the `aurora` channel opens `vinco://alarm`. There is no snooze. It stops itself after 10 minutes.
+- **The phone keeps the rule:** the repeat rule lives on the phone (SharedPreferences), so the next ring is set after a ring, a reboot, an update or a clock change, without opening the app.
+- **Ring screen `/alarm`:**
+  - **March:** 30 steps, or 30 taps without a step counter.
+  - **"I'm sick":** the sick-day Truce; if it can't be paid, the alarm keeps ringing.
+  - **"Use an alarm pass".**
+  - **First try:** logs wake-up and pays 2 denarii.
+- **Not built yet:** "See the sky" and "Reach the post" are marked as coming; they ring with the march until built.
+
+## Focus ("Acies") and the guard (31 Oct)
+
+A focus is a timed stretch with a guard on the phone (spec: [TODAY-AND-FOCUS.md](TODAY-AND-FOCUS.md) section 4). The timer, the session record and the reward work now; the blocking waits for the Vigil module.
+
+| Guard                          | What the phone does during the focus             | Rate (denarii a minute) |
+| ------------------------------ | ------------------------------------------------ | ----------------------- |
+| "Custos" (Limit apps)          | Marked apps allowed for 5 minutes in all         | 0.2                     |
+| "Imperium" (Block apps)        | Marked apps blocked                              | 0.3                     |
+| "Silentium" (Block everything) | Everything blocked but calls, messages and Vinco | 0.4                     |
+
+- **Bridge calls** (`GuardBridge`, `src/features/guard/bridge.ts`):
+  - `startFocus({ mode, endsAt, allowanceMinutes })`: called when a focus begins. `mode` is the guard; `allowanceMinutes` is 5 for Custos and 0 otherwise. The module should guard until `endsAt` on its own, even if Vinco is killed.
+  - `endFocus()`: called when the focus completes or is given up. Must be safe to call when no focus is on.
+  - The stub does nothing; errors from the module are logged in dev and never stop the timer or the reward.
+- **Until the module ships** (`guardBridge.isSupported` false), the setup screen says: "Blocking arrives with the Vigil. The timer and the reward work now."
+- **For the module later:** report `SystemClock.elapsedRealtime()` so a focus can be judged on elapsed time across restarts (today that check only runs while Vinco stays open, see TODAY-AND-FOCUS.md "Focus as built").
+
+### Testing Aurora on the phone
+
+1. Build once (cloud): `npx eas-cli@latest build -p android --profile development`. Install the APK from the link.
+2. On the PC: `npx expo start`. On the phone: open Vinco (the development build) and pick the PC's server.
+3. User menu, Aurora: turn it on. Allow exact alarms, full-screen alarm (Android 14+) and notifications in the "On this phone" card.
+4. "Test the alarm in 1 minute", then lock the phone. It rings over the lock screen; the back button does nothing; 30 steps (or taps) stop it and pay the first-try denarii.
+5. Try "I'm sick" (with and without a Truce) and an alarm pass from the Forum.
+6. Reboot: "Next ring" is still set.
+
+A `preview` build (`--profile preview`) is the same app without the PC, for living with it day to day.
+
 ### Order of work
 
 1. Development build and the empty local modules (half a day).

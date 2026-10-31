@@ -5,6 +5,8 @@ export const radius = {
   sm: 10,
   md: 16,
   lg: 24,
+  /** Hero cards and full-screen surfaces (the focus view). */
+  xl: 30,
   pill: 999,
 } as const;
 

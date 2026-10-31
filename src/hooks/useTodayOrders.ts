@@ -68,6 +68,8 @@ export type TodayOrders = {
   heldCount: number;
   /** Every order that counts today. */
   totalCount: number;
+  /** When each held order was last logged today (for the day path on Today). */
+  heldAt: Date[];
   wokeAt: Date | null;
   /** When the user went to sleep before today's wake-up, if logged. */
   sleptAt: Date | null;
@@ -193,8 +195,18 @@ export function useTodayOrders(
     });
   };
 
+  const statuses = getOrderStatuses(amounts, targets);
+  const heldIds = new Set(customOrders.filter((item) => item.status !== 'none').map((item) => item.order.id));
+  const heldAt = [
+    ...orderLogs.data.filter((row) => row.kind !== 'wake' && statuses[row.kind] !== 'none'),
+    ...customLogs.data.filter((row) => row.day === today && heldIds.has(row.orderId)),
+  ]
+    .map((row) => new Date(row.updatedAt))
+    .filter((date) => !Number.isNaN(date.getTime()));
+
   return {
     today,
+    heldAt,
     isLoaded:
       orderLogs.updatedAt !== undefined &&
       dayLog.updatedAt !== undefined &&
@@ -202,7 +214,7 @@ export function useTodayOrders(
       customLogs.updatedAt !== undefined,
     targets,
     amounts,
-    statuses: getOrderStatuses(amounts, targets),
+    statuses,
     customOrders,
     heldCount: countOrdersHeld(amounts, targets) + customHeld,
     totalCount: orderKindsIn(targets).length + customOrders.length,

@@ -32,6 +32,30 @@ export const settingsCopy = {
     devMode: 'Dev mode',
   },
 
+  /** The Appearance screen: the mode, then a palette for dark and one for light. */
+  appearance: {
+    title: 'Appearance',
+    caption: 'Pick a palette for dark and one for light. "Match phone" switches between them.',
+    mode: 'Mode',
+    darkSection: 'Dark palettes',
+    lightSection: 'Light palettes',
+    rowValue: (mode: string, palette: string): string => `${mode} · ${palette}`,
+    selected: 'Selected',
+    paletteLabel: (name: string, meaning: string, isSelected: boolean): string =>
+      `${name}, ${meaning}${isSelected ? ', selected' : ''}`,
+  },
+
+  /** Every palette's plain label, beside its Latin name. */
+  palettes: {
+    basalt: 'Dark stone',
+    nox: 'True black',
+    purpura: 'Imperial purple',
+    aes: 'Bronze green',
+    marble: 'Light stone',
+    papyrus: 'Parchment',
+    calx: 'Limestone',
+  },
+
   colorModes: {
     dark: 'Dark',
     light: 'Light',

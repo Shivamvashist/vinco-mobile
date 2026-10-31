@@ -9,12 +9,14 @@ import { createStyles, useReduceMotion } from '@/theme';
 import { Txt } from '../Txt';
 
 import type { OrderRowContent } from './describeOrderRow';
-import { TaskRow } from './TaskRow';
+import { type RowControls, TaskRow } from './TaskRow';
 
 export type OrderListRow = {
   key: string;
   content: OrderRowContent;
   status: OrderStatus;
+  /** Minus and plus, or a check that toggles. */
+  controls?: RowControls;
   onPress: () => void;
   onLongPress: () => void;
 };
@@ -34,7 +36,8 @@ const ROW_MOVE = LinearTransition.duration(220);
 
 /**
  * Today's orders: open ones first, conquered ones sink to the bottom with their laurel. Tap to
- * log, long press to take one back. The heading counts what's done.
+ * log, long press to take one back; rows with levels also show a minus and a plus, done-or-not rows
+ * a check that toggles. The heading counts what's done.
  */
 export function OrderList({ rows, isWaiting, note, footer }: OrderListProps) {
   const styles = useStyles();
@@ -68,6 +71,7 @@ export function OrderList({ rows, isWaiting, note, footer }: OrderListProps) {
               status={row.status}
               action={row.content.action}
               segments={row.content.segments}
+              controls={row.controls}
               onPress={row.onPress}
               onLongPress={row.onLongPress}
               accessibilityLabel={`${row.content.name}, ${row.content.line}`}

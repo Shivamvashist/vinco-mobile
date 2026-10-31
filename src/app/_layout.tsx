@@ -69,6 +69,10 @@ function RootNavigator() {
           contentStyle: { backgroundColor: theme.colors.background },
         }}
       >
+        <Stack.Screen
+          name="alarm"
+          options={{ presentation: 'fullScreenModal', animation: 'fade', gestureEnabled: false }}
+        />
         <Stack.Screen name="campaign-lost" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="day-card" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="timelapse" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />

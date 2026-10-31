@@ -114,18 +114,18 @@ describe('getRankStatus', () => {
 
 describe('getDayAwards', () => {
   it('pays 5 for held, 10 for conquered, nothing for a Truce or a miss', () => {
-    expect(getDayAwards('2026-10-17', 'held', 3)).toEqual([
+    expect(getDayAwards('2026-10-17', 'held', 2)).toEqual([
       { day: '2026-10-17', reason: 'day_held', amount: 5 },
     ]);
-    expect(getDayAwards('2026-10-17', 'conquered', 3)[0]?.amount).toBe(10);
+    expect(getDayAwards('2026-10-17', 'conquered', 2)[0]?.amount).toBe(10);
     expect(getDayAwards('2026-10-17', 'truce', 3)).toEqual([]);
     expect(getDayAwards('2026-10-17', 'missed', 0)).toEqual([]);
   });
 
-  it('adds 25 for every 7 days of campaign', () => {
+  it('adds the run pay on paying days, never on a Truce day', () => {
     const awards = getDayAwards('2026-10-17', 'held', 14);
-    expect(awards.map((award) => award.reason)).toEqual(['day_held', 'campaign_week']);
-    expect(getDayAwards('2026-10-17', 'truce', 7).map((award) => award.amount)).toEqual([25]);
+    expect(awards.map((award) => award.reason)).toEqual(['day_held', 'streak_day7', 'streak_milestone']);
+    expect(getDayAwards('2026-10-17', 'truce', 7)).toEqual([]);
   });
 });
 

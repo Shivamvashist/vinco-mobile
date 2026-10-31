@@ -6,13 +6,16 @@
  * Every Roast line ends with a way forward. Selfie, weight and slip lines stay neutral.
  */
 export { arcCopy } from './arc';
+export { auroraCopy } from './aurora';
 export { campaignCopy } from './campaign';
 export { commonCopy } from './common';
 export { dayCardCopy } from './dayCard';
 export { devCopy } from './dev';
+export { focusCopy } from './focus';
 export { forumCopy } from './forum';
 export { guardCopy } from './guard';
 export { menuCopy } from './menu';
+export { notificationsCopy } from './notifications';
 export { permissionsCopy } from './permissions';
 export { progressCopy } from './progress';
 export { settingsCopy } from './settings';

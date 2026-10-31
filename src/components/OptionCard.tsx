@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -8,6 +8,8 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { createStyles, type FeedbackCue, useFeedback, useReduceMotion } from '@/theme';
+
+import { PressableScale } from './PressableScale';
 
 import { Txt } from './Txt';
 
@@ -68,12 +70,14 @@ export function OptionCard({
 
   return (
     <Animated.View style={popStyle}>
-      <Pressable
+      <PressableScale
+        scaleTo="card"
         accessibilityRole="radio"
         accessibilityState={{ checked: selected }}
         accessibilityLabel={label}
         onPress={handlePress}
-        style={({ pressed }) => [styles.card, selected && styles.selected, pressed && styles.pressed]}
+        style={[styles.card, selected && styles.selected]}
+        pressedStyle={styles.pressed}
       >
         {leading ? <View style={styles.leading}>{leading}</View> : null}
         <View style={styles.text}>
@@ -95,7 +99,7 @@ export function OptionCard({
             </Txt>
           ) : null}
         </View>
-      </Pressable>
+      </PressableScale>
     </Animated.View>
   );
 }
@@ -107,6 +111,7 @@ const useStyles = createStyles((theme) => ({
     gap: theme.space.lg,
     padding: theme.space.lg,
     borderRadius: theme.radius.md,
+    borderCurve: 'continuous',
     borderWidth: theme.layout.borderWidthStrong,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.surfaceSunk,

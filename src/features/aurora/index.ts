@@ -10,4 +10,23 @@ export {
   sanitizeAuroraSettings,
   type Weekday,
 } from './aurora';
-export { type AuroraBridge, auroraBridge, unsupportedAuroraBridge } from './bridge';
+export {
+  type AuroraBridge,
+  auroraBridge,
+  type AuroraNotice,
+  type AuroraRepeat,
+  createNativeAuroraBridge,
+  unsupportedAuroraBridge,
+} from './bridge';
+export {
+  type AuroraPlan,
+  type AuroraStop,
+  BUILT_MISSIONS,
+  earnsFirstTry,
+  isMissionBuilt,
+  isSamePlan,
+  marchLeft,
+  missionToRun,
+  planAuroraRing,
+  toDaysMask,
+} from './schedule';

@@ -17,9 +17,10 @@ import { IconButton } from '../IconButton';
 import { Txt } from '../Txt';
 import { WeekBarChart } from './WeekBarChart';
 import { BodyChart, type BodySeries } from './BodyChart';
+import { OrderCharts } from './OrderCharts';
 
 export type CommentariiProps = {
-  arc: { startDay: DayKey; lengthDays: number };
+  arc: { id: number; startDay: DayKey; lengthDays: number };
   targets: OrderTargets;
   today: DayKey;
   /** Today's weight if logged (the button then reads "Update"). */
@@ -32,7 +33,8 @@ const litres = (value: number) => `${Number(value.toFixed(1))}`;
 
 /**
  * The Commentarii (logs): one log at a time, picked with chips. Sleep, water and workout as a
- * week of bars with week-by-week arrows; weight as a line across the arc with the weekly trend.
+ * week of bars with week-by-week arrows; every order's week (each chart can be hidden); weight as a
+ * line across the arc with the weekly trend.
  */
 export function Commentarii({ arc, targets, today, todayWeightKg, onLogWeight }: CommentariiProps) {
   const styles = useStyles();
@@ -91,7 +93,11 @@ export function Commentarii({ arc, targets, today, todayWeightKg, onLogWeight }:
               }}
             />
           </View>
-          {logs.isLoaded ? <WeekLog kind={kind} logs={logs} targets={targets} today={today} /> : null}
+          {kind === 'orders' ? (
+            <OrderCharts arc={arc} targets={targets} weekStart={shownWeek} today={today} />
+          ) : logs.isLoaded ? (
+            <WeekLog kind={kind} logs={logs} targets={targets} today={today} />
+          ) : null}
         </>
       )}
     </View>
@@ -99,7 +105,7 @@ export function Commentarii({ arc, targets, today, todayWeightKg, onLogWeight }:
 }
 
 type WeekLogProps = {
-  kind: Exclude<LogKind, 'weight'>;
+  kind: Exclude<LogKind, 'weight' | 'orders'>;
   logs: ReturnType<typeof useCommentarii>;
   targets: OrderTargets;
   today: DayKey;

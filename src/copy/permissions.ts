@@ -17,7 +17,7 @@ export const permissionsCopy = {
     },
     notifications: {
       label: 'Reminders',
-      why: 'Up to three nudges a day, and the Aurora alarm. Arrive in an update.',
+      why: 'Up to three nudges a day, only while something is left to do. Never between 11 pm and your wake-up.',
     },
     guard: {
       label: 'Reel counter',

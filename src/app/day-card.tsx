@@ -2,48 +2,68 @@ import * as Sharing from 'expo-sharing';
 import { router } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { captureRef } from 'react-native-view-shot';
 
 import { Button } from '@/components/Button';
 import { type DayCardRow, DayCard } from '@/components/dayCard/DayCard';
+import { DesignPicker } from '@/components/dayCard/DesignPicker';
 import { IconButton } from '@/components/IconButton';
 import { Screen } from '@/components/Screen';
 import { Toast } from '@/components/Toast';
 import { Txt } from '@/components/Txt';
 import { dayCardCopy } from '@/copy';
 import { getArcPosition } from '@/features/arc';
-import { type ForumItemId } from '@/features/forum';
+import {
+  availableDesigns,
+  availableStyles,
+  DAY_CARD_DESIGN_IDS,
+  DEFAULT_DAY_CARD_DESIGN,
+  pickAvailable,
+  toCardResult,
+} from '@/features/dayCard';
 import { isCheckOrder, type OrderKind, orderKindsIn } from '@/features/orders';
 import { useActiveArc } from '@/hooks/useActiveArc';
 import { useCampaign } from '@/hooks/useCampaign';
 import { useForum } from '@/hooks/useForum';
 import { type TodayOrders, useTodayOrders } from '@/hooks/useTodayOrders';
 import { dayOfArc, formatClockTime } from '@/lib/dates';
-import { createStyles, DAY_CARD_STYLES, type DayCardStyle, useFeedback } from '@/theme';
+import { useDayCardStore, usePreferencesStore } from '@/stores';
+import {
+  createStyles,
+  DAY_CARD_STYLES,
+  type DayCardStyle,
+  motion,
+  useFeedback,
+  useReduceMotion,
+} from '@/theme';
 
 const SWATCH_SIZE = 44;
-/** Card styles bought in the Forum, by the item that unlocks them. */
-const FORUM_STYLE_ITEMS: Partial<Record<DayCardStyle['id'], ForumItemId>> = {
-  aurum: 'cardAurum',
-  nox: 'cardNox',
-};
 
-/** "Day sealed": the shareable day card, in three styles. */
+/**
+ * "Day sealed": the shareable day card. Pick a design (the layout), then a colour style; both
+ * are remembered for the next sealed day. Forum designs and styles show once owned.
+ */
 export default function DayCardScreen() {
   const styles = useStyles();
   const play = useFeedback();
+  const reduceMotion = useReduceMotion();
   const { arc, targets } = useActiveArc();
   const orders = useTodayOrders(targets, arc?.id ?? null);
   const campaign = useCampaign(arc, targets, orders.today);
   const forum = useForum();
-  // Free styles, plus the ones bought in the Forum.
-  const styleOptions = DAY_CARD_STYLES.filter((option) => {
-    const itemId = FORUM_STYLE_ITEMS[option.id];
-    return !option.isFromForum || (itemId != null && forum.holdings[itemId].held > 0);
-  });
-  const hasMoreInForum = styleOptions.length < DAY_CARD_STYLES.length;
+  const tone = usePreferencesStore((state) => state.tone);
+  const saved = useDayCardStore();
+  // Free designs and styles, plus the ones bought in the Forum.
+  const styleOptions = availableStyles(DAY_CARD_STYLES, forum.holdings);
+  const designOptions = availableDesigns(forum.holdings);
+  const hasMoreInForum =
+    styleOptions.length < DAY_CARD_STYLES.length || designOptions.length < DAY_CARD_DESIGN_IDS.length;
+  // A saved choice that is no longer owned falls back to the first free one.
+  const design = pickAvailable(saved.designId, designOptions, DEFAULT_DAY_CARD_DESIGN);
+  const cardStyle =
+    styleOptions.find((option) => option.id === saved.styleId) ?? (DAY_CARD_STYLES[0] as DayCardStyle);
   const cardRef = useRef<View>(null);
-  const [cardStyle, setCardStyle] = useState<DayCardStyle>(DAY_CARD_STYLES[0] as DayCardStyle);
   const [isSharing, setIsSharing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const hideToast = useCallback(() => setToast(null), []);
@@ -91,16 +111,37 @@ export default function DayCardScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
-        <DayCard
-          ref={cardRef}
-          dayNumber={dayNumber}
-          lengthDays={arc?.lengthDays ?? dayNumber}
-          rows={describeRows(orders)}
-          campaign={campaign.isLudus ? campaign.completedDays : campaign.campaign}
-          isLudus={campaign.isLudus}
-          rankName={campaign.rank.current?.name ?? null}
+        <Animated.View
+          key={design}
+          entering={reduceMotion ? undefined : FadeIn.duration(motion.duration.fast)}
+        >
+          <DayCard
+            ref={cardRef}
+            design={design}
+            dayNumber={dayNumber}
+            lengthDays={arc?.lengthDays ?? dayNumber}
+            rows={describeRows(orders)}
+            campaign={campaign.isLudus ? campaign.completedDays : campaign.campaign}
+            isLudus={campaign.isLudus}
+            rankName={campaign.rank.current?.name ?? null}
+            result={toCardResult(campaign.todayStatus)}
+            tone={tone}
+            cardStyle={cardStyle}
+          />
+        </Animated.View>
+
+        <Txt variant="eyebrow" style={styles.pickerLabel}>
+          {dayCardCopy.pickDesign}
+        </Txt>
+        <DesignPicker
+          designs={designOptions}
+          selected={design}
           cardStyle={cardStyle}
+          onSelect={saved.setDesign}
         />
+        <Txt variant="eyebrow" style={styles.pickerLabel}>
+          {dayCardCopy.pickColour}
+        </Txt>
         <View style={styles.swatches} accessibilityRole="radiogroup">
           {styleOptions.map((option) => {
             const isSelected = option.id === cardStyle.id;
@@ -111,8 +152,9 @@ export default function DayCardScreen() {
                 accessibilityState={{ checked: isSelected }}
                 accessibilityLabel={dayCardCopy.styleLabel(option.name)}
                 onPress={() => {
+                  if (isSelected) return;
                   play('select');
-                  setCardStyle(option);
+                  saved.setStyle(option.id);
                 }}
                 style={[
                   styles.swatch,
@@ -181,7 +223,8 @@ const useStyles = createStyles((theme) => ({
   headerTitle: { flex: 1, textAlign: 'center' },
   headerSpacer: { width: theme.layout.minTouchTarget },
   body: { paddingVertical: theme.space.md, alignItems: 'center' },
-  swatches: { flexDirection: 'row', gap: theme.space.md, marginTop: theme.space.xl },
+  pickerLabel: { marginTop: theme.space.xl, marginBottom: theme.space.sm },
+  swatches: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: theme.space.md },
   swatch: {
     width: SWATCH_SIZE,
     height: SWATCH_SIZE,

@@ -8,17 +8,18 @@ import { IconButton } from '@/components/IconButton';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionHeader } from '@/components/SectionHeader';
-import { AppearanceSheet } from '@/components/settings/AppearanceSheet';
 import { OutlineSheet } from '@/components/settings/OutlineSheet';
+import { RemindersSheet } from '@/components/settings/RemindersSheet';
 import { SettingsGroup } from '@/components/settings/SettingsGroup';
 import { SettingsRow } from '@/components/settings/SettingsRow';
 import { ToneSheet } from '@/components/settings/ToneSheet';
 import { WakeTimeSheet } from '@/components/settings/WakeTimeSheet';
-import { commonCopy, devCopy, guardCopy, settingsCopy } from '@/copy';
+import { commonCopy, devCopy, guardCopy, notificationsCopy, settingsCopy } from '@/copy';
 import { db, setArcWakeTime } from '@/db';
 import { DevPanel } from '@/dev/DevPanel';
 import { DEFAULT_WAKE_MINUTES } from '@/features/orders';
 import { useActiveArc } from '@/hooks/useActiveArc';
+import { useReminderControls } from '@/hooks/useReminderControls';
 import { useResetJourney } from '@/hooks/useResetJourney';
 import { formatClockMinutes, parseClockMinutes, toClockString } from '@/lib/dates';
 import {
@@ -28,9 +29,9 @@ import {
   useGuardStore,
   usePreferencesStore,
 } from '@/stores';
-import { createStyles, useThemeControls } from '@/theme';
+import { createStyles, type PaletteId, useTheme, useThemeControls } from '@/theme';
 
-type OpenSheet = 'tone' | 'colorMode' | 'outline' | 'wakeTime' | 'retreat' | null;
+type OpenSheet = 'tone' | 'outline' | 'wakeTime' | 'reminders' | 'retreat' | null;
 
 const rows = settingsCopy.rows;
 
@@ -44,13 +45,15 @@ export default function SettingsScreen() {
   const setTone = usePreferencesStore((state) => state.setTone);
   const ghostOpacity = usePreferencesStore((state) => state.ghostOpacity);
   const setGhostOpacity = usePreferencesStore((state) => state.setGhostOpacity);
-  const { preferences, setColorMode, setSoundEnabled, setHapticsEnabled } = useThemeControls();
+  const { preferences, setSoundEnabled, setHapticsEnabled } = useThemeControls();
+  const theme = useTheme();
   const { arc, targets } = useActiveArc();
   const resetJourney = useResetJourney();
   const isDevModeOn = useDevStore((state) => state.isDevModeOn);
   const setDevModeOn = useDevStore((state) => state.setDevModeOn);
   const guardLevel = useGuardStore((state) => state.level);
   const aurora = useGuardStore((state) => state.aurora);
+  const reminders = useReminderControls();
   const [openSheet, setOpenSheet] = useState<OpenSheet>(null);
   const close = () => setOpenSheet(null);
 
@@ -87,8 +90,13 @@ export default function SettingsScreen() {
           />
           <SettingsRow
             label={rows.colorMode}
-            value={settingsCopy.colorModes[preferences.colorMode]}
-            onPress={() => setOpenSheet('colorMode')}
+            value={settingsCopy.appearance.rowValue(
+              settingsCopy.colorModes[preferences.colorMode],
+              theme.paletteId in settingsCopy.palettes
+                ? settingsCopy.palettes[theme.paletteId as PaletteId]
+                : '',
+            )}
+            onPress={() => router.push('/appearance')}
           />
           <SettingsRow
             label={rows.sound}
@@ -113,6 +121,15 @@ export default function SettingsScreen() {
               label={rows.wakeTime}
               value={formatClockMinutes(wakeMinutes)}
               onPress={() => setOpenSheet('wakeTime')}
+            />
+            <SettingsRow
+              label={notificationsCopy.settings.row}
+              value={
+                reminders.settings.isOn && reminders.permission?.status !== 'denied'
+                  ? notificationsCopy.settings.on
+                  : notificationsCopy.settings.off
+              }
+              onPress={() => setOpenSheet('reminders')}
             />
           </SettingsGroup>
         ) : null}
@@ -156,12 +173,6 @@ export default function SettingsScreen() {
       </Screen>
 
       <ToneSheet visible={openSheet === 'tone'} onClose={close} tone={tone} onChange={setTone} />
-      <AppearanceSheet
-        visible={openSheet === 'colorMode'}
-        onClose={close}
-        colorMode={preferences.colorMode}
-        onChange={setColorMode}
-      />
       <OutlineSheet
         visible={openSheet === 'outline'}
         onClose={close}
@@ -174,6 +185,15 @@ export default function SettingsScreen() {
         onClose={close}
         minutes={wakeMinutes}
         onSave={saveWakeTime}
+      />
+      <RemindersSheet
+        visible={openSheet === 'reminders'}
+        onClose={close}
+        settings={reminders.settings}
+        permission={reminders.permission}
+        onToggleOn={(isOn) => void reminders.setOn(isOn)}
+        onToggleKind={reminders.setKind}
+        onEveningChange={reminders.setEveningMinutes}
       />
       <RetreatSheet
         visible={openSheet === 'retreat'}

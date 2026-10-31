@@ -1,13 +1,14 @@
-import { DENARII, TRUCES } from '@/features/campaign';
+import { AURORA_FIRST_TRY_DENARII, DENARII, STREAK, TRUCES } from '@/features/campaign';
 
 /**
  * The Forum: what denarii buy. Denarii are earned, never bought with real money, and nothing
  * here can be bought with real money either. Prices are tunable with Early Access data.
  * See docs/WAVE-2.md, section 3.
  */
-export type ForumItemId = 'truce' | 'venia' | 'iconLaurel' | 'iconMarble' | 'cardAurum' | 'cardNox';
+export type ForumItemId =
+  'truce' | 'venia' | 'iconLaurel' | 'iconMarble' | 'cardAurum' | 'cardNox' | 'designStamp' | 'designMemento';
 
-/** supplies: used up. insignia: app icons. cards: day card styles. */
+/** supplies: used up. insignia: app icons. cards: day card colour styles and designs. */
 export type ForumCategory = 'supplies' | 'insignia' | 'cards';
 
 export type ForumItem = {
@@ -37,6 +38,8 @@ export const FORUM_ITEMS: readonly ForumItem[] = [
   { id: 'venia', category: 'supplies', price: 40, kind: 'consumable', maxHeld: 2, works: 'native' },
   { id: 'cardAurum', category: 'cards', price: 150, kind: 'cosmetic', maxHeld: 1, works: 'now' },
   { id: 'cardNox', category: 'cards', price: 150, kind: 'cosmetic', maxHeld: 1, works: 'now' },
+  { id: 'designStamp', category: 'cards', price: 150, kind: 'cosmetic', maxHeld: 1, works: 'now' },
+  { id: 'designMemento', category: 'cards', price: 150, kind: 'cosmetic', maxHeld: 1, works: 'now' },
   { id: 'iconLaurel', category: 'insignia', price: 200, kind: 'cosmetic', maxHeld: 1, works: 'native' },
   { id: 'iconMarble', category: 'insignia', price: 200, kind: 'cosmetic', maxHeld: 1, works: 'native' },
 ];
@@ -77,7 +80,15 @@ export function denariiShort(item: ForumItem, balance: number): number {
 export type EarnSource = 'live' | 'aurora' | 'vigil' | 'decorations';
 
 export type EarnWay = {
-  id: 'dayHeld' | 'dayConquered' | 'campaignWeek' | 'auroraFirstTry' | 'underReelBudget' | 'decorations';
+  id:
+    | 'dayHeld'
+    | 'dayConquered'
+    | 'streakWeek'
+    | 'streakMilestone'
+    | 'focus'
+    | 'auroraFirstTry'
+    | 'underReelBudget'
+    | 'decorations';
   /** A fixed amount, or a range for decorations. */
   amount: number | { from: number; to: number };
   source: EarnSource;
@@ -87,8 +98,18 @@ export type EarnWay = {
 export const EARN_WAYS: readonly EarnWay[] = [
   { id: 'dayHeld', amount: DENARII.dayHeld, source: 'live' },
   { id: 'dayConquered', amount: DENARII.dayConquered, source: 'live' },
-  { id: 'campaignWeek', amount: DENARII.campaignWeek, source: 'live' },
-  { id: 'auroraFirstTry', amount: 2, source: 'aurora' },
+  {
+    id: 'streakWeek',
+    amount: { from: STREAK.weekly[0].amount, to: STREAK.weekly[2].amount },
+    source: 'live',
+  },
+  {
+    id: 'streakMilestone',
+    amount: { from: STREAK.milestones[0].amount, to: STREAK.milestones[3].amount },
+    source: 'live',
+  },
+  { id: 'focus', amount: { from: 2, to: 48 }, source: 'live' },
+  { id: 'auroraFirstTry', amount: AURORA_FIRST_TRY_DENARII, source: 'aurora' },
   { id: 'underReelBudget', amount: 3, source: 'vigil' },
   { id: 'decorations', amount: { from: 10, to: 100 }, source: 'decorations' },
 ];

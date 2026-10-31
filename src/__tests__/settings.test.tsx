@@ -49,19 +49,39 @@ describe('Settings', () => {
     await waitFor(() => expect(screen.queryByText(permissionsCopy.status.checking)).toBeNull());
   });
 
-  it('changes tone and appearance from the sheets, and toggles sound', async () => {
+  it('changes tone from its sheet, and toggles sound', async () => {
     startHeldArc(0);
     renderRouter(APP_DIR, { initialUrl: '/settings' });
     fireEvent.press(await screen.findByLabelText(`${rows.tone}, Centurion`));
     fireEvent.press(await screen.findByLabelText(/^Roast me/));
     expect(usePreferencesStore.getState().tone).toBe('roast');
 
-    fireEvent.press(screen.getByLabelText(`${rows.colorMode}, ${settingsCopy.colorModes.dark}`));
-    fireEvent.press(await screen.findByLabelText(settingsCopy.colorModes.light));
-    expect(usePreferencesStore.getState().colorMode).toBe('light');
-
     fireEvent(screen.getByLabelText(rows.sound), 'valueChange', false);
     expect(usePreferencesStore.getState().soundEnabled).toBe(false);
+  });
+
+  it('opens Appearance, picks a palette for each scheme and the mode', async () => {
+    renderRouter(APP_DIR, { initialUrl: '/settings' });
+    const appearance = settingsCopy.appearance;
+    fireEvent.press(
+      await screen.findByLabelText(
+        `${rows.colorMode}, ${appearance.rowValue(settingsCopy.colorModes.dark, settingsCopy.palettes.basalt)}`,
+      ),
+    );
+    // A dark palette while the mode is dark: applies at once.
+    fireEvent.press(
+      await screen.findByLabelText(appearance.paletteLabel('Nox', settingsCopy.palettes.nox, false)),
+    );
+    expect(usePreferencesStore.getState().darkPaletteId).toBe('nox');
+    expect(usePreferencesStore.getState().colorMode).toBe('dark');
+    // A light palette while the mode is fixed to dark switches the mode, so it is seen.
+    fireEvent.press(
+      screen.getByLabelText(appearance.paletteLabel('Papyrus', settingsCopy.palettes.papyrus, false)),
+    );
+    expect(usePreferencesStore.getState().lightPaletteId).toBe('papyrus');
+    expect(usePreferencesStore.getState().colorMode).toBe('light');
+    fireEvent.press(screen.getByLabelText(settingsCopy.colorModes.system));
+    expect(usePreferencesStore.getState().colorMode).toBe('system');
   });
 
   it('sets the selfie outline strength', async () => {

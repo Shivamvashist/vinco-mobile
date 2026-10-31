@@ -11,6 +11,7 @@ import { sql } from 'drizzle-orm';
 import { index, integer, primaryKey, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 import type { DayResult, LedgerReason, TruceReason } from '@/features/campaign';
+import type { FocusGuard, FocusStatus } from '@/features/focus';
 import type { ForumItemId } from '@/features/forum';
 import type { OrderKind } from '@/features/orders';
 import type { TaskRepeat } from '@/features/tasks';
@@ -232,6 +233,29 @@ export const itemUses = sqliteTable(
   (table) => [index('item_uses_item_idx').on(table.itemId)],
 );
 
+/**
+ * Focus sessions ("Acies"): one row per focus begun. At most one is 'running' at a time.
+ * The day is the local day it began on; its pay is a ledger row 'focus_1' to 'focus_3' on that day.
+ */
+export const focusSessions = sqliteTable(
+  'focus_sessions',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    day: text('day').notNull(),
+    guard: text('guard').$type<FocusGuard>().notNull(),
+    minutes: integer('minutes').notNull(),
+    /** Wall-clock start and planned end, ISO timestamps. */
+    startedAt: text('started_at').notNull(),
+    endsAt: text('ends_at').notNull(),
+    /** When it was completed or given up; null while running. */
+    endedAt: text('ended_at'),
+    status: text('status').$type<FocusStatus>().notNull().default('running'),
+    /** Denarii paid when completed (0 when it earned nothing, or was given up). */
+    reward: integer('reward').notNull().default(0),
+  },
+  (table) => [index('focus_sessions_status_idx').on(table.status)],
+);
+
 export type ArcRow = typeof arcs.$inferSelect;
 export type ArcOrderRow = typeof arcOrders.$inferSelect;
 export type OrderLogRow = typeof orderLogs.$inferSelect;
@@ -244,3 +268,4 @@ export type TaskRow = typeof tasks.$inferSelect;
 export type TaskCompletionRow = typeof taskCompletions.$inferSelect;
 export type PurchaseRow = typeof purchases.$inferSelect;
 export type ItemUseRow = typeof itemUses.$inferSelect;
+export type FocusSessionRow = typeof focusSessions.$inferSelect;

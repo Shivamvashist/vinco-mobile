@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { View } from 'react-native';
 
+import { AuroraStatus } from '@/components/aurora/AuroraStatus';
 import { Card } from '@/components/Card';
 import { ChoiceChip } from '@/components/ChoiceChip';
 import { PreviewNotice } from '@/components/guard/PreviewNotice';
@@ -13,8 +14,15 @@ import { SettingsGroup } from '@/components/settings/SettingsGroup';
 import { SettingsRow } from '@/components/settings/SettingsRow';
 import { TimeField } from '@/components/TimeField';
 import { Txt } from '@/components/Txt';
-import { commonCopy, guardCopy } from '@/copy';
-import { ALL_WEEKDAYS, AURORA_MISSIONS, getNextRing, type Weekday } from '@/features/aurora';
+import { auroraCopy, commonCopy, guardCopy } from '@/copy';
+import {
+  ALL_WEEKDAYS,
+  AURORA_MISSIONS,
+  auroraBridge,
+  getNextRing,
+  isMissionBuilt,
+  type Weekday,
+} from '@/features/aurora';
 import { useActiveArc } from '@/hooks/useActiveArc';
 import { useForum } from '@/hooks/useForum';
 import { formatClockTime, parseClockMinutes, toDayKey } from '@/lib/dates';
@@ -24,8 +32,8 @@ import { createStyles } from '@/theme';
 const copy = guardCopy.aurora;
 
 /**
- * Aurora's settings: on or off, the time, the days and the mission. In preview: saved now,
- * rings with the native Aurora module. See docs/GUARDIANS.md.
+ * Aurora's settings: on or off, the time, the days and the mission. In the Vinco build it shows
+ * the alarm's live state on the phone; in Expo Go, the preview notice. See docs/GUARDIANS.md.
  */
 export default function AuroraScreen() {
   const styles = useStyles();
@@ -55,9 +63,13 @@ export default function AuroraScreen() {
         <IconButton icon="back" accessibilityLabel={commonCopy.back} onPress={back} />
       </View>
       <ScreenHeader eyebrow={copy.eyebrow} title={copy.title} caption={copy.intro} />
-      <View style={styles.block}>
-        <PreviewNotice />
-      </View>
+      {auroraBridge.isSupported ? (
+        <AuroraStatus settings={aurora} />
+      ) : (
+        <View style={styles.block}>
+          <PreviewNotice />
+        </View>
+      )}
 
       <SettingsGroup title={copy.title}>
         <SettingsRow
@@ -113,7 +125,11 @@ export default function AuroraScreen() {
               <OptionCard
                 key={mission}
                 title={copy.missions[mission].name}
-                description={copy.missions[mission].does}
+                description={
+                  isMissionBuilt(mission)
+                    ? copy.missions[mission].does
+                    : `${copy.missions[mission].does} ${auroraCopy.status.soon}`
+                }
                 selected={aurora.mission === mission}
                 onPress={() => updateAurora({ mission })}
               />

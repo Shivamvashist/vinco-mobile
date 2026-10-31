@@ -87,7 +87,7 @@ describe('Free training', () => {
     act(() => jest.advanceTimersByTime(600));
     expect(app.getPathname()).toBe('/veni');
     expect(screen.queryByText(campaignCopy.lost.title)).toBeNull();
-    expect(screen.queryByText(todayCopy.chips.campaign(0))).toBeNull();
+    expect(screen.queryByText(todayCopy.tiles.run.campaign)).toBeNull();
   });
 
   it('shows the run so far and how to keep it', async () => {
@@ -97,7 +97,7 @@ describe('Free training', () => {
     holdDay(addDays(today, -1));
     markAwake();
     renderRouter(APP_DIR, { initialUrl: '/veni' });
-    expect(await screen.findByText(todayCopy.run.chip(2))).toBeTruthy();
+    expect(await screen.findByLabelText(/^Run, 2 in a row/)).toBeTruthy();
     expect(screen.getByText(todayCopy.run.nudge(2))).toBeTruthy();
   });
 

@@ -75,9 +75,12 @@ describe('usePreferencesStore', () => {
     expect(Object.keys(saved.state).sort()).toEqual(
       [
         'colorMode',
+        'darkPaletteId',
         'ghostOpacity',
         'hapticsEnabled',
         'hiddenBodyLines',
+        'hiddenOrderCharts',
+        'lightPaletteId',
         'soundEnabled',
         'themeId',
         'tone',

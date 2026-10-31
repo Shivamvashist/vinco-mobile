@@ -11,6 +11,8 @@ export const devCopy = {
   nextDayHint: 'Seals today as it stands, like a real midnight.',
   atMaxOffset: "The clock can't run further ahead.",
   noArc: 'Finish onboarding to use the day tools.',
+  addDenarii: (amount: number): string => `Add ${amount} denarii`,
+  addedDenarii: (total: number): string => `Dev grant today: ${total} denarii.`,
   themeLab: 'Theme lab',
   resetAll: 'Reset everything',
   resetTitle: 'Reset everything?',

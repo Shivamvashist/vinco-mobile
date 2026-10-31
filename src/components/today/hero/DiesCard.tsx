@@ -1,0 +1,132 @@
+import { View } from 'react-native';
+
+import { todayCopy } from '@/copy';
+import { createStyles, useTheme } from '@/theme';
+
+import { PressableScale } from '../../PressableScale';
+import { RollingNumber } from '../../RollingNumber';
+import { Txt } from '../../Txt';
+import { DayPath } from './DayPath';
+import { Glow } from './Glow';
+
+export type DiesState = keyof typeof todayCopy.hero.states;
+
+export type DiesCardProps = {
+  state: DiesState;
+  held: number;
+  total: number;
+  /** Denarii paid live for today. */
+  earned: number;
+  /** Before dawn: the planned wake time to show instead of the count ("6:30 am"). */
+  plannedWake: string | null;
+  /** Now on the day, 0 (wake-up) to 1 (midnight). */
+  progress: number;
+  /** Where each order was done, on the same scale. */
+  marks: readonly number[];
+  onPress: () => void;
+};
+
+/** The glow's strength by state: dim while open, warmer once held, full when conquered. */
+const GLOW: Record<DiesState, number> = {
+  open: 0.45,
+  held: 0.75,
+  conquered: 1,
+  sick: 0.25,
+  dawn: 0.3,
+  finished: 0.6,
+};
+
+const copy = todayCopy.hero;
+
+/**
+ * Dies (the day): Today's hero. One big number (orders held) over the sun's path from wake-up to
+ * midnight, lit from below in the palette's accent; the light grows as the day holds. Tap for
+ * today's summary.
+ */
+export function DiesCard({
+  state,
+  held,
+  total,
+  earned,
+  plannedWake,
+  progress,
+  marks,
+  onPress,
+}: DiesCardProps) {
+  const theme = useTheme();
+  const styles = useStyles();
+  const isDawn = state === 'dawn' && plannedWake != null;
+  const isHeld = state === 'held' || state === 'conquered';
+  const stateLabel = copy.states[state];
+
+  return (
+    <PressableScale
+      scaleTo="card"
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={
+        isDawn ? copy.dawnLabel(plannedWake) : copy.accessibleLabel(held, total, stateLabel)
+      }
+      style={styles.card}
+    >
+      <Glow color="accent" intensity={GLOW[state]} />
+      <View style={styles.top}>
+        <Txt variant="label">{copy.label}</Txt>
+        <View style={[styles.pill, isHeld && styles.pillHeld]}>
+          <Txt variant="micro" color={isHeld ? 'onAccent' : 'textMuted'}>
+            {stateLabel}
+          </Txt>
+        </View>
+      </View>
+
+      <View style={styles.centre}>
+        {isDawn ? (
+          <RollingNumber value={plannedWake} variant="hero" />
+        ) : (
+          <View style={styles.count}>
+            <RollingNumber value={String(held)} variant="hero" color={isHeld ? 'accent' : 'text'} />
+            {total > 0 ? (
+              <Txt variant="heading" color="textMuted" style={styles.of}>
+                {copy.of(total)}
+              </Txt>
+            ) : null}
+          </View>
+        )}
+        <Txt variant="caption" style={styles.caption}>
+          {isDawn ? copy.dawnCaption : total === 0 ? copy.noOrders : copy.caption(earned)}
+        </Txt>
+      </View>
+
+      <View style={{ marginHorizontal: -theme.space.xs }}>
+        <DayPath progress={progress} marks={marks} isHeld={isHeld} />
+      </View>
+    </PressableScale>
+  );
+}
+
+const useStyles = createStyles((theme) => ({
+  card: {
+    minHeight: theme.layout.heroCardHeight,
+    padding: theme.layout.cardPadding,
+    paddingBottom: theme.space.sm,
+    borderRadius: theme.radius.xl,
+    borderCurve: 'continuous',
+    borderWidth: theme.layout.hairline,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    overflow: 'hidden',
+    justifyContent: 'space-between',
+  },
+  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  pill: {
+    paddingHorizontal: theme.space.sm,
+    paddingVertical: theme.space.xxs,
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.colors.surfaceSunk,
+  },
+  pillHeld: { backgroundColor: theme.colors.accent },
+  centre: { alignItems: 'center', paddingTop: theme.space.md },
+  count: { flexDirection: 'row', alignItems: 'baseline' },
+  of: { marginLeft: theme.space.xxs },
+  caption: { marginTop: theme.space.xxs },
+}));

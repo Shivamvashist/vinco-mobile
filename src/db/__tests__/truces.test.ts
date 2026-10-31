@@ -60,24 +60,24 @@ describe('callTruce', () => {
 
   it('buys with denarii when the reserve is empty, and refuses when short', () => {
     const db = createTestDatabase();
-    for (let day = 12; day <= 21; day += 1) logDay(db, `2026-10-${day}`, HELD);
-    sealFinishedDays(db, ARC, DEFAULT_ORDER_TARGETS, '2026-10-23');
-    sealFinishedDays(db, ARC, DEFAULT_ORDER_TARGETS, '2026-10-24');
-    // 10 held days (50) plus the week bonus (25) = 75 denarii, and one Truce earned on day 7.
-    expect(getDenariiBalance(db)).toBe(75);
+    for (let day = 12; day <= 18; day += 1) logDay(db, `2026-10-${day}`, HELD);
+    sealFinishedDays(db, ARC, DEFAULT_ORDER_TARGETS, '2026-10-20');
+    sealFinishedDays(db, ARC, DEFAULT_ORDER_TARGETS, '2026-10-21');
+    // 7 held days (35) plus the run pay on days 3, 5 and 7 (50) = 85, and one Truce earned on day 7.
+    expect(getDenariiBalance(db)).toBe(85);
     expect(getTruceReserve(db)).toBe(1);
 
-    // Two missed days (22nd, 23rd): one from the reserve, one bought.
-    const payment = callTruce(db, ['2026-10-23', '2026-10-22']);
+    // Two missed days (19th, 20th): one from the reserve, one bought.
+    const payment = callTruce(db, ['2026-10-20', '2026-10-19']);
     expect(payment).toMatchObject({ fromReserve: 1, toBuy: 1, cost: TRUCES.priceDenarii });
-    expect(getDenariiBalance(db)).toBe(75 - TRUCES.priceDenarii);
+    expect(getDenariiBalance(db)).toBe(85 - TRUCES.priceDenarii);
     expect(getTruceReserve(db)).toBe(0);
 
     // A third miss can't be afforded: nothing changes.
-    sealFinishedDays(db, ARC, DEFAULT_ORDER_TARGETS, '2026-10-25');
-    expect(() => callTruce(db, ['2026-10-24'])).toThrow(TruceError);
-    expect(getDayLog(db, '2026-10-24')?.truceUsed).toBe(false);
-    expect(getDenariiBalance(db)).toBe(75 - TRUCES.priceDenarii);
+    sealFinishedDays(db, ARC, DEFAULT_ORDER_TARGETS, '2026-10-22');
+    expect(() => callTruce(db, ['2026-10-21'])).toThrow(TruceError);
+    expect(getDayLog(db, '2026-10-21')?.truceUsed).toBe(false);
+    expect(getDenariiBalance(db)).toBe(85 - TRUCES.priceDenarii);
   });
 
   it('pays once even when called twice', () => {
@@ -152,16 +152,16 @@ describe('sick day', () => {
     const db = createTestDatabase();
     for (let day = 12; day <= 18; day += 1) logDay(db, `2026-10-${day}`, HELD);
     sealFinishedDays(db, ARC, DEFAULT_ORDER_TARGETS, '2026-10-19');
-    // 7 held days: 35 + 25 = 60 denarii, and one Truce earned on day 7.
-    expect(getDenariiBalance(db)).toBe(60);
+    // 7 held days: 35 plus 50 run pay = 85 denarii, and one Truce earned on day 7.
+    expect(getDenariiBalance(db)).toBe(85);
 
     // The reserve covers the 19th; the 20th has to be bought.
     callSickDay(db, '2026-10-19');
     expect(callSickDay(db, '2026-10-20')).toMatchObject({ toBuy: 1, cost: TRUCES.priceDenarii });
-    expect(getDenariiBalance(db)).toBe(60 - TRUCES.priceDenarii);
+    expect(getDenariiBalance(db)).toBe(85 - TRUCES.priceDenarii);
 
     cancelSickDay(db, '2026-10-20');
-    expect(getDenariiBalance(db)).toBe(60);
+    expect(getDenariiBalance(db)).toBe(85);
     expect(getDayLog(db, '2026-10-20')?.truceUsed).toBe(false);
     cancelSickDay(db, '2026-10-19');
     expect(getTruceReserve(db)).toBe(1);

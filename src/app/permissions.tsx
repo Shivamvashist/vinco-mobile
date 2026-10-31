@@ -11,6 +11,7 @@ import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Txt } from '@/components/Txt';
 import { commonCopy, permissionsCopy } from '@/copy';
+import { useNotificationPermission } from '@/hooks/useNotificationPermission';
 import { createStyles } from '@/theme';
 
 type Status = 'granted' | 'denied' | 'undetermined' | 'checking';
@@ -19,11 +20,13 @@ const copy = permissionsCopy;
 
 /**
  * What Vinco may use and why: camera and microphone now (allow here, or open the phone's
- * settings once refused), reminders and the reel counter later. Rechecks on return to the app.
+ * settings once refused), reminders (notifications) the same way, and the reel counter later.
+ * Rechecks on return to the app.
  */
 export default function PermissionsScreen() {
   const styles = useStyles();
   const [camera, requestCamera] = useCameraPermissions();
+  const notifications = useNotificationPermission();
   const [microphone, setMicrophone] = useState<{ status: Status; canAskAgain: boolean }>({
     status: 'checking',
     canAskAgain: true,
@@ -84,6 +87,10 @@ export default function PermissionsScreen() {
           icon="bell"
           label={copy.items.notifications.label}
           why={copy.items.notifications.why}
+          status={notifications.permission?.status ?? 'checking'}
+          onAllow={
+            notifications.permission?.canAskAgain === false ? undefined : () => void notifications.request()
+          }
         />
         <PermissionRow icon="eye" label={copy.items.guard.label} why={copy.items.guard.why} />
       </View>

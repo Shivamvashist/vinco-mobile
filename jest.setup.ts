@@ -94,6 +94,28 @@ jest.mock('expo-haptics', () => ({
   NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
 }));
 
+// Notifications: nothing is scheduled or shown in tests. The permission reads as allowed.
+jest.mock('expo-notifications', () => ({
+  setNotificationHandler: jest.fn(),
+  setNotificationChannelAsync: jest.fn(() => Promise.resolve(null)),
+  getAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve([])),
+  cancelScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
+  scheduleNotificationAsync: jest.fn(() => Promise.resolve('id')),
+  getPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ granted: true, status: 'granted', canAskAgain: true, expires: 'never' }),
+  ),
+  requestPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ granted: true, status: 'granted', canAskAgain: true, expires: 'never' }),
+  ),
+  getExpoPushTokenAsync: jest.fn(() => Promise.resolve({ type: 'expo', data: 'ExponentPushToken[test]' })),
+  useLastNotificationResponse: () => null,
+  clearLastNotificationResponse: jest.fn(),
+  DEFAULT_ACTION_IDENTIFIER: 'expo.modules.notifications.actions.DEFAULT',
+  AndroidImportance: { LOW: 2, DEFAULT: 3, HIGH: 4 },
+  AndroidNotificationVisibility: { PRIVATE: 0, PUBLIC: 1, SECRET: -1 },
+  SchedulableTriggerInputTypes: { DATE: 'date' },
+}));
+
 jest.mock('expo-sqlite/kv-store', () => {
   const memory = new Map<string, string>();
   const Storage = {

@@ -56,7 +56,20 @@ export const progressCopy = {
   /** The Commentarii: Caesar's campaign notes, Vinco's logs. Weight stays neutral in every tone. */
   logs: {
     eyebrow: '"Commentarii" · your campaign notes',
-    kinds: { sleep: 'Sleep', water: 'Water', workout: 'Workout', weight: 'Body' },
+    kinds: { sleep: 'Sleep', water: 'Water', workout: 'Workout', orders: 'Orders', weight: 'Body' },
+    /** Every order's week, each chart shown or hidden with its chip. */
+    orders: {
+      chipsHint: 'Pick the charts to show',
+      goal: (amount: string): string => `Goal ${amount}`,
+      everyDay: 'Done or not',
+      meals: (count: number): string => `${count} ${count === 1 ? 'meal' : 'meals'}`,
+      doneDays: (done: number, logged: number): string => `Done ${done} of ${logged} days.`,
+      atGoal: (done: number, logged: number): string => `At goal ${done} of ${logged} days.`,
+      allHidden: 'Every chart is hidden. Tap an order above to show it.',
+      empty: 'No orders to chart yet.',
+      tickLabel: (day: string, isDone: boolean | null): string =>
+        `${day}: ${isDone == null ? 'not counted' : isDone ? 'done' : 'not done'}`,
+    },
     week: (from: string, to: string): string => `${from} to ${to}`,
     previousWeek: 'Previous week',
     nextWeek: 'Next week',

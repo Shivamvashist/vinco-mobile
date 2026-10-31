@@ -1,8 +1,9 @@
 import { useRef } from 'react';
-import { ActivityIndicator, Pressable, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 
 import { createStyles, type FeedbackCue, useFeedback, useTheme } from '@/theme';
 
+import { PressableScale } from './PressableScale';
 import { Txt } from './Txt';
 
 /** A second press inside this window is ignored, so a double tap can't act twice. */
@@ -66,20 +67,16 @@ export function Button({
   };
 
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? (showSublabel ? `${label}, ${sublabel}` : label)}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled, busy: loading }}
       disabled={isInactive}
       onPress={handlePress}
-      style={({ pressed }) => [
-        styles.base,
-        styles[size],
-        styles[variant],
-        disabled && variant !== 'ghost' && styles.disabled,
-        pressed && styles[`${variant}Pressed`],
-      ]}
+      containerStyle={styles.container}
+      style={[styles.base, styles[size], styles[variant], disabled && variant !== 'ghost' && styles.disabled]}
+      pressedStyle={styles[`${variant}Pressed`]}
     >
       {loading ? (
         <ActivityIndicator
@@ -102,11 +99,12 @@ export function Button({
           ) : null}
         </View>
       )}
-    </Pressable>
+    </PressableScale>
   );
 }
 
 const useStyles = createStyles((theme) => ({
+  container: { alignSelf: 'stretch' },
   base: {
     alignSelf: 'stretch',
     alignItems: 'center',

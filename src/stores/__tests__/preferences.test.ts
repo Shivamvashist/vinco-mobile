@@ -60,3 +60,19 @@ describe('ghost opacity', () => {
     expect(sanitizePreferences({ ghostOpacity: 'half' })).toEqual({});
   });
 });
+
+describe('sanitizePreferences: palettes and order charts', () => {
+  it('keeps a palette only for its own scheme', () => {
+    expect(sanitizePreferences({ darkPaletteId: 'nox', lightPaletteId: 'calx' })).toEqual({
+      darkPaletteId: 'nox',
+      lightPaletteId: 'calx',
+    });
+    expect(sanitizePreferences({ darkPaletteId: 'marble', lightPaletteId: 'gone' })).toEqual({});
+  });
+
+  it('keeps valid order chart keys, once each', () => {
+    expect(
+      sanitizePreferences({ hiddenOrderCharts: ['water', 'own-12', 'own-12', 'bad key', 3, 'own-x'] }),
+    ).toEqual({ hiddenOrderCharts: ['water', 'own-12'] });
+  });
+});

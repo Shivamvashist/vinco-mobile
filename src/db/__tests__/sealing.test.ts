@@ -80,19 +80,19 @@ describe('sealFinishedDays', () => {
     expect(getDayLog(db, '2026-10-12')?.sealedAt).toBe(firstSeal);
   });
 
-  it('adds the 7-day campaign bonus', () => {
+  it('pays the run on days 3, 5 and 7', () => {
     const db = createTestDatabase();
     for (let day = 12; day <= 18; day += 1) logDay(db, `2026-10-${day}`, HELD);
     sealFinishedDays(db, ARC, DEFAULT_ORDER_TARGETS, '2026-10-19');
-    expect(ledgerTotal(db)).toBe(7 * 5 + 25);
+    expect(ledgerTotal(db)).toBe(7 * 5 + 10 + 15 + 25);
   });
 
-  it('pays day denarii in the Ludus, but no weekly bonus and no Truce', () => {
+  it('pays day and run denarii in free training, but no Truce', () => {
     const db = createTestDatabase();
     for (let day = 12; day <= 18; day += 1) logDay(db, `2026-10-${day}`, HELD);
     sealFinishedDays(db, { ...ARC, kind: 'ludus' }, DEFAULT_ORDER_TARGETS, '2026-10-19');
     expect(results(db, '2026-10-18')).toEqual(Array(7).fill('held'));
-    expect(ledgerTotal(db)).toBe(7 * 5);
+    expect(ledgerTotal(db)).toBe(7 * 5 + 10 + 15 + 25);
     expect(getTruceReserve(db)).toBe(0);
   });
 

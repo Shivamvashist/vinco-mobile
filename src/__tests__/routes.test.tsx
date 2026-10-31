@@ -156,7 +156,8 @@ describe('Today', () => {
     await screen.findByLabelText(new RegExp(`^${water.name},`));
     const order = () =>
       screen
-        .getAllByRole('button')
+        // Rows with a minus and a plus are adjustable; the rest are buttons.
+        .getAllByRole(/^(button|adjustable)$/)
         .map((row) => String(row.props.accessibilityLabel ?? '').split(',')[0] ?? '')
         .filter((name) => ['Water', 'Wake-up', 'Protein meal', 'Workout'].includes(name));
     expect(order()).toEqual(['Water', 'Protein meal', 'Workout', 'Wake-up']);
@@ -470,7 +471,7 @@ describe('Campaign', () => {
     }
 
     renderRouter(APP_DIR, { initialUrl: '/veni' });
-    expect(await screen.findByText(todayCopy.chips.campaign(2))).toBeTruthy();
+    expect(await screen.findByLabelText(/^Run, 2 in a row/)).toBeTruthy();
     expect(screen.getByText(todayCopy.arcEyebrow('III', 'LX'))).toBeTruthy();
   });
 });
@@ -593,7 +594,7 @@ describe('Campaign lost', () => {
 
     act(() => jest.advanceTimersByTime(600));
     fireEvent.press(screen.getByLabelText(campaignCopy.truced.toToday));
-    expect(await screen.findByText(todayCopy.chips.campaign(4))).toBeTruthy();
+    expect(await screen.findByLabelText(/^Run, 4 in a row/)).toBeTruthy();
     expect(screen.queryByText(todayCopy.truceBanner.title)).toBeNull();
   });
 
@@ -613,7 +614,8 @@ describe('Campaign lost', () => {
 
   it('prices the Truce in denarii when the reserve is empty, and refuses when short', async () => {
     // Six days ago the arc began. Day II was missed and the starting Truce covered it;
-    // days I, III, IV and V held (20 denarii); yesterday was missed with nothing in reserve.
+    // days I, III, IV and V held (20 denarii, plus 10 and 15 run pay on days III and V of the run);
+    // yesterday was missed with nothing in reserve.
     const today = toDayKey(new Date());
     const start = addDays(today, -6);
     createArc(db, {
@@ -634,7 +636,7 @@ describe('Campaign lost', () => {
     callTruce(db, [addDays(start, 1)]);
 
     renderRouter(APP_DIR, { initialUrl: '/veni' });
-    expect(await screen.findByText(campaignCopy.truce.cannotAfford(50, 20))).toBeTruthy();
+    expect(await screen.findByText(campaignCopy.truce.cannotAfford(50, 45))).toBeTruthy();
     expect(screen.queryByLabelText(new RegExp(`^${campaignCopy.truce.title}`))).toBeNull();
   });
 });

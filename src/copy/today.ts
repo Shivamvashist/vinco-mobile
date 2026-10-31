@@ -25,16 +25,6 @@ export const todayCopy = {
     action: 'Choose what next',
   },
 
-  chips: {
-    campaign: (days: number): string => `Campaign ${days}`,
-    /** Free training has no streak: it counts the days trained instead. */
-    trained: (days: number): string => `${days} ${days === 1 ? 'day' : 'days'} trained`,
-    denarii: (amount: number): string => `${amount} denarii`,
-    denariiHint: 'Opens the Forum',
-    truces: (count: number): string =>
-      count === 0 ? 'No Truces' : `${count} ${count === 1 ? 'Truce' : 'Truces'}`,
-  },
-
   /** Shown once every order holds, so the day can be sealed even after the stamp is dismissed. */
   sealCard: {
     heldTitle: 'Line held',
@@ -73,9 +63,76 @@ export const todayCopy = {
 
   /** Free training has no streak to lose: just a nudge to keep a run of full days going. */
   run: {
-    chip: (days: number): string => `${days}-day run`,
     nudge: (days: number): string => `Finish today's orders to keep your ${days}-day run going.`,
     start: 'Finish every order today to start a run.',
+  },
+
+  /** The Dies card (the hero): today's orders as one big number over the day's path. */
+  hero: {
+    label: 'Today',
+    states: {
+      open: 'Open',
+      held: 'Held',
+      conquered: 'Conquered',
+      sick: 'Sick day',
+      dawn: 'Before dawn',
+      finished: 'Arc complete',
+    },
+    of: (total: number): string => `/${total}`,
+    caption: (earned: number): string => (earned > 0 ? `orders held · +${earned} denarii` : 'orders held'),
+    dawnCaption: 'planned wake-up',
+    noOrders: 'no orders yet',
+    /** For screen readers: the whole card in one sentence. */
+    accessibleLabel: (held: number, total: number, state: string): string =>
+      `Today, ${state}. ${held} of ${total} orders held. Opens today's summary.`,
+    dawnLabel: (time: string): string => `Today, before dawn. Planned wake-up ${time}.`,
+  },
+
+  /** The two tiles under the hero. */
+  tiles: {
+    run: {
+      campaign: 'Campaign',
+      ludus: 'Run',
+      unit: (days: number): string => (days === 1 ? 'day in a row' : 'days in a row'),
+      hint: 'Opens what the run pays',
+      label: (days: number, next: string): string => `Run, ${days} in a row. Next: ${next}.`,
+    },
+    purse: {
+      title: 'Purse',
+      unit: 'denarii',
+      today: (amount: number): string => `+${amount} today`,
+      none: 'Spend in the Forum',
+      hint: 'Opens the Forum',
+      label: (amount: number, today: number): string =>
+        `Purse, ${amount} denarii${today > 0 ? `, ${today} earned today` : ''}.`,
+    },
+  },
+
+  /** The run pay sheet, from the run tile. */
+  runSheet: {
+    title: '"Stipendium" (run pay)',
+    body: 'Every week of a run pays on days 3, 5 and 7. Long runs pay a bonus on top.',
+    weekly: (day: number, amount: number): string => `Day ${day} of each week · +${amount}`,
+    truce: 'Day 7 in a campaign · a Truce',
+    milestone: (day: number, amount: number): string => `${day} days in a row · +${amount}`,
+    close: 'Close',
+  },
+
+  /** The run's next reward, on the run tile, its sheet and in reminders. */
+  streak: {
+    next: (inDays: number, denarii: number, hasTruce: boolean): string => {
+      const when = inDays === 1 ? 'Hold today' : `${inDays} more days`;
+      const what = [denarii > 0 ? `+${denarii} denarii` : null, hasTruce ? 'a Truce' : null]
+        .filter(Boolean)
+        .join(' and ');
+      return `${when}: ${what}`;
+    },
+  },
+
+  /** A short toast when today's pay changes. */
+  denariiToast: {
+    paid: (amount: number): string => `+${amount} denarii`,
+    takenBack: (amount: number): string => `${amount} denarii taken back until the day holds again`,
   },
 
   /** Free training with no orders yet: one suggestion, and a way to add your own. */
@@ -170,7 +227,6 @@ export const todayCopy = {
       'Your campaign is safe today. Log anything you manage. Hold every order and the Truce comes back at midnight.',
     better: "I'm feeling better",
     betterHint: 'Takes the Truce back',
-    chip: 'Sick day',
   },
 
   /** The wake sheet: when you woke, when you slept. */
@@ -211,7 +267,7 @@ export const todayCopy = {
     action: (mode: CustomOrderMode): string => ({ check: 'Done', tap: '+1', typed: 'Log' })[mode],
     hint: (mode: CustomOrderMode): string =>
       ({
-        check: 'Double tap once it is done. Long press to undo.',
+        check: 'Double tap to mark it done, or not done again.',
         tap: 'Double tap to add one. Long press to take one back.',
         typed: "Double tap to type today's amount.",
       })[mode],

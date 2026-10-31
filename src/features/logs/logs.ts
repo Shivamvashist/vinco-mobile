@@ -7,9 +7,9 @@ import { SLEEP } from '../sleep';
  * The Commentarii: Caesar's campaign notes, Vinco's logs. Pure helpers that turn a week of
  * records into chart bars and a few honest numbers. See docs/DAY-FLOW.md, section 4.
  */
-export type LogKind = 'sleep' | 'water' | 'workout' | 'weight';
+export type LogKind = 'sleep' | 'water' | 'workout' | 'orders' | 'weight';
 
-export const LOG_KINDS: readonly LogKind[] = ['sleep', 'water', 'workout', 'weight'];
+export const LOG_KINDS: readonly LogKind[] = ['sleep', 'water', 'workout', 'orders', 'weight'];
 
 /** How a bar reads: hit the full goal, held the minimum, fell short, or a sleep-only tone. */
 export type BarTone = 'full' | 'held' | 'short' | 'rest' | 'empty';

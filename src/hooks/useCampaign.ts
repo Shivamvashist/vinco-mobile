@@ -23,7 +23,10 @@ import {
   getCurrentCampaign,
   getDayResult,
   getRankStatus,
+  getNextStreakReward,
   getTruceOffer,
+  LIVE_LEDGER_REASONS,
+  type NextStreakReward,
   type RankStatus,
   type TruceOffer,
 } from '@/features/campaign';
@@ -48,6 +51,10 @@ export type Campaign = {
   truceOffer: TruceOffer | null;
   /** Denarii held: earned minus spent. */
   denarii: number;
+  /** Denarii paid live for today so far (taken back if today stops holding). */
+  todayEarned: number;
+  /** What the run pays next (the Stipendium). */
+  nextReward: NextStreakReward;
   /** Today so far: open until all four orders hold. */
   todayStatus: 'open' | 'held' | 'conquered';
   /** True in free training (the 'ludus' kind): no campaign, no loss, no Truces. */
@@ -86,6 +93,9 @@ export function useCampaign(arc: ArcInfo, targets: OrderTargets, today: DayKey):
   const denarii =
     sumAmounts(ledgerRows.data) - sumAmounts(purchaseRows.data.map((row) => ({ amount: row.price })));
   const truceReserve = Math.max(0, sumAmounts(truceRows.data));
+  const todayEarned = sumAmounts(
+    ledgerRows.data.filter((row) => row.day === today && LIVE_LEDGER_REASONS.includes(row.reason)),
+  );
   const completedDays = countCompletedDays(records, isTodayHeld);
   const isLudus = arc?.kind === 'ludus';
   const hasFinishedCaesarArc =
@@ -94,9 +104,11 @@ export function useCampaign(arc: ArcInfo, targets: OrderTargets, today: DayKey):
     arc.lengthDays >= CAESAR_ARC_LENGTH &&
     getArcPosition(arc.startDay, arc.lengthDays, today).phase === 'finished';
 
+  const run = getCurrentCampaign(records, today, isTodayHeld);
+
   return {
     records,
-    campaign: getCurrentCampaign(records, today, isTodayHeld),
+    campaign: run,
     bestCampaign: getBestCampaign(records, today, isTodayHeld),
     completedDays,
     rank: getRankStatus(completedDays, hasFinishedCaesarArc),
@@ -107,6 +119,8 @@ export function useCampaign(arc: ArcInfo, targets: OrderTargets, today: DayKey):
     todayStatus: !isTodayHeld ? 'open' : todayResult === 'conquered' ? 'conquered' : 'held',
     selfieDays: dayRows.data.filter((row) => row.selfiePath).length,
     denarii,
+    todayEarned,
+    nextReward: getNextStreakReward(run, !isLudus),
     isLoaded:
       dayRows.updatedAt !== undefined &&
       orderRows.updatedAt !== undefined &&

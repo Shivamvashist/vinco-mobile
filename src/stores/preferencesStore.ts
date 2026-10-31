@@ -18,6 +18,8 @@ type PreferencesActions = {
   setGhostOpacity: (opacity: number) => void;
   /** Shows or hides one line on Vidi's body chart. */
   toggleBodyLine: (line: BodyLine) => void;
+  /** Shows or hides one order's chart in Vidi (key from orderChartKey). */
+  toggleOrderChart: (key: string) => void;
   updateThemePreferences: (patch: Partial<ThemePreferences>) => void;
   /** Back to the defaults (dev reset only: a journey reset keeps preferences). */
   reset: () => void;
@@ -44,6 +46,14 @@ export const usePreferencesStore = create<PreferencesStore>()(
             ? state.hiddenBodyLines.filter((hidden) => hidden !== line)
             : [...state.hiddenBodyLines, line],
         })),
+      toggleOrderChart: (key) =>
+        set((state) =>
+          sanitizePreferences({
+            hiddenOrderCharts: state.hiddenOrderCharts.includes(key)
+              ? state.hiddenOrderCharts.filter((hidden) => hidden !== key)
+              : [...state.hiddenOrderCharts, key],
+          }),
+        ),
       updateThemePreferences: (patch) => set(sanitizePreferences(patch)),
       reset: () => set(DEFAULT_PREFERENCES),
     }),
@@ -55,16 +65,22 @@ export const usePreferencesStore = create<PreferencesStore>()(
         tone,
         themeId,
         colorMode,
+        darkPaletteId,
+        lightPaletteId,
         soundEnabled,
         hapticsEnabled,
         ghostOpacity,
         hiddenBodyLines,
+        hiddenOrderCharts,
       }) => ({
         tone,
         ghostOpacity,
         hiddenBodyLines,
+        hiddenOrderCharts,
         themeId,
         colorMode,
+        darkPaletteId,
+        lightPaletteId,
         soundEnabled,
         hapticsEnabled,
       }),
@@ -83,6 +99,8 @@ export function selectThemePreferences(state: PreferencesStore): ThemePreference
   return {
     themeId: state.themeId,
     colorMode: state.colorMode,
+    darkPaletteId: state.darkPaletteId,
+    lightPaletteId: state.lightPaletteId,
     soundEnabled: state.soundEnabled,
     hapticsEnabled: state.hapticsEnabled,
   };

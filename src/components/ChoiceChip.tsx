@@ -1,6 +1,6 @@
-import { Pressable } from 'react-native';
-
 import { createStyles, type FeedbackCue, useFeedback } from '@/theme';
+
+import { PressableScale } from './PressableScale';
 
 import { Txt } from './Txt';
 
@@ -40,23 +40,20 @@ export function ChoiceChip({
   };
 
   return (
-    <Pressable
+    <PressableScale
+      scaleTo="button"
       accessibilityRole={isMulti ? 'checkbox' : 'radio'}
       accessibilityState={{ checked: selected }}
       accessibilityLabel={accessibilityLabel ?? label}
       hitSlop={HIT_SLOP}
       onPress={handlePress}
-      style={({ pressed }) => [
-        styles.chip,
-        isMulti && styles.multi,
-        selected && styles.selected,
-        pressed && styles.pressed,
-      ]}
+      style={[styles.chip, isMulti && styles.multi, selected && styles.selected]}
+      pressedStyle={styles.pressed}
     >
       <Txt variant="labelSmall" color={selected ? 'text' : 'textMuted'} numberOfLines={1}>
         {label}
       </Txt>
-    </Pressable>
+    </PressableScale>
   );
 }
 

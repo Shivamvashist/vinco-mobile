@@ -1,6 +1,6 @@
 /**
  * DEV ONLY: the dev tools card in Settings, shown when dev mode is on (dev builds only).
- * Moves the calendar ahead, fills today's orders, opens the theme lab and resets everything.
+ * Moves the calendar ahead, fills today's orders, adds denarii, opens the theme lab and resets everything.
  */
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -10,7 +10,8 @@ import { BottomSheet } from '@/components/BottomSheet';
 import { Button } from '@/components/Button';
 import { Txt } from '@/components/Txt';
 import { commonCopy, devCopy } from '@/copy';
-import { db } from '@/db';
+import { db, grantDevDenarii } from '@/db';
+import { DEV_GRANT_DENARII } from '@/features/campaign';
 import type { OrderTargets } from '@/features/orders';
 import { useResetJourney } from '@/hooks/useResetJourney';
 import { useToday } from '@/hooks/useToday';
@@ -32,7 +33,7 @@ export function DevPanel({ targets }: DevPanelProps) {
   const dayOffset = useDevStore((state) => state.dayOffset);
   const advanceDay = useDevStore((state) => state.advanceDay);
   const [isResetOpen, setIsResetOpen] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const isAtMaxOffset = dayOffset >= MAX_DAY_OFFSET;
 
   const run = (action: () => void) => {
@@ -42,7 +43,7 @@ export function DevPanel({ targets }: DevPanelProps) {
     } catch (error) {
       console.warn('[dev] Action failed.', error);
       play('denied');
-      setMessage(devCopy.failed);
+      setMessage({ text: devCopy.failed, isError: true });
     }
   };
 
@@ -59,8 +60,13 @@ export function DevPanel({ targets }: DevPanelProps) {
         </Txt>
       )}
       {message ? (
-        <Txt variant="caption" color="danger" accessibilityRole="alert" style={styles.note}>
-          {message}
+        <Txt
+          variant="caption"
+          color={message.isError ? 'danger' : 'currency'}
+          accessibilityRole={message.isError ? 'alert' : undefined}
+          style={styles.note}
+        >
+          {message.text}
         </Txt>
       ) : null}
 
@@ -90,6 +96,21 @@ export function DevPanel({ targets }: DevPanelProps) {
         <Txt variant="caption" style={styles.note}>
           {isAtMaxOffset ? devCopy.atMaxOffset : devCopy.nextDayHint}
         </Txt>
+        <Button
+          label={devCopy.addDenarii(DEV_GRANT_DENARII)}
+          variant="secondary"
+          size="compact"
+          cue="confirm"
+          onPress={() => {
+            try {
+              setMessage({ text: devCopy.addedDenarii(grantDevDenarii(db, today)), isError: false });
+            } catch (error) {
+              console.warn('[dev] Could not add denarii.', error);
+              play('denied');
+              setMessage({ text: devCopy.failed, isError: true });
+            }
+          }}
+        />
         <Button
           label={devCopy.themeLab}
           variant="secondary"
