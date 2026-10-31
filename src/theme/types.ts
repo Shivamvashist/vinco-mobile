@@ -178,6 +178,8 @@ export type Theme = {
   id: string;
   name: string;
   scheme: SchemeName;
+  /** The palette the colours come from (palettes/registry.ts). */
+  paletteId: string;
   colors: ColorPalette;
   statusBarStyle: ColorScheme['statusBarStyle'];
   fonts: FontFamilies;
@@ -193,6 +195,10 @@ export type Theme = {
 export type ThemePreferences = {
   themeId: string;
   colorMode: ColorMode;
+  /** The palette used whenever the scheme is dark. */
+  darkPaletteId: string;
+  /** The palette used whenever the scheme is light. */
+  lightPaletteId: string;
   soundEnabled: boolean;
   hapticsEnabled: boolean;
 };

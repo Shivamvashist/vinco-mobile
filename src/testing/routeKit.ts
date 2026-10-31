@@ -6,7 +6,14 @@
 import { createArc, db, nowIso, saveOrderAmount, updateDayLog } from '@/db';
 import { DEFAULT_ORDER_TARGETS } from '@/features/orders';
 import { addDays, toDayKey } from '@/lib/dates';
-import { useDevStore, useNoticesStore, useOnboardingStore, usePreferencesStore } from '@/stores';
+import {
+  useDayCardStore,
+  useDevStore,
+  useNoticesStore,
+  useOnboardingStore,
+  usePreferencesStore,
+} from '@/stores';
+import { DEFAULT_PALETTE_IDS } from '@/theme';
 
 /** Where renderRouter finds the app's routes. */
 export const APP_DIR = './src/app';
@@ -16,9 +23,13 @@ export function resetAppState(): void {
   usePreferencesStore.setState({
     tone: 'centurion',
     colorMode: 'dark',
+    darkPaletteId: DEFAULT_PALETTE_IDS.dark,
+    lightPaletteId: DEFAULT_PALETTE_IDS.light,
+    hiddenOrderCharts: [],
     soundEnabled: true,
     hapticsEnabled: true,
   });
+  useDayCardStore.getState().reset();
   useOnboardingStore.getState().reset();
   useNoticesStore.setState({ acknowledgedLossDay: null });
   useDevStore.setState({ isDevModeOn: false, dayOffset: 0 });

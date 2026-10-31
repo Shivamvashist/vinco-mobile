@@ -1,6 +1,6 @@
 import { Easing, type EasingFunctionFactory } from 'react-native-reanimated';
 
-import { motion, type MotionDuration, type MotionEasing } from './tokens/motion';
+import { motion, type MotionDuration, type MotionEasing, type MotionSpring } from './tokens/motion';
 
 /** A Reanimated easing curve from the theme's motion tokens. */
 export function themeEasing(name: MotionEasing = 'standard'): EasingFunctionFactory {
@@ -11,4 +11,9 @@ export function themeEasing(name: MotionEasing = 'standard'): EasingFunctionFact
 /** Timing config for withTiming(): a theme duration plus a theme easing. */
 export function themeTiming(duration: MotionDuration = 'base', easingName: MotionEasing = 'standard') {
   return { duration: motion.duration[duration], easing: themeEasing(easingName) };
+}
+
+/** Spring config for withSpring(), from the theme's motion tokens. */
+export function themeSpring(name: MotionSpring = 'settle') {
+  return motion.spring[name];
 }

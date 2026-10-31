@@ -48,6 +48,9 @@ export const layout = {
   tabBarHeight: 70,
   iconSize: 22,
   iconSizeSmall: 16,
+  /** Today's hero (the Dies card) and its two tiles. */
+  heroCardHeight: 236,
+  tileHeight: 132,
   /** Square tile behind an order's icon. */
   iconTileSize: 34,
   borderWidth: 1,

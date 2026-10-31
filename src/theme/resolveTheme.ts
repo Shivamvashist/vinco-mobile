@@ -3,6 +3,7 @@ import { radius } from './tokens/radius';
 import { getTypeScale, scaleLayout, scaleSpace, scaleTypeScale } from './tokens/scale';
 import { layout, space } from './tokens/spacing';
 import { createTypeScale } from './tokens/typography';
+import { DEFAULT_PALETTE_IDS, type Palette } from './palettes/registry';
 import type { ColorMode, SchemeName, Theme, ThemeDefinition } from './types';
 
 /** Fallback when the phone doesn't report a colour scheme. Vinco is dark by default. */
@@ -22,13 +23,22 @@ export function resolveSchemeName(colorMode: ColorMode, systemScheme: string | n
 /**
  * Builds the full theme object components read.
  * @param sizeScale from getSizeScale(window width): shrinks spacing, sizes and type on narrow phones
+ * @param palette the user's palette for this scheme; without one (or for the other scheme), the
+ *   theme's own scheme colours
  */
-export function buildTheme(definition: ThemeDefinition, scheme: SchemeName, sizeScale = 1): Theme {
-  const colorScheme = definition.schemes[scheme];
+export function buildTheme(
+  definition: ThemeDefinition,
+  scheme: SchemeName,
+  sizeScale = 1,
+  palette?: Palette,
+): Theme {
+  const usesPalette = palette?.scheme === scheme;
+  const colorScheme = usesPalette ? palette : definition.schemes[scheme];
   return {
     id: definition.id,
     name: definition.name,
     scheme,
+    paletteId: usesPalette ? palette.id : DEFAULT_PALETTE_IDS[scheme],
     colors: colorScheme.colors,
     statusBarStyle: colorScheme.statusBarStyle,
     fonts: definition.fonts.families,

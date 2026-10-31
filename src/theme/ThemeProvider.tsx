@@ -5,6 +5,7 @@ import { useColorScheme, useWindowDimensions } from 'react-native';
 import { playHaptic } from './feedback/playHaptic';
 import { ReduceMotionProvider } from './ReduceMotionProvider';
 import { configureUiAudio, createSoundBank, type SoundBank } from './feedback/soundBank';
+import { getPalette, type PaletteId } from './palettes/registry';
 import { buildTheme, resolveSchemeName } from './resolveTheme';
 import { getThemeDefinition, THEMES } from './themes/registry';
 import { getSizeScale } from './tokens/scale';
@@ -15,6 +16,8 @@ type ThemeControls = {
   availableThemes: readonly Pick<ThemeDefinition, 'id' | 'name'>[];
   setThemeId: (themeId: string) => void;
   setColorMode: (colorMode: ColorMode) => void;
+  /** Picks the palette used whenever the scheme is dark (or light). Applies at once. */
+  setPalette: (scheme: SchemeName, paletteId: PaletteId) => void;
   setSoundEnabled: (enabled: boolean) => void;
   setHapticsEnabled: (enabled: boolean) => void;
 };
@@ -41,11 +44,12 @@ export function ThemeProvider({ children, preferences, onPreferencesChange }: Th
   const systemScheme = useColorScheme();
   const definition = getThemeDefinition(preferences.themeId);
   const schemeName = resolveSchemeName(preferences.colorMode, systemScheme);
+  const palette = getPalette(paletteIdFor(preferences, schemeName), schemeName);
   // Sizes follow the phone's width, so a narrow phone gets the same layout, a little smaller.
   const sizeScale = getSizeScale(useWindowDimensions().width);
   const theme = useMemo(
-    () => buildTheme(definition, schemeName, sizeScale),
-    [definition, schemeName, sizeScale],
+    () => buildTheme(definition, schemeName, sizeScale, palette),
+    [definition, schemeName, sizeScale, palette],
   );
 
   // Keeps the native root view (seen behind the keyboard and during transitions) on-theme.
@@ -59,6 +63,8 @@ export function ThemeProvider({ children, preferences, onPreferencesChange }: Th
       availableThemes: THEMES.map(({ id, name }) => ({ id, name })),
       setThemeId: (themeId) => onPreferencesChange({ themeId: getThemeDefinition(themeId).id }),
       setColorMode: (colorMode) => onPreferencesChange({ colorMode }),
+      setPalette: (scheme, paletteId) =>
+        onPreferencesChange(scheme === 'dark' ? { darkPaletteId: paletteId } : { lightPaletteId: paletteId }),
       setSoundEnabled: (soundEnabled) => onPreferencesChange({ soundEnabled }),
       setHapticsEnabled: (hapticsEnabled) => onPreferencesChange({ hapticsEnabled }),
     }),
@@ -122,16 +128,23 @@ type SchemeOverrideProps = {
 };
 
 /**
- * Forces a scheme for one part of the tree, whatever the user picked.
- * Use for immersive screens that must stay dark, like the camera.
+ * Forces a scheme for one part of the tree, whatever mode the user picked, in the user's own
+ * palette for that scheme. Use for immersive screens that must stay dark, like the camera.
  */
 export function SchemeOverride({ scheme, children }: SchemeOverrideProps) {
   const parent = useTheme();
+  const { preferences } = useThemeControls();
+  const palette = getPalette(paletteIdFor(preferences, scheme), scheme);
   const theme = useMemo(
-    () => buildTheme(getThemeDefinition(parent.id), scheme, parent.sizeScale),
-    [parent.id, parent.sizeScale, scheme],
+    () => buildTheme(getThemeDefinition(parent.id), scheme, parent.sizeScale, palette),
+    [parent.id, parent.sizeScale, scheme, palette],
   );
   return <ThemeContext value={theme}>{children}</ThemeContext>;
+}
+
+/** The palette id the user picked for a scheme. */
+function paletteIdFor(preferences: ThemePreferences, scheme: SchemeName): string {
+  return scheme === 'dark' ? preferences.darkPaletteId : preferences.lightPaletteId;
 }
 
 /** The active theme: colours, type, spacing, radius, layout, motion. */
@@ -141,7 +154,7 @@ export function useTheme(): Theme {
   return theme;
 }
 
-/** Read and change theme preferences (theme, colour mode, sound, haptics). */
+/** Read and change theme preferences (theme, colour mode, palettes, sound, haptics). */
 export function useThemeControls(): ThemeControls {
   const controls = use(ThemeControlsContext);
   if (!controls) throw new Error('useThemeControls must be used inside <ThemeProvider>.');

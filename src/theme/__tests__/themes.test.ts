@@ -1,5 +1,6 @@
 import { contrastRatio } from '../contrast';
 import { DAY_CARD_STYLES } from '../palettes/dayCards';
+import { DEFAULT_PALETTE_IDS, getPalette, PALETTES, palettesFor } from '../palettes/registry';
 import { THEMES } from '../themes/registry';
 import type { ColorPalette, FeedbackCue, SchemeName } from '../types';
 
@@ -20,6 +21,9 @@ const READABLE_PAIRS: [keyof ColorPalette, keyof ColorPalette, number][] = [
   ['onSeal', 'seal', 4.5],
   ['onInverse', 'inverse', 7],
   ['border', 'background', 1.3],
+  ['currency', 'surface', 4.5],
+  ['danger', 'surface', 4.5],
+  ['accent', 'surfaceRaised', 4.5],
 ];
 
 const ALL_CUES: FeedbackCue[] = [
@@ -86,3 +90,28 @@ describe.each(DAY_CARD_STYLES.map((style) => [style.name, style] as const))(
     });
   },
 );
+
+describe.each(PALETTES.map((palette) => [palette.id, palette] as const))('palette "%s"', (_id, palette) => {
+  it.each(READABLE_PAIRS)('%s on %s meets %d:1', (foreground, background, minimum) => {
+    const { colors } = palette;
+    expect(contrastRatio(colors[foreground], colors[background])).toBeGreaterThanOrEqual(minimum);
+  });
+
+  it('has a status bar that reads on its background', () => {
+    expect(palette.statusBarStyle).toBe(palette.scheme === 'dark' ? 'light' : 'dark');
+  });
+});
+
+describe('palette registry', () => {
+  it('has unique ids and both defaults', () => {
+    expect(new Set(PALETTES.map((palette) => palette.id)).size).toBe(PALETTES.length);
+    expect(palettesFor('dark')[0]?.id).toBe(DEFAULT_PALETTE_IDS.dark);
+    expect(palettesFor('light')[0]?.id).toBe(DEFAULT_PALETTE_IDS.light);
+  });
+
+  it('falls back to the default for an unknown id or the wrong scheme', () => {
+    expect(getPalette('neon', 'dark').id).toBe('basalt');
+    expect(getPalette('papyrus', 'dark').id).toBe('basalt');
+    expect(getPalette('nox', 'dark').id).toBe('nox');
+  });
+});

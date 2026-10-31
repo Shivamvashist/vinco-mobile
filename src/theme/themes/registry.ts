@@ -1,3 +1,4 @@
+import { DEFAULT_PALETTE_IDS } from '../palettes/registry';
 import type { ThemeDefinition, ThemePreferences } from '../types';
 import { vincoTheme } from './vinco';
 
@@ -14,6 +15,8 @@ export const DEFAULT_THEME_ID = vincoTheme.id;
 export const DEFAULT_THEME_PREFERENCES: ThemePreferences = {
   themeId: DEFAULT_THEME_ID,
   colorMode: 'dark',
+  darkPaletteId: DEFAULT_PALETTE_IDS.dark,
+  lightPaletteId: DEFAULT_PALETTE_IDS.light,
   soundEnabled: false,
   hapticsEnabled: true,
 };
