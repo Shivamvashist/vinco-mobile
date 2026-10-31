@@ -1,9 +1,10 @@
 import { View } from 'react-native';
 
 import { todayCopy } from '@/copy';
-import { createStyles } from '@/theme';
+import { createStyles, iconTile } from '@/theme';
 
 import { Button } from '../Button';
+import { Card } from '../Card';
 import { Icon } from '../Icon';
 import { Txt } from '../Txt';
 
@@ -20,12 +21,13 @@ export type DawnCardProps = {
 /**
  * The first thing on Today until wake-up is logged: one greeting, one button, and a quiet
  * way out for a sick day. "I'm up" opens the wake sheet; the orders wait below until then.
+ * A surface card with first light rising from the bottom, like the hero.
  */
 export function DawnCard({ hour, plannedTime, onRise, onFeelingSick }: DawnCardProps) {
   const styles = useStyles();
   const copy = todayCopy.dawn;
   return (
-    <View style={styles.card}>
+    <Card glow={{ color: 'accent', intensity: 0.7 }} style={styles.card}>
       <View style={styles.sun}>
         <Icon name="sunrise" color="accent" />
       </View>
@@ -46,28 +48,13 @@ export function DawnCard({ hour, plannedTime, onRise, onFeelingSick }: DawnCardP
           <Button label={todayCopy.sickDay.dawnAction} variant="ghost" cue="tap" onPress={onFeelingSick} />
         ) : null}
       </View>
-    </View>
+    </Card>
   );
 }
 
 const useStyles = createStyles((theme) => ({
-  card: {
-    alignItems: 'center',
-    paddingVertical: theme.space.xxl,
-    paddingHorizontal: theme.space.lg,
-    borderRadius: theme.radius.lg,
-    borderWidth: theme.layout.borderWidth,
-    borderColor: theme.colors.accentBorder,
-    backgroundColor: theme.colors.accentTint,
-  },
-  sun: {
-    width: theme.layout.iconTileSize,
-    height: theme.layout.iconTileSize,
-    borderRadius: theme.radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.accentSoft,
-  },
+  card: { alignItems: 'center', paddingVertical: theme.space.xxl },
+  sun: iconTile(theme, 'accentSoft', 'round'),
   eyebrow: { marginTop: theme.space.md, marginBottom: theme.space.xs },
   planned: { marginTop: theme.space.xs },
   action: { alignSelf: 'stretch', marginTop: theme.space.xl, gap: theme.space.xs },

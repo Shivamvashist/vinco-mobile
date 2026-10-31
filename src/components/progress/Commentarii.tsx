@@ -154,7 +154,7 @@ function WeekLog({ kind, logs, targets, today }: WeekLogProps) {
 
   return (
     <>
-      <Card variant="sunk" bordered style={styles.chartCard}>
+      <Card style={styles.chartCard}>
         <View style={styles.chartHeader}>
           <Txt variant="label">{header.title}</Txt>
           <Txt variant="caption">{header.target}</Txt>
@@ -224,7 +224,7 @@ function WeightLog({ today, logs, todayWeightKg, onLogWeight }: WeightLogProps) 
 
   return (
     <>
-      <Card variant="sunk" bordered style={styles.chartCard}>
+      <Card style={styles.chartCard}>
         <Txt variant="label">{body.title}</Txt>
         {hasAny ? (
           <>

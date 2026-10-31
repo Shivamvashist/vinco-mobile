@@ -1,6 +1,7 @@
 import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { Icon, type IconName } from '@/components/Icon';
 import { Txt } from '@/components/Txt';
 import { focusCopy } from '@/copy';
@@ -40,7 +41,7 @@ export function GuardPermissionNotice({ guard, permissions }: GuardPermissionNot
 
   if (!granted.accessibility) {
     return (
-      <View style={styles.card} accessibilityRole="summary">
+      <Card glow={{ color: 'accent', intensity: 0.5 }} style={styles.card} accessibilityRole="summary">
         <View style={styles.titleRow}>
           <Icon name="shield" color="accent" size={theme.layout.iconSize} />
           <Txt variant="headingSmall" accessibilityRole="header" style={styles.flex}>
@@ -59,13 +60,13 @@ export function GuardPermissionNotice({ guard, permissions }: GuardPermissionNot
           size="compact"
         />
         <Txt variant="caption">{copy.blockingOff}</Txt>
-      </View>
+      </Card>
     );
   }
 
   if (guard === 'custos' && !granted.overlay) {
     return (
-      <View style={styles.card}>
+      <Card glow={{ color: 'accent', intensity: 0.5 }} style={styles.card}>
         <Txt variant="label" accessibilityRole="header">
           {copy.overlayTitle}
         </Txt>
@@ -76,7 +77,7 @@ export function GuardPermissionNotice({ guard, permissions }: GuardPermissionNot
           variant="secondary"
           size="compact"
         />
-      </View>
+      </Card>
     );
   }
   return null;
@@ -108,11 +109,6 @@ const useStyles = createStyles((theme) => ({
   card: {
     gap: theme.space.sm,
     padding: theme.layout.cardPadding + theme.space.xs,
-    borderRadius: theme.radius.md,
-    borderCurve: 'continuous',
-    borderWidth: theme.layout.borderWidth,
-    borderColor: theme.colors.accentBorder,
-    backgroundColor: theme.colors.accentTint,
   },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: theme.space.sm },
   point: { flexDirection: 'row', alignItems: 'flex-start', gap: theme.space.sm },

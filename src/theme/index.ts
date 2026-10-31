@@ -8,6 +8,7 @@ export type { ThemeEffects } from './effects';
 /** Re-applies the UI audio mode (quiet on silent, mixes with music). Call after recording. */
 export { configureUiAudio as restoreUiAudioMode } from './feedback/soundBank';
 export { useReduceMotion } from './ReduceMotionProvider';
+export { cardSurface, iconTile } from './surfaces';
 export { SchemeOverride, ThemeProvider, useFeedback, useTheme, useThemeControls } from './ThemeProvider';
 export { DEFAULT_THEME_PREFERENCES, getAllFontAssets, THEMES } from './themes/registry';
 export { DAY_CARD_STYLES, type DayCardStyle } from './palettes/dayCards';

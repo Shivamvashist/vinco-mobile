@@ -8,6 +8,7 @@ const STEP_HREFS: Record<OnboardingStep, Href> = {
   arc: '/onboarding/arc',
   orders: '/onboarding/orders',
   tone: '/onboarding/tone',
+  permissions: '/onboarding/permissions',
   oath: '/onboarding/oath',
   selfie: '/onboarding/selfie',
 };

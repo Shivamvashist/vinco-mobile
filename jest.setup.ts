@@ -41,7 +41,8 @@ jest.mock('expo-camera', () => {
       React.useEffect(() => onCameraReady?.(), [onCameraReady]);
       return React.createElement(View, props);
     }),
-    useCameraPermissions: () => [{ granted: true, canAskAgain: true }, jest.fn()],
+    // [permission, request, read again]. A jest.fn so a test can show another state.
+    useCameraPermissions: jest.fn(() => [{ granted: true, canAskAgain: true }, jest.fn(), jest.fn()]),
   };
 });
 

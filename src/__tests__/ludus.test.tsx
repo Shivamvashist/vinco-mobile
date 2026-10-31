@@ -36,6 +36,8 @@ describe('Free training', () => {
     press(onboardingCopy.plan.continue(0));
     await screen.findByText(onboardingCopy.tone.title);
     press(onboardingCopy.continue);
+    await screen.findByText(onboardingCopy.permissions.title);
+    press(onboardingCopy.continue);
     await screen.findByText(onboardingCopy.oath.title);
     press(onboardingCopy.oath.skip);
     expect(await screen.findByText(onboardingCopy.selfie.bodyLudus)).toBeTruthy();

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
-import { createStyles, useReduceMotion } from '@/theme';
+import { cardSurface, createStyles, useReduceMotion } from '@/theme';
 
 import { Txt } from '../Txt';
 
@@ -66,10 +66,7 @@ const useStyles = createStyles((theme) => ({
     minHeight: theme.layout.buttonHeight * 1.6,
     paddingVertical: theme.layout.cardPadding,
     paddingHorizontal: theme.space.lg,
-    borderRadius: theme.radius.md,
-    borderWidth: theme.layout.borderWidth,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surfaceRaised,
+    ...cardSurface(theme, 'raised'),
   },
   meta: { flexDirection: 'row', alignItems: 'center', gap: theme.space.sm },
   avatar: {

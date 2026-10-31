@@ -41,7 +41,9 @@ export default function ToneScreen() {
       backHref={arcKind === 'campaign' ? '/onboarding/orders' : '/onboarding/plan'}
       title={copy.title}
       subtitle={copy.subtitle}
-      footer={<Button label={onboardingCopy.continue} onPress={() => router.push('/onboarding/oath')} />}
+      footer={
+        <Button label={onboardingCopy.continue} onPress={() => router.push('/onboarding/permissions')} />
+      }
     >
       <View style={styles.scenes} accessibilityRole="radiogroup">
         {copy.scenes.map((option, index) => (

@@ -36,7 +36,7 @@ export default function OathScreen() {
     <FlowLayout
       step={position.step}
       totalSteps={position.total}
-      backHref="/onboarding/tone"
+      backHref="/onboarding/permissions"
       title={copy.title}
       subtitle={copy.body}
       footer={

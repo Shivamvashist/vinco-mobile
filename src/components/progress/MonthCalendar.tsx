@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { commonCopy, progressCopy, rewardsCopy } from '@/copy';
 import type { GloriaLevel } from '@/features/gloria';
 import { type DayKey, monthGrid, parseDayKey } from '@/lib/dates';
-import { createStyles, useFeedback } from '@/theme';
+import { cardSurface, createStyles, useFeedback } from '@/theme';
 
 import { IconButton } from '../IconButton';
 import { Txt } from '../Txt';
@@ -203,10 +203,7 @@ function DayCell({ day, details, onPress }: DayCellProps) {
 const useStyles = createStyles((theme) => ({
   card: {
     padding: theme.space.lg,
-    borderRadius: theme.radius.md,
-    borderWidth: theme.layout.borderWidth,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surfaceSunk,
+    ...cardSurface(theme),
     gap: theme.space.xs + theme.space.xxs,
   },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: theme.space.xs },
@@ -221,14 +218,15 @@ const useStyles = createStyles((theme) => ({
   tint2: { opacity: 0.2 },
   tint3: { opacity: 0.32 },
   legendTints: { flexDirection: 'row', gap: theme.space.xxs },
-  surfaceSwatch: { backgroundColor: theme.colors.surface, overflow: 'hidden' },
+  surfaceSwatch: { backgroundColor: theme.colors.surfaceSunk, overflow: 'hidden' },
   conquered: { backgroundColor: theme.colors.accent },
   held: { borderWidth: theme.layout.borderWidthStrong, borderColor: theme.colors.accent },
   truce: { backgroundColor: theme.colors.rest },
   missed: { borderWidth: theme.layout.borderWidthStrong, borderColor: theme.colors.dangerBorder },
-  open: { backgroundColor: theme.colors.surface },
-  rest: { backgroundColor: theme.colors.surface },
-  future: { backgroundColor: theme.colors.surface },
+  // Days sit sunk into the card.
+  open: { backgroundColor: theme.colors.surfaceSunk },
+  rest: { backgroundColor: theme.colors.surfaceSunk },
+  future: { backgroundColor: theme.colors.surfaceSunk },
   outside: {},
   today: { borderWidth: theme.layout.borderWidthStrong, borderColor: theme.colors.text },
   pressed: { opacity: 0.7 },

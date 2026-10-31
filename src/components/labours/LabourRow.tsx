@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { rewardsCopy } from '@/copy';
 import { type ClaimPay, type LabourId, type LabourStatus } from '@/features/labours';
 import type { ClaimOutcome } from '@/hooks/useLabours';
-import { createStyles } from '@/theme';
+import { createStyles, iconTile } from '@/theme';
 
 import { ClaimButton } from '../hud/ClaimButton';
 import { Icon, type IconName } from '../Icon';
@@ -86,14 +86,7 @@ export function LabourRow({ status, pay, note, onClaim, onProblem }: LabourRowPr
 
 const useStyles = createStyles((theme) => ({
   row: { flexDirection: 'row', alignItems: 'center', gap: theme.space.md, paddingVertical: theme.space.sm },
-  mark: {
-    width: theme.layout.iconTileSize,
-    height: theme.layout.iconTileSize,
-    borderRadius: theme.radius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.surfaceSunk,
-  },
+  mark: iconTile(theme, 'surfaceSunk'),
   markReady: { backgroundColor: theme.colors.accentSoft },
   markIcon: { width: theme.layout.iconSizeSmall },
   body: { flex: 1, minWidth: 0, gap: theme.space.xs },

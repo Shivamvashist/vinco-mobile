@@ -1,15 +1,18 @@
-import { router, Tabs } from 'expo-router';
+import { router, Tabs, useSegments } from 'expo-router';
+import { useState } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { TabBar } from '@/components/navigation/TabBar';
+import { TabsHeader } from '@/components/navigation/TabsHeader';
 import { TabSwipe } from '@/components/navigation/TabSwipe';
 import { tabTransitionOptions } from '@/components/navigation/tabTransition';
-import { tabsCopy } from '@/copy';
+import { isTabName, type TabName, tabsCopy } from '@/copy';
 import { useAuroraSchedule } from '@/hooks/useAuroraSchedule';
 import { useLossNotice } from '@/hooks/useLossNotice';
 import { useReminderSchedule } from '@/hooks/useReminderSchedule';
 import { useSealFinishedDays } from '@/hooks/useSealFinishedDays';
+import { useWakeWatch } from '@/hooks/useWakeWatch';
 import { IS_DEV_MODE_AVAILABLE } from '@/stores';
 import { useReduceMotion, useTheme } from '@/theme';
 
@@ -30,15 +33,27 @@ export default function TabsLayout() {
   useAuroraSchedule();
   // Keeps the day's reminders in step with the day, and follows tapped notifications.
   useReminderSchedule();
+  // With the guard service on: "Are you up?" on the first unlock after 3 am until wake-up is logged.
+  useWakeWatch();
 
-  // The tabs slide as one strip of pages and follow a sideways swipe (TabSwipe, tabTransition).
+  // The tab on screen, for the header. A stack screen over the tabs (the Forum, Focus) keeps the
+  // last one, so the header doesn't change underneath it.
+  const segment = useSegments().find(isTabName);
+  const [tab, setTab] = useState<TabName>(segment ?? 'veni');
+  if (segment && segment !== tab) setTab(segment);
+
+  // One header above the tabs, outside the slide (TabsHeader). The tabs slide as one strip of
+  // pages and follow a sideways swipe (TabSwipe, tabTransition); a tab out of sight is frozen, so
+  // it doesn't re-render on every record change while the user is elsewhere.
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <TabsHeader tab={tab} />
       <Tabs
         tabBar={(props) => <TabBar {...props} />}
         screenLayout={({ children }) => <TabSwipe>{children}</TabSwipe>}
         screenOptions={{
           headerShown: false,
+          freezeOnBlur: true,
           sceneStyle: { backgroundColor: theme.colors.background },
           ...tabTransitionOptions(width, reduceMotion),
         }}

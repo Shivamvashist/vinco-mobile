@@ -1,13 +1,13 @@
 import { View } from 'react-native';
 
 import { todayCopy } from '@/copy';
-import { createStyles, useTheme } from '@/theme';
+import { cardSurface, createStyles, useTheme } from '@/theme';
 
 import { PressableScale } from '../../PressableScale';
 import { RollingNumber } from '../../RollingNumber';
 import { Txt } from '../../Txt';
 import { DayPath } from './DayPath';
-import { Glow } from './Glow';
+import { Glow } from '../../Glow';
 
 export type DiesState = keyof typeof todayCopy.hero.states;
 
@@ -112,12 +112,8 @@ const useStyles = createStyles((theme) => ({
     minHeight: theme.layout.heroCardHeight,
     padding: theme.layout.cardPadding,
     paddingBottom: theme.space.sm,
+    ...cardSurface(theme),
     borderRadius: theme.radius.xl,
-    borderCurve: 'continuous',
-    borderWidth: theme.layout.hairline,
-    borderColor: theme.effects.cardBorder,
-    backgroundColor: theme.colors.surface,
-    boxShadow: theme.effects.cardShadow,
     overflow: 'hidden',
     justifyContent: 'space-between',
   },

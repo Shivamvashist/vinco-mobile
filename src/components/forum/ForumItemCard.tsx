@@ -2,7 +2,7 @@ import { Pressable, View } from 'react-native';
 
 import { forumCopy } from '@/copy';
 import type { ForumItem, Holding } from '@/features/forum';
-import { createStyles, useFeedback } from '@/theme';
+import { cardSurface, createStyles, useFeedback } from '@/theme';
 
 import { Icon } from '../Icon';
 import { Txt } from '../Txt';
@@ -81,8 +81,7 @@ const useStyles = createStyles((theme) => ({
     alignItems: 'center',
     gap: theme.space.md,
     padding: theme.layout.cardPadding,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.surface,
+    ...cardSurface(theme),
   },
   pressed: { backgroundColor: theme.colors.surfaceRaised },
   text: { flex: 1, minWidth: 0, gap: theme.space.xxs },

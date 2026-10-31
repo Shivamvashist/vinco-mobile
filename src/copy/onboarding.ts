@@ -140,6 +140,15 @@ export const onboardingCopy = {
     } satisfies ToneLines,
   },
 
+  /** After the tone, before the oath (microphone) and the selfie (camera). Every one is optional. */
+  permissions: {
+    title: 'What Vinco will use',
+    subtitle:
+      'Allow these now so nothing stops you on Day I. Every one is optional; change them any time from your menu.',
+    allowAll: 'Allow all',
+    allowAllHint: 'Asks for reminders, the camera and the microphone, one after another.',
+  },
+
   oath: {
     title: 'Take the oath',
     body: 'Where do you see yourself in three months? Say it out loud, in your own voice. Listen back twice a day when you need it.',

@@ -4,11 +4,13 @@ import {
   selectGuardBridge,
   toFocusEvent,
   toNativeFocusConfig,
+  toNativeWakeWatch,
   unsupportedGuardBridge,
 } from '../bridge';
 
 const START = new Date(2026, 9, 31, 9, 0);
 const END = new Date(2026, 9, 31, 9, 25);
+const WAKE_COPY = { title: 'Are you up?', body: 'Log your wake-up.', channelName: 'Wake-up check' };
 
 function fakeNative() {
   let listener: ((event: unknown) => void) | null = null;
@@ -25,6 +27,7 @@ function fakeNative() {
     launchApp: jest.fn(async (packageName: string) => packageName === 'org.example.notes'),
     startFocus: jest.fn(async () => undefined),
     endFocus: jest.fn(async () => undefined),
+    setWakeWatch: jest.fn(async () => undefined),
     addListener: jest.fn((_name: string, next: (event: unknown) => void) => {
       listener = next;
       return { remove };
@@ -51,6 +54,9 @@ describe('guard bridge selection', () => {
     ).resolves.toBeUndefined();
     await expect(bridge.endFocus()).resolves.toBeUndefined();
     expect(() => bridge.onFocusEvent(() => undefined)()).not.toThrow();
+    await expect(
+      bridge.setWakeWatch({ enabled: true, awakeDay: null, copy: WAKE_COPY }),
+    ).resolves.toBeUndefined();
   });
 
   it('wraps the native module when it is built in', async () => {
@@ -84,6 +90,10 @@ describe('guard bridge selection', () => {
     expect(heard).toHaveBeenCalledWith({ type: 'appClosed', packageName: 'org.example.feed' });
     unsubscribe();
     expect(remove).toHaveBeenCalled();
+    await bridge.setWakeWatch({ enabled: true, awakeDay: '2026-11-01', copy: WAKE_COPY });
+    expect(native.setWakeWatch).toHaveBeenCalledWith(
+      toNativeWakeWatch({ enabled: true, awakeDay: '2026-11-01', copy: WAKE_COPY }),
+    );
     // Reel counting isn't native yet: the stub's answer.
     await expect(bridge.getTodayCount()).resolves.toBe(0);
   });
@@ -105,6 +115,20 @@ describe('toNativeFocusConfig', () => {
       endsAt: END.getTime(),
       allowedPackages: ['org.example.notes', 'org.example.maps'],
       copy: { alertTitle: 'Focus is on' },
+    });
+  });
+});
+
+describe('toNativeWakeWatch', () => {
+  it('adds the 03:00 to 12:00 window and flattens the copy', () => {
+    expect(toNativeWakeWatch({ enabled: false, awakeDay: null, copy: WAKE_COPY })).toEqual({
+      enabled: false,
+      fromMinutes: 180,
+      untilMinutes: 720,
+      awakeDay: null,
+      title: 'Are you up?',
+      body: 'Log your wake-up.',
+      channelName: 'Wake-up check',
     });
   });
 });

@@ -80,10 +80,12 @@ describe('useOnboardingStore', () => {
   });
 
   it('numbers steps by path', () => {
-    expect(getStepPosition('plan', 'ludus')).toEqual({ step: 1, total: 4 });
-    expect(getStepPosition('selfie', 'ludus')).toEqual({ step: 4, total: 4 });
-    expect(getStepPosition('arc', 'campaign')).toEqual({ step: 2, total: 6 });
-    expect(getStepPosition('oath', 'campaign')).toEqual({ step: 5, total: 6 });
+    expect(getStepPosition('plan', 'ludus')).toEqual({ step: 1, total: 5 });
+    expect(getStepPosition('permissions', 'ludus')).toEqual({ step: 3, total: 5 });
+    expect(getStepPosition('selfie', 'ludus')).toEqual({ step: 5, total: 5 });
+    expect(getStepPosition('arc', 'campaign')).toEqual({ step: 2, total: 7 });
+    expect(getStepPosition('permissions', 'campaign')).toEqual({ step: 5, total: 7 });
+    expect(getStepPosition('oath', 'campaign')).toEqual({ step: 6, total: 7 });
   });
 
   it('picks free training, and a length picks a campaign again', () => {

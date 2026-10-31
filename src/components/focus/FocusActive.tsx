@@ -13,7 +13,7 @@ import type { FocusComes, RetreatPayment } from '@/features/focus';
 import type { FocusRetreatResult } from '@/hooks/useFocus';
 import { useScreensaver } from '@/hooks/useScreensaver';
 import { formatClockTime } from '@/lib/dates';
-import { createStyles, themeTiming, useReduceMotion, useTheme } from '@/theme';
+import { cardSurface, createStyles, themeTiming, useReduceMotion, useTheme } from '@/theme';
 
 import { DriftingClock } from './DriftingClock';
 import { FocusClock } from './FocusClock';
@@ -169,12 +169,7 @@ const useStyles = createStyles((theme) => ({
     gap: theme.space.xxs,
     minHeight: theme.layout.minTouchTarget + theme.space.xl,
     padding: theme.layout.cardPadding,
-    borderRadius: theme.radius.md,
-    borderCurve: 'continuous',
-    borderWidth: theme.layout.hairline,
-    borderColor: theme.effects.cardBorder,
-    backgroundColor: theme.colors.surface,
-    boxShadow: theme.effects.cardShadow,
+    ...cardSurface(theme),
   },
   half: { flex: 1 },
   rainTile: { padding: 0, overflow: 'hidden' },

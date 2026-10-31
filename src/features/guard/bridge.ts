@@ -3,10 +3,12 @@ import type { FocusGuard } from '@/features/focus';
 import {
   type VigilNativeFocusConfig,
   type VigilNativeModule,
+  type VigilNativeWakeWatch,
   vigilNativeModule,
 } from '../../../modules/vigil';
 
 import type { GuardLevel } from './guard';
+import { WAKE_PROMPT, type WakeWatchConfig } from './wakeWatch';
 
 export type GuardPermission = 'accessibility' | 'overlay';
 
@@ -77,6 +79,11 @@ export type GuardBridge = {
   endFocus: () => Promise<void>;
   /** Events from the native guard while a focus runs. Returns the unsubscribe. */
   onFocusEvent: (listener: (event: FocusEvent) => void) => () => void;
+  /**
+   * "Are you up?": keeps the native unlock watch in step (src/hooks/useWakeWatch.ts). Fires only
+   * while the guard service runs. Logging wake-up today also clears a prompt still on screen.
+   */
+  setWakeWatch: (config: WakeWatchConfig) => Promise<void>;
 };
 
 /** Expo Go, iOS and tests: everything reports "not available", nothing throws. */
@@ -93,6 +100,7 @@ export const unsupportedGuardBridge: GuardBridge = {
   startFocus: async () => undefined,
   endFocus: async () => undefined,
   onFocusEvent: () => () => undefined,
+  setWakeWatch: async () => undefined,
 };
 
 const FOCUS_EVENT_TYPES: readonly FocusEventType[] = ['nudge', 'appBlocked', 'appClosed'];
@@ -110,6 +118,19 @@ export function toNativeFocusConfig(config: FocusGuardConfig): VigilNativeFocusC
     endsAt: config.endsAt.getTime(),
     allowedPackages: [...new Set(packages)],
     copy,
+  };
+}
+
+/** The wake watch as the Kotlin side takes it: the window from WAKE_PROMPT, the copy flattened. */
+export function toNativeWakeWatch(config: WakeWatchConfig): VigilNativeWakeWatch {
+  return {
+    enabled: config.enabled,
+    fromMinutes: WAKE_PROMPT.fromMinutes,
+    untilMinutes: WAKE_PROMPT.untilMinutes,
+    awakeDay: config.awakeDay,
+    title: config.copy.title,
+    body: config.copy.body,
+    channelName: config.copy.channelName,
   };
 }
 
@@ -146,6 +167,7 @@ export function createNativeGuardBridge(native: VigilNativeModule): GuardBridge 
       });
       return () => subscription.remove();
     },
+    setWakeWatch: (config) => native.setWakeWatch(toNativeWakeWatch(config)),
   };
 }
 

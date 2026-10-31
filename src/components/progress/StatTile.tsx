@@ -2,7 +2,7 @@ import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { useTabReturn } from '@/hooks/useTabReturn';
-import { type ColorRole, createStyles, motion, useReduceMotion } from '@/theme';
+import { cardSurface, type ColorRole, createStyles, motion, useReduceMotion } from '@/theme';
 
 import { Txt } from '../Txt';
 
@@ -50,8 +50,7 @@ const useStyles = createStyles((theme) => ({
     flex: 1,
     minWidth: 0,
     padding: theme.space.md,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.surface,
+    ...cardSurface(theme),
   },
   window: { overflow: 'hidden' },
   label: { marginTop: theme.space.xxs },

@@ -159,6 +159,17 @@ The local module `modules/vigil` (Kotlin, module name `VincoVigil`) sits behind 
 
 Compile check on the PC (needs Android Studio's JDK and the Android SDK): `npx expo prebuild -p android --no-install` (the `android/` folder is generated and gitignored), add `android/local.properties` with `sdk.dir=C:/Users/<you>/AppData/Local/Android/Sdk`, set `JAVA_HOME` to Android Studio's `jbr`, then from `android/`: `.\gradlew.bat :vigil:compileDebugKotlin`.
 
+### Are you up? (wake prompt, 1 Nov)
+
+When the user unlocks the phone between **03:00 and 12:00** (local time) and today's wake-up isn't logged, Vinco posts one quiet notification: "Are you up?". Tapping it opens Today on the wake-up flow (`vinco://veni?wake=1`).
+
+- **Needs the guard service.** Since Android 8 an app can't hear unlocks (`ACTION_USER_PRESENT`) from the manifest; a running component must register for them. The Vigil's accessibility service already runs whenever the user turned it on, so it registers the unlock receiver in `onServiceConnected` and drops it in `onUnbind` / `onDestroy`. With the service off the prompt simply doesn't fire. No foreground service is added for it.
+- **The rule** (`VigilWake.onUnlock`, mirrored and tested in `src/features/guard/wakeWatch.ts` `shouldPromptWake`): the watch is on, the time is in the window (`WAKE_PROMPT`), `awakeDay` isn't today, no prompt was posted today (`promptedDay`), and notifications are allowed. At most **once per local day**. The only work on an unlock is one SharedPreferences read.
+- **The watch** lives in its own prefs file, `vinco.vigil.wake` (apart from `vinco.vigil`, which a focus ending clears): enabled, window, `awakeDay`, `promptedDay`, title, body, channel name.
+- **The app keeps it in step** with `useWakeWatch()` (mounted in the tabs layout), through `guardBridge.setWakeWatch({ enabled, awakeDay, copy })`. On while the active arc has the wake-up order and reminders are on. `awakeDay` is today once wake-up is logged (`amounts.wake > 0` or `wokeAt`) or a sick-day Truce is called; logging it also clears a prompt still on screen. Sent only when something changed.
+- **Notification:** channel `vinco.wake` ("Wake-up check"), default importance, no full-screen, auto-cancels on tap, same small icon as Aurora. It may post during a focus.
+- Copy: `notificationsCopy.wakePrompt` (three tones).
+
 ### Testing Aurora on the phone
 
 1. Build once (cloud): `npx eas-cli@latest build -p android --profile development`. Install the APK from the link.

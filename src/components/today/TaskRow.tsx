@@ -1,7 +1,7 @@
 import { type AccessibilityActionEvent, Pressable, View } from 'react-native';
 
 import type { OrderStatus } from '@/features/orders';
-import { createStyles } from '@/theme';
+import { cardSurface, createStyles } from '@/theme';
 
 import { Icon } from '../Icon';
 import { PressableScale } from '../PressableScale';
@@ -151,14 +151,10 @@ const useStyles = createStyles((theme) => ({
     paddingVertical: theme.space.sm,
     paddingHorizontal: theme.layout.cardPadding,
     minHeight: theme.layout.buttonHeight,
-    borderRadius: theme.radius.md,
-    borderCurve: 'continuous',
-    borderWidth: theme.layout.borderWidth,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surfaceSunk,
+    ...cardSurface(theme),
   },
   // Done: it sinks to the bottom of the list, quieter, with the laurel circle as its mark.
-  rowConquered: { borderColor: theme.colors.accentBorder, backgroundColor: theme.colors.background },
+  rowConquered: { borderColor: theme.colors.accentBorder, backgroundColor: theme.colors.surfaceSunk },
   pressed: { opacity: 0.85 },
   text: { flex: 1, minWidth: 0 },
   line: { marginTop: theme.space.xxs },

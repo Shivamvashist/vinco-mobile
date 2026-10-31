@@ -137,6 +137,14 @@ export function useFocus(): FocusController {
     }
   }, [running, now]);
 
+  // The database is the truth: with no focus running, make sure no native guard is left on
+  // (a failed endFocus after a retreat or reset would otherwise hold the phone until endsAt).
+  const hasLoadedRows = latestRows.updatedAt != null;
+  useEffect(() => {
+    if (!hasLoadedRows || runningId != null) return;
+    void guardBridge.endFocus().catch(warnBridge);
+  }, [hasLoadedRows, runningId]);
+
   const start = (
     minutes: number,
     guard: FocusGuard,

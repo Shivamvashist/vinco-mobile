@@ -11,6 +11,7 @@ export {
   selectGuardBridge,
   toFocusEvent,
   toNativeFocusConfig,
+  toNativeWakeWatch,
   unsupportedGuardBridge,
 } from './bridge';
 export {
@@ -28,3 +29,12 @@ export {
   isGuardLevel,
   levelIncludes,
 } from './guard';
+export {
+  isInWakeWindow,
+  planWakeWatch,
+  shouldPromptWake,
+  WAKE_PROMPT,
+  type WakeWatchConfig,
+  type WakeWatchCopy,
+  type WakeWindow,
+} from './wakeWatch';

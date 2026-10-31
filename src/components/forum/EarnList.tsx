@@ -2,7 +2,7 @@ import { View } from 'react-native';
 
 import { forumCopy } from '@/copy';
 import { EARN_WAYS } from '@/features/forum';
-import { createStyles } from '@/theme';
+import { cardSurface, createStyles } from '@/theme';
 
 import { Txt } from '../Txt';
 
@@ -63,8 +63,7 @@ const useStyles = createStyles((theme) => ({
   subtitle: { marginTop: theme.space.xs },
   list: {
     marginTop: theme.space.lg,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.surface,
+    ...cardSurface(theme),
     overflow: 'hidden',
   },
   row: {

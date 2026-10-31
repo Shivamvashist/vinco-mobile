@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { arcCopy, commonCopy } from '@/copy';
 import { isArcLength, type PastArc } from '@/features/arc';
 import type { DayKey } from '@/lib/dates';
-import { createStyles } from '@/theme';
+import { cardSurface, createStyles } from '@/theme';
 
 import { Txt } from '../Txt';
 
@@ -61,7 +61,7 @@ export function PastArcList({ arcs, today }: PastArcListProps) {
 }
 
 const useStyles = createStyles((theme) => ({
-  list: { borderRadius: theme.radius.md, backgroundColor: theme.colors.surface, overflow: 'hidden' },
+  list: { ...cardSurface(theme), overflow: 'hidden' },
   row: { padding: theme.layout.cardPadding, gap: theme.space.xxs },
   divider: { borderTopWidth: theme.layout.hairline, borderTopColor: theme.colors.border },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: theme.space.sm },

@@ -4,7 +4,7 @@ import { commonCopy, forumCopy, rewardsCopy } from '@/copy';
 import { isFocusRetreatReason } from '@/features/focus';
 import type { TreasuryEntry } from '@/hooks/useForum';
 import type { DayKey } from '@/lib/dates';
-import { createStyles } from '@/theme';
+import { cardSurface, createStyles } from '@/theme';
 
 import { Txt } from '../Txt';
 
@@ -64,7 +64,7 @@ function describeReason(reason: string): string {
 }
 
 const useStyles = createStyles((theme) => ({
-  list: { borderRadius: theme.radius.md, backgroundColor: theme.colors.surface, overflow: 'hidden' },
+  list: { ...cardSurface(theme), overflow: 'hidden' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

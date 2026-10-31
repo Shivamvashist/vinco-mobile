@@ -4,8 +4,9 @@ import { arcCopy, rewardsCopy } from '@/copy';
 import type { Decoration, DecorationId } from '@/features/campaign';
 import { claimKey, DECORATION_REWARDS, FOREVER_PERIOD, resolveClaimPay } from '@/features/labours';
 import type { ClaimOutcome } from '@/hooks/useLabours';
-import { createStyles } from '@/theme';
+import { cardSurface, createStyles } from '@/theme';
 
+import { Glow } from '../Glow';
 import { ClaimButton } from '../hud/ClaimButton';
 import { Icon } from '../Icon';
 import { RewardChips } from '../labours/RewardChips';
@@ -51,6 +52,9 @@ export function DecorationGrid({
           const status = isEarned ? (isClaimed ? claimCopy.claimed : copy.earned) : item.how;
           return (
             <View key={id} style={[styles.tile, isEarned ? styles.earned : styles.locked]}>
+              {isEarned ? (
+                <Glow color="accent" intensity={isClaimed ? 0.35 : 0.7} origin="bottomRight" />
+              ) : null}
               <View
                 style={styles.head}
                 accessible
@@ -107,16 +111,14 @@ const useStyles = createStyles((theme) => ({
     flexGrow: 1,
     gap: theme.space.xs,
     padding: theme.space.md,
-    borderRadius: theme.radius.md,
+    borderRadius: theme.radius.lg,
+    borderCurve: 'continuous',
   },
-  earned: {
-    backgroundColor: theme.colors.accentTint,
-    borderWidth: theme.layout.borderWidth,
-    borderColor: theme.colors.accentBorder,
-  },
+  // Earned: a card with a soft laurel light (brighter until claimed); locked: an outline to fill.
+  earned: { ...cardSurface(theme), overflow: 'hidden' },
   locked: {
     borderWidth: theme.layout.borderWidth,
-    borderColor: theme.colors.border,
+    borderColor: theme.effects.cardBorder,
     borderStyle: 'dashed',
   },
   head: { gap: theme.space.xs },

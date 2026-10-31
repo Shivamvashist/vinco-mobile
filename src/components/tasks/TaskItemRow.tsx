@@ -2,7 +2,7 @@ import { Pressable, View } from 'react-native';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 
 import { tasksCopy } from '@/copy';
-import { createStyles, useReduceMotion } from '@/theme';
+import { cardSurface, createStyles, useReduceMotion } from '@/theme';
 
 import { IconButton } from '../IconButton';
 import { StatusCircle } from '../StatusCircle';
@@ -79,8 +79,7 @@ const useStyles = createStyles((theme) => ({
     flexDirection: 'row',
     alignItems: 'center',
     paddingLeft: theme.layout.cardPadding,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.surface,
+    ...cardSurface(theme),
   },
   main: {
     flex: 1,

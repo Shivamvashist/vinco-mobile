@@ -147,6 +147,24 @@ export const notificationsCopy = {
     announcements: { name: 'News from Vinco', description: 'Now and then: updates and events. Never ads.' },
   },
 
+  /**
+   * "Are you up?": posted once, on the first unlock after 3 am while wake-up isn't logged. Needs
+   * the guard service (docs/GUARDIANS.md). Tapping it opens Today's wake-up flow.
+   */
+  wakePrompt: {
+    channelName: 'Wake-up check',
+    title: {
+      philosopher: 'Are you up?',
+      centurion: 'Are you up, soldier?',
+      roast: 'Are you up, or just scrolling?',
+    },
+    body: {
+      philosopher: 'If the day has begun, mark it. One tap logs your wake-up.',
+      centurion: 'Phone is unlocked, so you are awake. Log your wake-up now.',
+      roast: 'Your thumb is clearly awake. Point it at Vinco and log your wake-up first.',
+    },
+  },
+
   settings: {
     row: 'Reminders',
     on: 'On',

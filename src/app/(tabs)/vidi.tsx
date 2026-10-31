@@ -5,7 +5,6 @@ import { router } from 'expo-router';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
-import { HudCounters } from '@/components/hud/HudCounters';
 import { Commentarii } from '@/components/progress/Commentarii';
 import { DaySummarySheet } from '@/components/progress/DaySummarySheet';
 import { GloriaCard } from '@/components/progress/GloriaCard';
@@ -15,7 +14,6 @@ import { StatTile } from '@/components/progress/StatTile';
 import { WeightSheet } from '@/components/proof/WeightSheet';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Screen } from '@/components/Screen';
-import { ScreenHeader } from '@/components/ScreenHeader';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { ToneLine } from '@/components/ToneLine';
 import { Txt } from '@/components/Txt';
@@ -57,14 +55,9 @@ export default function VidiScreen() {
   const [isWeightSheetOpen, setIsWeightSheetOpen] = useState(false);
   const [openDay, setOpenDay] = useState<{ day: DayKey; status: CalendarDayStatus } | null>(null);
 
-  const header = (
-    <ScreenHeader eyebrow={progressCopy.eyebrow} title={progressCopy.title} accessory={<HudCounters />} />
-  );
-
   if (!arc) {
     return (
-      <Screen>
-        {header}
+      <Screen gutter="tabBody">
         {isArcLoaded ? (
           <View style={styles.section}>
             <ToneLine line={pickTone(progressCopy.emptyLine, tone)} tone={tone} />
@@ -84,8 +77,7 @@ export default function VidiScreen() {
 
   return (
     <>
-      <Screen>
-        {header}
+      <Screen gutter="tabBody">
         <View style={[styles.section, styles.stats]}>
           {campaign.isLudus ? (
             <>

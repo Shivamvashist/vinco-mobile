@@ -23,7 +23,7 @@ Shared rules for all components:
 | `Txt`               | All text, by type variant and colour role                                |
 | `Screen`            | Safe area, background, gutters, scroll-to-top on tab re-tap              |
 | `ScreenHeader`      | Eyebrow, title (accessibility header), caption, optional right accessory |
-| `Card`              | Rounded container: `surface`, `sunk`, `raised`, optional border          |
+| `Card`              | The one card language: `surface`, `raised`, `sunk`; optional `glow`      |
 | `ToneLine`          | A message in the user's tone, with the tone named underneath             |
 | `navigation/TabBar` | Veni / Vidi / Vici, Latin over plain label                               |
 

@@ -81,7 +81,7 @@ function OrderWeek({ chart, today }: OrderWeekProps) {
   const atGoal = logged.filter((bar) => bar.tone === 'full').length;
 
   return (
-    <Card variant="sunk" bordered style={styles.card}>
+    <Card style={styles.card}>
       <View style={styles.header}>
         <Txt variant="label" numberOfLines={1} style={styles.title}>
           {chart.name}

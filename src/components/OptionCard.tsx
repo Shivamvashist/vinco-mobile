@@ -7,7 +7,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { createStyles, type FeedbackCue, useFeedback, useReduceMotion } from '@/theme';
+import { cardSurface, createStyles, type FeedbackCue, useFeedback, useReduceMotion } from '@/theme';
 
 import { PressableScale } from './PressableScale';
 
@@ -110,12 +110,11 @@ const useStyles = createStyles((theme) => ({
     alignItems: 'center',
     gap: theme.space.lg,
     padding: theme.space.lg,
-    borderRadius: theme.radius.md,
-    borderCurve: 'continuous',
+    ...cardSurface(theme),
+    // Full width in both states, so picking one never shifts the layout.
     borderWidth: theme.layout.borderWidthStrong,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surfaceSunk,
   },
+  // Picked: the selected-card tint with the accent border.
   selected: {
     borderColor: theme.colors.accent,
     backgroundColor: theme.colors.accentTint,

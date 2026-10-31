@@ -4,12 +4,13 @@ How Vinco reaches the user outside the app. Code follows this file; change it fi
 
 **The promise:** at most three nudges a day, plus the alarm. A reminder only fires while there is something left to do; the moment its job is done, it is withdrawn.
 
-## 1. Three kinds of notification
+## 1. Four kinds of notification
 
 | Kind                  | Who sends it                                | Android channel | Status                                          |
 | --------------------- | ------------------------------------------- | --------------- | ----------------------------------------------- |
 | **Local reminders**   | The phone itself (`expo-notifications`)     | `reminders`     | Built (this file)                               |
 | **Aurora, the alarm** | The native Aurora module (`modules/aurora`) | `aurora`        | Built by the Aurora work, not here. Not a nudge |
+| **Are you up?**       | The native Vigil module (`modules/vigil`)   | `vinco.wake`    | Built (section 6a). Needs the guard service     |
 | **Admin broadcasts**  | vinco-backend, through Expo's push service  | `announcements` | Later: token stored now, nothing sent yet       |
 
 The alarm never counts toward the daily cap, and reminders never touch the alarm's schedule.
@@ -66,6 +67,13 @@ No reminder from **11 pm until the planned wake time** (never later than noon, s
 - Every notification carries `data.url`. Reminders use `/veni`; admin broadcasts may use `vinco://<screen>`.
 - A tap opens that screen with `router.push`, Today with `router.navigate`. Cold starts are covered: `useLastNotificationResponse` returns the tap that launched the app, then the response is cleared so it is followed once.
 - Only known screens open (`toNotificationPath`: Veni, Vidi, Vici, Settings, Permissions, Forum, Plan, Guard, Aurora). Anything else opens Today.
+
+## 6a. Are you up? (wake prompt)
+
+- **What:** on the first unlock between 03:00 and 12:00 with today's wake-up not logged, one notification "Are you up?" (three tones, `notificationsCopy.wakePrompt`). A tap opens `vinco://veni?wake=1`, Today's wake-up flow.
+- **Who sends it:** the native Vigil module (`modules/vigil`, `VigilWake.kt`), not expo-notifications, on its own channel `vinco.wake` (default importance). It is only heard while the **guard service** (the Vigil's accessibility service) is on; without it, nothing fires. Detail in [GUARDIANS.md](GUARDIANS.md) "Are you up? (wake prompt)".
+- **When it stays quiet:** wake-up already logged today, a sick-day Truce today, a prompt already posted today (at most once a day), no arc with the wake-up order, reminders switched off (the master switch), or notifications not allowed.
+- **The daily cap:** it is a separate prompt, like the alarm, and does not count toward the 3 reminders a day. It fires only when wake-up isn't logged and at most once a day. It can land on the same morning as "Today's orders" (wake time + 30 min) when the user unlocks before that; the reminder planner doesn't know about it. Open question for the lead: count it toward the cap, or skip "Today's orders" on a day the prompt fired.
 
 ## 7. Privacy
 

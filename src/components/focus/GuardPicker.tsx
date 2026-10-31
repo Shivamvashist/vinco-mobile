@@ -4,9 +4,9 @@ import { PressableScale } from '@/components/PressableScale';
 import { Txt } from '@/components/Txt';
 import { focusCopy } from '@/copy';
 import { FOCUS_GUARDS, FOCUS_RULES, type FocusGuard } from '@/features/focus';
-import { createStyles, useFeedback, useTheme } from '@/theme';
+import { cardSurface, createStyles, useFeedback, useTheme } from '@/theme';
 
-import { Glow } from '../today/hero/Glow';
+import { Glow } from '../Glow';
 import { GuardAvatar } from './avatars/GuardAvatar';
 
 export type GuardPickerProps = {
@@ -104,12 +104,9 @@ const useStyles = createStyles((theme) => ({
     minHeight: theme.layout.minTouchTarget,
     paddingVertical: theme.space.md,
     paddingHorizontal: theme.space.xs,
-    borderRadius: theme.radius.md,
-    borderCurve: 'continuous',
+    ...cardSurface(theme),
+    // Full width in both states, so picking one never shifts the layout.
     borderWidth: theme.layout.borderWidth,
-    borderColor: theme.effects.cardBorder,
-    backgroundColor: theme.colors.surface,
-    boxShadow: theme.effects.cardShadow,
     overflow: 'hidden',
   },
   cardSelected: { borderColor: theme.colors.accentBorder, backgroundColor: theme.colors.accentTint },

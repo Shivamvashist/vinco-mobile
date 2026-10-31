@@ -2,7 +2,7 @@ import { Pressable, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { settingsCopy } from '@/copy';
-import { createStyles, type Palette } from '@/theme';
+import { cardSurface, createStyles, type Palette } from '@/theme';
 
 import { Icon } from '../Icon';
 import { Txt } from '../Txt';
@@ -83,10 +83,9 @@ const useStyles = createStyles((theme) => ({
   card: {
     flex: 1,
     minWidth: 0,
-    borderRadius: theme.radius.md,
+    ...cardSurface(theme),
+    // Full width in both states, so picking one never shifts the layout.
     borderWidth: theme.layout.borderWidthStrong,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
     overflow: 'hidden',
   },
   cardSelected: { borderColor: theme.colors.accent },

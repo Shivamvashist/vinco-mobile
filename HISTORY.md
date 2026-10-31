@@ -143,6 +143,11 @@ Answer when convenient; work continues with the safe default shown.
 
 ### Noticed, not done
 
+- (1 Nov) The wake prompt doesn't count toward the 3-a-day reminder cap; on a morning it fires before "Today's orders" both can arrive. Decide: count it, or skip the morning reminder on a prompted day.
+- (1 Nov) The wake prompt needs the guard (accessibility) service on; without it Android gives no way to hear the unlock short of a foreground service.
+- (1 Nov) `jest.setup.ts` has a `react/display-name` lint error at the camera fake's `forwardRef` (pre-existing; lint skips it).
+- (1 Nov) The Vidi calendar test was date-dependent (failed on the 1st and 2nd of a month); fixed to step back a month.
+
 - `app/(tabs)/veni.tsx` is about 485 lines after Wave 3 (under the 500 limit). If it grows, move the quick-log list and the no-orders card into their own components.
 - `useSealFinishedDays` runs in the tab layout. Screens over the tabs (Settings) keep it running, but a direct link into a stack screen would not seal until the tabs mount.
 - Template leftovers not used by the app: `assets/images/react-logo*.png`, `expo-badge*.png`, `expo-logo.png`, `logo-glow.png`, `tutorial-web.png`, `tabIcons/`; packages `@expo/ui`, `expo-glass-effect`, `expo-symbols`, `expo-web-browser`, `expo-device`. Remove when convenient (`expo-device` may be useful later).
@@ -178,10 +183,28 @@ Answer when convenient; work continues with the safe default shown.
   - Silentium's shade detection is a heuristic (systemui windows); OEM differences need the phone test list in GUARDIANS.md.
   - Play: the accessibility declaration and the foreground-service and full-screen-intent declarations are release tasks.
   - `git rm -r --cached modules/aurora/android/.gradle` once (now gitignored).
+  - Review risks left (31 Oct):
+    - Claims are never taken back if the deed is undone after claiming (by design).
+    - A retreat in the ~20 ms after the end would still charge.
+    - Vici can show a decoration as claimable after the arc ends, and the claim then refuses it.
+    - A focus across midnight counts to the day it began.
+    - The native 3-hour cap is applied only at start.
+  - Play Protect blocks sideloaded installs in India because of the accessibility service: install with `adb install -r` for testing, Play internal testing for testers.
 
 ---
 
 ## Milestone log
+
+### 1 Nov 2026: crash fix, shared header, setup permissions, wake prompt, daily log, one card language (still 1.1.0)
+
+- **Crash:** `themeSpring`, `themeTiming` and `themeEasing` (src/theme/animation.ts) are worklets. They were called from gesture callbacks (TabSwipe `onFinalize`, which fires on every touch; SlideToConfirm; NoticePill) and closed the release app. Any helper called from a gesture or animation callback must be a worklet.
+- **Shared tabs header:** `components/navigation/TabsHeader` (words from `describeTabHeader`) sits in `(tabs)/_layout.tsx` above the navigator, outside the slide; tab screens use `Screen gutter="tabBody"`. One HUD instead of three; `freezeOnBlur` on the tabs.
+- **Daily log:** `today/DailyLogButton` (floating, ring of logs done) and `today/DailyLogSheet`; `QuickLogs` removed.
+- **Focus tile:** `HeroTile` takes a `cornerAction`; the bite is drawn by `hero/NotchedSurface` from `lib/notchedTile.ts` (tested).
+- **Permissions:** `useAppPermissions` and `components/permissions/PermissionList` drive `onboarding/permissions` (tone, permissions, oath) and `/permissions`. Native rows go through `auroraBridge` and `guardBridge`; the accessibility row keeps the prominent disclosure from `focusCopy.permission`.
+- **"Are you up?":** the Vigil service listens for unlocks (`ACTION_USER_PRESENT`, registered while it runs). The rule is in `VigilWake.kt`, mirrored in `features/guard/wakeWatch.ts`; `useWakeWatch()` (mounted in the tabs layout) syncs it through `guardBridge.setWakeWatch`. Today opens the wake sheet from `?wake=1` and clears it through the screen's own navigation (the global router throws before the root mounts). Docs: GUARDIANS.md and NOTIFICATIONS.md 6a.
+- **One card language:** `Card` (variants plus an optional `glow`), with `cardSurface` and `iconTile` in `src/theme/surfaces.ts`, controls every card; `Glow` moved to `src/components/Glow.tsx`. Tints remain only for selected states and small badges. See the DESIGN-SYSTEM section "Surfaces".
+- Check: 84 suites, 974 tests green. The Kotlin compiles (`:vigil:compileDebugKotlin`). Not yet tried on a phone.
 
 ### 31 Oct 2026: Wave 5 (still 1.1.0)
 
@@ -202,7 +225,12 @@ Answer when convenient; work continues with the safe default shown.
   - `useScreensaver` (expo-brightness, expo-keep-awake), `useFocusLock`, retreat in `db/focus.ts`, five new sound cues, `FocusTile`.
 - **Step G (notices):** `features/notices/queue.ts`, `components/notices` (`notify`, NoticeHost, NoticePill). Toast removed.
 - **Integration:** the focus claim flies to its own counters; one Gloria rule (`features/gloria`); coin cue throttled; Forum history labels.
-- 80 suites, 950 tests. Nothing tried on a phone yet.
+- **Review fixes:**
+  - Done on a focus result no longer reopens setup (`beforeRemove` marks it seen).
+  - The native tick stops after a focus ends.
+  - The guard never pulls Vinco over a call.
+  - With no focus in the database, `useFocus` lifts any native guard left on.
+- 80 suites, 951 tests; `:vigil:compileDebugKotlin` succeeds. Nothing tried on a phone yet.
 - Guard avatars are vector emblems in code. Illustrated versions can replace them (prompts in the developer handover of 31 Oct).
 
 ### 31 Oct 2026: Today hero, spring motion, Focus (still 1.1.0)

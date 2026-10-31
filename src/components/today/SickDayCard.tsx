@@ -4,6 +4,7 @@ import { todayCopy } from '@/copy';
 import { createStyles } from '@/theme';
 
 import { Button } from '../Button';
+import { Card } from '../Card';
 import { Txt } from '../Txt';
 
 export type SickDayCardProps = {
@@ -16,7 +17,7 @@ const copy = todayCopy.sickDay;
 export function SickDayCard({ onFeelingBetter }: SickDayCardProps) {
   const styles = useStyles();
   return (
-    <View style={styles.card}>
+    <Card glow={{ color: 'rest', intensity: 0.4 }} style={styles.card}>
       <Txt variant="eyebrow" color="textMuted">
         {copy.cardEyebrow}
       </Txt>
@@ -36,18 +37,12 @@ export function SickDayCard({ onFeelingBetter }: SickDayCardProps) {
           onPress={onFeelingBetter}
         />
       </View>
-    </View>
+    </Card>
   );
 }
 
 const useStyles = createStyles((theme) => ({
-  card: {
-    padding: theme.layout.cardPadding,
-    borderRadius: theme.radius.lg,
-    borderWidth: theme.layout.borderWidth,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
-  },
+  card: { padding: theme.layout.cardPadding },
   title: { marginTop: theme.space.xs },
   body: { marginTop: theme.space.xs },
   action: { marginTop: theme.space.lg },

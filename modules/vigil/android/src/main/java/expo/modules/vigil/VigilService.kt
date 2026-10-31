@@ -1,8 +1,10 @@
 package expo.modules.vigil
 
 import android.accessibilityservice.AccessibilityService
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.provider.Settings
 import android.view.accessibility.AccessibilityEvent
 
@@ -13,6 +15,7 @@ import android.view.accessibility.AccessibilityEvent
  */
 class VigilService : AccessibilityService() {
   private var guard: VigilGuard? = null
+  private var unlockReceiver: BroadcastReceiver? = null
 
   override fun onServiceConnected() {
     super.onServiceConnected()
@@ -20,6 +23,8 @@ class VigilService : AccessibilityService() {
     guard = created
     running = this
     created.reload()
+    // Unlocks can only be heard by a running component since Android 8: the "Are you up?" prompt.
+    if (unlockReceiver == null) unlockReceiver = VigilWake.register(this)
   }
 
   override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -33,7 +38,15 @@ class VigilService : AccessibilityService() {
 
   override fun onInterrupt() = Unit
 
+  override fun onUnbind(intent: Intent?): Boolean {
+    VigilWake.unregister(this, unlockReceiver)
+    unlockReceiver = null
+    return super.onUnbind(intent)
+  }
+
   override fun onDestroy() {
+    VigilWake.unregister(this, unlockReceiver)
+    unlockReceiver = null
     guard?.stop()
     guard = null
     if (running === this) running = null

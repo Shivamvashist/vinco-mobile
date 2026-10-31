@@ -7,7 +7,7 @@ import { menuCopy } from '@/copy';
 import { useActiveArc } from '@/hooks/useActiveArc';
 import { useOath } from '@/hooks/useOath';
 import { useToday } from '@/hooks/useToday';
-import { createStyles, useFeedback, useReduceMotion, useTheme } from '@/theme';
+import { cardSurface, createStyles, useFeedback, useReduceMotion, useTheme } from '@/theme';
 
 import { Icon, type IconName } from '../Icon';
 import { Txt } from '../Txt';
@@ -158,10 +158,7 @@ const useStyles = createStyles((theme) => ({
   card: {
     position: 'absolute',
     paddingVertical: theme.space.sm,
-    borderRadius: theme.radius.lg,
-    borderWidth: theme.layout.borderWidth,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surfaceRaised,
+    ...cardSurface(theme, 'raised'),
   },
   account: {
     flexDirection: 'row',

@@ -7,7 +7,7 @@ import { type FocusTotals, isFocusGuard } from '@/features/focus';
 import type { Tone } from '@/features/tone';
 import type { DayKey } from '@/lib/dates';
 import { formatClockTime } from '@/lib/dates';
-import { createStyles } from '@/theme';
+import { cardSurface, createStyles } from '@/theme';
 
 export type FocusLogProps = {
   totals: FocusTotals;
@@ -109,11 +109,7 @@ const useStyles = createStyles((theme) => ({
     flex: 1,
     gap: theme.space.xxs,
     padding: theme.layout.cardPadding,
-    borderRadius: theme.radius.md,
-    borderCurve: 'continuous',
-    borderWidth: theme.layout.hairline,
-    borderColor: theme.effects.cardBorder,
-    backgroundColor: theme.colors.surface,
+    ...cardSurface(theme),
   },
   tabular: { fontVariant: ['tabular-nums'] },
   list: {

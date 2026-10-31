@@ -13,14 +13,12 @@ import { RankCard } from '@/components/arc/RankCard';
 import { RecordGrid } from '@/components/arc/RecordGrid';
 import { TreasuryCard } from '@/components/arc/TreasuryCard';
 import { BottomSheet } from '@/components/BottomSheet';
-import { HudCounters } from '@/components/hud/HudCounters';
 import { Screen } from '@/components/Screen';
-import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionHeader } from '@/components/SectionHeader';
 import { ToneLine } from '@/components/ToneLine';
 import { Txt } from '@/components/Txt';
 import { arcCopy, commonCopy, pickTone } from '@/copy';
-import { arcEndDay, getArcPosition, isArcLength } from '@/features/arc';
+import { arcEndDay, getArcPosition } from '@/features/arc';
 import { getDecorations, TRUCES } from '@/features/campaign';
 import { useActiveArc } from '@/hooks/useActiveArc';
 import { useArcChoice } from '@/hooks/useArcChoice';
@@ -60,8 +58,7 @@ export default function ViciScreen() {
 
   if (!arc) {
     return (
-      <Screen>
-        <ScreenHeader eyebrow={arcCopy.eyebrow} title={arcCopy.title} accessory={<HudCounters />} />
+      <Screen gutter="tabBody">
         {isLoaded ? (
           <View style={styles.section}>
             <ToneLine line={pickTone(arcCopy.emptyLine, tone)} tone={tone} />
@@ -87,11 +84,6 @@ export default function ViciScreen() {
       : 'active';
   const startLabel = commonCopy.dayLabel(arc.startDay, today);
   const endLabel = commonCopy.dayLabel(arcEndDay(arc.startDay, arc.lengthDays), today);
-  const title = isLudus
-    ? arcCopy.ludusName
-    : isArcLength(arc.lengthDays)
-      ? arcCopy.names[arc.lengthDays]
-      : arcCopy.fallbackName;
   const caption = isLudus
     ? arcCopy.ludusCaption(startLabel)
     : position.phase === 'finished'
@@ -116,8 +108,9 @@ export default function ViciScreen() {
 
   return (
     <>
-      <Screen>
-        <ScreenHeader eyebrow={arcCopy.eyebrow} title={title} caption={caption} accessory={<HudCounters />} />
+      <Screen gutter="tabBody">
+        {/* The arc's name is in the shared tabs header; its dates lead the page. */}
+        <Txt variant="caption">{caption}</Txt>
 
         {isLudus ? null : (
           <View style={styles.journey}>

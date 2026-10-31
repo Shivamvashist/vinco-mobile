@@ -19,6 +19,7 @@ src/theme/
   tokens/              theme-independent: spacing, radius, layout, motion, type scale builder, screen-width scale
   palettes/            colour schemes: nox, basalt, purpura, aes (dark); marble, papyrus, calx, alba (light)
   effects.ts           depth per scheme: glow strength, card hairline, soft shadow on light
+  surfaces.ts          the one card language: cardSurface and iconTile style helpers
   themes/              core themes (vinco) and the registry
   feedback/            sound bank (expo-audio) and haptics (expo-haptics)
   __tests__/           contrast, resolver, theme completeness
@@ -135,7 +136,7 @@ A **theme** is fonts and sounds (Vinco). A **palette** is one full set of colour
 
 - Every palette passes the same contrast pairs (`theme/__tests__/themes.test.ts`): text 7:1 on background, surface and sunk; muted text, accent, currency and danger 4.5:1; on-accent 4.5:1.
 - Saved as `darkPaletteId` and `lightPaletteId` in preferences; an unknown id, or one of the wrong scheme, falls back to the default on restore. Nox became the default dark palette on 31 Oct (the Vinco theme's own dark scheme is Nox too); a saved choice is kept, only the default changed.
-- **Depth per scheme** (`theme/effects.ts`, read as `theme.effects`): built from each palette, so a new palette gets it for free. Dark: glows at full strength, the plain `border`, no shadow. Light: glows at half strength (a full glow reads as a stain on pale stone), the card hairline a step stronger (`border` mixed 45% toward `borderStrong`), and a soft two-layer shadow in the palette's own ink. Use `theme.effects.cardBorder` and `theme.effects.cardShadow` (a `boxShadow`) on cards, tiles and the hero; `Glow` applies `glowStrength` itself. `Card` uses them for its surface and raised variants and its border.
+- **Depth per scheme** (`theme/effects.ts`, read as `theme.effects`): built from each palette, so a new palette gets it for free. Dark: glows at full strength, the plain `border`, no shadow. Light: glows at half strength (a full glow reads as a stain on pale stone), the card hairline a step stronger (`border` mixed 45% toward `borderStrong`), and a soft two-layer shadow in the palette's own ink. Use `theme.effects.cardBorder` and `theme.effects.cardShadow` (a `boxShadow`) on cards, tiles and the hero; `Glow` applies `glowStrength` itself. `Card` and `cardSurface` (below) use them, so most components never touch them directly.
 - The day card keeps its own fixed styles (`palettes/dayCards.ts`), so a shared card looks the same everywhere.
 - **Adding one:** create `palettes/<id>.ts` (a `ColorScheme` with every role), add it to `PALETTES` with its scheme, add its plain label to `settingsCopy.palettes`. The tests cover it at once (contrast in `themes.test.ts`, depth in `effects.test.ts`); its preview on `/appearance` is drawn from its own colours.
 
@@ -169,11 +170,22 @@ Sizes are for a 412 dp wide phone; narrower phones get them a little smaller (se
 ## 5. Spacing, radius, layout, motion
 
 - **space**: `xxs 2, xs 4, sm 8, md 12, lg 16, xl 20, xxl 24, xxxl 32, huge 48, giant 64`
-- **radius**: `xs 4, sm 10, md 16 (cards), lg 24 (sheets), pill 999`
+- **radius**: `xs 4, sm 10, md 16 (inset rows), lg 24 (cards, tiles, sheets), xl 30 (the hero, full-screen surfaces), pill 999`
 - **layout**: `screenGutter 18, flowGutter 22, cardPadding 12, minTouchTarget 44, buttonHeight 52, buttonHeightCompact 44, buttonHeightLarge 58, tabBarHeight 70, iconSize 22, iconSizeSmall 16, iconTileSize 34, chipHeight 30, choiceChipHeight 36, statusCircleSize 28, ringSize 58, ringStrokeWidth 5, barHeightThin / Regular / Thick 3 / 5 / 6, sheetPadding 20` (trimmed for real phones on 13 Oct)
 - **Scaling to the phone** (`tokens/scale.ts`, 13 Oct): all of the above are design sizes for a 412 dp wide phone. The theme multiplies space and layout by `sizeScale = clamp(width / 412, 0.84, 1)` and type by a gentler share of it, so a 360 dp phone gets the same layout a little smaller. `minTouchTarget`, border widths and stamp borders never shrink. Read `theme.sizeScale` for a one-off size; never use raw pixel sizes.
 - **Animating:** `withTiming(value, themeTiming('base'))` or `themeEasing('standard')` from `@/theme`. Check `useReduceMotion()` first; when true, set the final value directly.
 - **motion**: durations `instant 100, fast 200, base 350, slow 500, slower 800` ms; easing `standard (0.2, 0.8, 0.2, 1)`; `stagger 60` ms. Quick and quiet everywhere; the stamp is the one big moment. Respect the phone's reduce-motion setting.
+
+### Surfaces: one card language (1 Nov)
+
+Every card, tile, row and panel speaks the same language, so a palette or scheme change reaches all of them at once. Controlled in two places: `Card` (`components/Card.tsx`) and `cardSurface` (`theme/surfaces.ts`).
+
+- **The card:** `surface` (or `surfaceRaised` for menus and previews), the card hairline (`layout.hairline` in `effects.cardBorder`), the soft shadow on light palettes (`effects.cardShadow`), `borderCurve: 'continuous'` and `radius.lg`. The hero alone uses `radius.xl`.
+- **`Card`** for a plain container: `variant` `surface` (default), `raised` or `sunk` (an inset row inside a card or sheet: `surfaceSunk`, `radius.md`, no shadow; `bordered` adds the hairline). `glow={{ color, origin?, intensity? }}` lays a soft palette light behind the content (`components/Glow.tsx`, the hero's light): accent for dawn, wins and rank, danger for a warning, rest for a sick day.
+- **`cardSurface(theme, level?)`** for anything that cannot be a `Card` (a pressable tile, a list container with dividers): spread it into the style, `{ ...cardSurface(theme), padding: ... }`.
+- **`iconTile(theme, fill?, shape?)`**: the small square (or round) soft tile behind a card's icon, `layout.iconTileSize` on `accentSoft` by default.
+- **Inside a card or a sheet** (both `surface`), inset things are `surfaceSunk`; never `surface` on `surface`.
+- **Tints are states, not panels.** `accentTint` with `accentBorder` (or `accent`) marks a selected card or chip, a picked order, a step button. A whole notice or card is never a flat tinted box: make it a card and give it a glow. Selectable cards keep a full border width in both states (`layout.borderWidth` or `borderWidthStrong`, coloured `cardBorder` when off), so picking one never shifts the layout.
 
 ### Day card designs (31 Oct)
 

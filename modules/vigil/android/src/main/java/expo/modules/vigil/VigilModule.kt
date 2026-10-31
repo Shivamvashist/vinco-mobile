@@ -23,6 +23,17 @@ class FocusConfig : Record {
   @Field val copy: Map<String, String> = emptyMap()
 }
 
+/** What `setWakeWatch` receives: the "Are you up?" prompt (VigilWake). Minutes from local midnight. */
+class WakeWatchConfig : Record {
+  @Field val enabled: Boolean = false
+  @Field val fromMinutes: Int = 180
+  @Field val untilMinutes: Int = 720
+  @Field val awakeDay: String? = null
+  @Field val title: String = ""
+  @Field val body: String = ""
+  @Field val channelName: String = ""
+}
+
 class InvalidFocusGuardException(guard: String) :
   CodedException("ERR_VIGIL_GUARD", "Unknown focus guard: $guard", null)
 
@@ -114,6 +125,21 @@ class VigilModule : Module() {
     AsyncFunction("endFocus") {
       VigilStore(context).clear()
       VigilService.refresh()
+    }
+
+    AsyncFunction("setWakeWatch") { config: WakeWatchConfig ->
+      VigilWake.save(
+        context,
+        WakeWatch(
+          enabled = config.enabled,
+          fromMinutes = config.fromMinutes,
+          untilMinutes = config.untilMinutes,
+          awakeDay = config.awakeDay,
+          title = config.title,
+          body = config.body,
+          channelName = config.channelName
+        )
+      )
     }
   }
 

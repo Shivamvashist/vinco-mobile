@@ -1,6 +1,6 @@
 import { Pressable, View } from 'react-native';
 
-import { createStyles, useFeedback, useTheme } from '@/theme';
+import { cardSurface, createStyles, iconTile, useFeedback, useTheme } from '@/theme';
 
 import { Icon, type IconName } from '../Icon';
 import { IconButton } from '../IconButton';
@@ -102,21 +102,17 @@ const useStyles = createStyles((theme) => ({
     paddingVertical: theme.space.md,
     paddingLeft: theme.space.md,
     paddingRight: theme.space.sm,
-    borderRadius: theme.radius.md,
-    borderWidth: theme.layout.borderWidthStrong,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surfaceSunk,
+    ...cardSurface(theme),
+    // Full width in both states, so adding one never shifts the layout.
+    borderWidth: theme.layout.borderWidth,
   },
-  added: { borderColor: theme.colors.accentBorder, backgroundColor: theme.colors.accentTint },
+  // Added: the selected-card tint with the accent border.
+  added: {
+    borderColor: theme.colors.accentBorder,
+    backgroundColor: theme.colors.accentTint,
+  },
   pressed: { opacity: 0.85 },
-  iconTile: {
-    width: theme.layout.iconTileSize,
-    height: theme.layout.iconTileSize,
-    borderRadius: theme.radius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.accentSoft,
-  },
+  iconTile: iconTile(theme),
   text: { flex: 1, minWidth: 0, gap: theme.space.xxs },
   toggle: {
     flexDirection: 'row',

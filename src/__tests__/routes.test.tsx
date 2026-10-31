@@ -126,8 +126,9 @@ describe('Today', () => {
     expect(await screen.findByText(todayCopy.wakeSheet.editTitle)).toBeTruthy();
   });
 
-  it('logs body weight from the quick logs', async () => {
+  it('logs body weight from the daily log', async () => {
     renderRouter(APP_DIR, { initialUrl: '/veni' });
+    await openDailyLog(0);
     fireEvent.press(await screen.findByLabelText(todayCopy.quickLogs.weight));
     const field = await screen.findByLabelText(proofCopy.weightSheet.label);
     fireEvent.changeText(field, '12');
@@ -136,18 +137,21 @@ describe('Today', () => {
     fireEvent.changeText(field, '72,5');
     act(() => jest.advanceTimersByTime(600));
     fireEvent.press(screen.getByLabelText(proofCopy.weightSheet.save));
+    await openDailyLog(1);
     expect(await screen.findByLabelText(todayCopy.quickLogs.weightDone('72.5'))).toBeTruthy();
     expect(getDayLog(db, toDayKey(new Date()))?.weightKg).toBe(72.5);
   });
 
-  it('logs calories from the quick logs, with quick additions', async () => {
+  it('logs calories from the daily log, with quick additions', async () => {
     renderRouter(APP_DIR, { initialUrl: '/veni' });
+    await openDailyLog(0);
     fireEvent.press(await screen.findByLabelText(todayCopy.quickLogs.calories));
     const sheet = proofCopy.caloriesSheet;
     fireEvent.changeText(await screen.findByLabelText(sheet.label), '1,500');
     fireEvent.press(screen.getByLabelText(sheet.addLabel(250)));
     act(() => jest.advanceTimersByTime(600));
     fireEvent.press(screen.getByLabelText(sheet.save));
+    await openDailyLog(1);
     expect(await screen.findByLabelText(todayCopy.quickLogs.caloriesDone('1,750'))).toBeTruthy();
     expect(getDayLog(db, toDayKey(new Date()))?.calories).toBe(1750);
   });
@@ -284,6 +288,20 @@ describe('Dawn', () => {
     expect(log?.sleptAt).toBeTruthy();
     expect(await screen.findByText(new RegExp(`· ${commonCopy.duration(8 * 60)} sleep$`))).toBeTruthy();
   });
+
+  it('opens straight into the wake sheet from the "Are you up?" link, only at dawn', async () => {
+    startArc();
+    renderRouter(APP_DIR, { initialUrl: '/veni?wake=1' });
+    expect(await screen.findByText(todayCopy.wakeSheet.title)).toBeTruthy();
+  });
+
+  it('ignores the "Are you up?" link once wake-up is logged', async () => {
+    startArc();
+    markAwake();
+    renderRouter(APP_DIR, { initialUrl: '/veni?wake=1' });
+    expect(await screen.findByLabelText(new RegExp(`^${todayCopy.orders.water.name},`))).toBeTruthy();
+    expect(screen.queryByText(todayCopy.wakeSheet.title)).toBeNull();
+  });
 });
 
 describe('Sick day', () => {
@@ -399,6 +417,9 @@ describe('Onboarding', () => {
     await screen.findByText(onboardingCopy.tone.title);
     press(/^Roast me/);
     press(onboardingCopy.continue);
+    // Permissions: all allowed already (the fakes), so Continue goes on.
+    await screen.findByText(onboardingCopy.permissions.title);
+    press(onboardingCopy.continue);
     // Oath: skip.
     await screen.findByText(onboardingCopy.oath.title);
     press(onboardingCopy.oath.skip);
@@ -426,7 +447,7 @@ describe('Onboarding', () => {
 
     fireEvent.press(await screen.findByLabelText(new RegExp(`^${onboardingCopy.rubicon.cross}`)));
     await screen.findByText(plan.title);
-    expect(screen.getByLabelText(onboardingCopy.stepAccessibilityLabel(1, 4))).toBeTruthy();
+    expect(screen.getByLabelText(onboardingCopy.stepAccessibilityLabel(1, 5))).toBeTruthy();
     press(new RegExp(`^${plan.water.name},`));
     press(plan.addOwn);
     fireEvent.changeText(await screen.findByLabelText(ordersCopy.add.nameLabel), 'Read');
@@ -436,6 +457,8 @@ describe('Onboarding', () => {
     expect(await screen.findByText(plan.ownLine(10, 'pages'))).toBeTruthy();
     press(plan.continue(2));
     await screen.findByText(onboardingCopy.tone.title);
+    press(onboardingCopy.continue);
+    await screen.findByText(onboardingCopy.permissions.title);
     press(onboardingCopy.continue);
     await screen.findByText(onboardingCopy.oath.title);
     press(onboardingCopy.oath.skip);
@@ -502,10 +525,16 @@ describe('Vidi', () => {
     expect(screen.getByLabelText(`1/3 ${progressCopy.stats.fullGoalDays}`)).toBeTruthy();
     expect(screen.getByLabelText(`57 ${progressCopy.stats.daysToGo}`)).toBeTruthy();
     expect(
-      screen.getByLabelText(progressCopy.calendar.dayLabel(commonCopy.fullDateLabel(start), 'conquered')),
-    ).toBeTruthy();
-    expect(
       screen.getByLabelText(progressCopy.calendar.dayLabel(commonCopy.fullDateLabel(today), 'today')),
+    ).toBeTruthy();
+    // Early in a month the start day sits in the month before, a step back on the calendar.
+    if (start.slice(0, 7) !== today.slice(0, 7)) {
+      fireEvent.press(screen.getByLabelText(progressCopy.calendar.previousMonth));
+    }
+    expect(
+      await screen.findByLabelText(
+        progressCopy.calendar.dayLabel(commonCopy.fullDateLabel(start), 'conquered'),
+      ),
     ).toBeTruthy();
     expect(screen.getByText(progressCopy.timelapse.count(0, 30))).toBeTruthy();
   });
@@ -736,9 +765,10 @@ describe('Own orders', () => {
 });
 
 describe('Daily selfie', () => {
-  it('takes the daily selfie from the quick logs and saves the weight', async () => {
+  it('takes the daily selfie from the daily log and saves the weight', async () => {
     startArc();
     renderRouter(APP_DIR, { initialUrl: '/veni' });
+    await openDailyLog(0);
     fireEvent.press(await screen.findByLabelText(todayCopy.quickLogs.selfie));
     fireEvent.press(await screen.findByLabelText(proofCopy.camera.takeSelfie));
     // The check: the shot waits for "Looks right" before it is saved.
@@ -755,6 +785,7 @@ describe('Daily selfie', () => {
     fireEvent.changeText(screen.getByLabelText(proofCopy.daily.weightLabel), '72,5');
     act(() => jest.advanceTimersByTime(600));
     fireEvent.press(screen.getByLabelText(proofCopy.daily.done));
+    await openDailyLog(2);
     expect(await screen.findByLabelText(todayCopy.quickLogs.selfieDone)).toBeTruthy();
     expect(await screen.findByLabelText(todayCopy.quickLogs.weightDone('72.5'))).toBeTruthy();
     expect(getDayLog(db, toDayKey(new Date()))?.weightKg).toBe(72.5);
@@ -844,3 +875,9 @@ describe('Day card', () => {
     expect(await screen.findByText(message)).toBeTruthy();
   }
 });
+
+/** Opens Today's daily log sheet from its round button, which says how many logs are in. */
+async function openDailyLog(logged: number): Promise<void> {
+  fireEvent.press(await screen.findByLabelText(todayCopy.quickLogs.openLabel(logged, 3)));
+  act(() => jest.advanceTimersByTime(600));
+}

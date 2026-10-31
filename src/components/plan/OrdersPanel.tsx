@@ -18,7 +18,7 @@ import { useActiveArc } from '@/hooks/useActiveArc';
 import { useOwnOrderActions } from '@/hooks/useOwnOrderActions';
 import { useTodayOrders } from '@/hooks/useTodayOrders';
 import { formatClockMinutes, parseClockMinutes } from '@/lib/dates';
-import { createStyles, useFeedback } from '@/theme';
+import { cardSurface, createStyles, useFeedback } from '@/theme';
 
 import { BottomSheet } from '../BottomSheet';
 import { Button } from '../Button';
@@ -331,8 +331,7 @@ const useStyles = createStyles((theme) => ({
     alignItems: 'center',
     gap: theme.space.sm,
     padding: theme.layout.cardPadding,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.surface,
+    ...cardSurface(theme),
   },
   text: { flex: 1, minWidth: 0, gap: theme.space.xxs },
   add: { marginTop: theme.space.xxl, marginBottom: theme.space.lg },

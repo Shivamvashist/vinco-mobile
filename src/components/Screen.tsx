@@ -9,8 +9,12 @@ export type ScreenProps = {
   children: ReactNode;
   /** Scrolls by default. Turn off for screens with a pinned footer button. */
   scroll?: boolean;
-  /** `tab` for tab screens, `flow` for onboarding and full-screen flows, `none` for edge-to-edge. */
-  gutter?: 'tab' | 'flow' | 'none';
+  /**
+   * `tab` for screens with their own header, `tabBody` for the three tabs (under the shared tabs
+   * header, which already keeps clear of the notch), `flow` for onboarding and full-screen flows,
+   * `none` for edge-to-edge.
+   */
+  gutter?: 'tab' | 'tabBody' | 'flow' | 'none';
   /** Which edges keep clear of the notch and gesture bar. Tab screens leave the bottom to the tab bar. */
   edges?: Edge[];
   background?: ColorRole;
@@ -33,12 +37,14 @@ export function Screen({
   const theme = useTheme();
   const styles = useStyles();
   const gutterStyle = styles[gutter];
+  // Under the shared tabs header the top edge is already safe.
+  const safeEdges = gutter === 'tabBody' ? [] : edges;
   const backgroundStyle = { backgroundColor: theme.colors[background] };
   const scrollRef = useRef<ScrollView>(null);
   useScrollToTop(scrollRef);
 
   return (
-    <SafeAreaView style={[styles.safeArea, backgroundStyle]} edges={edges}>
+    <SafeAreaView style={[styles.safeArea, backgroundStyle]} edges={safeEdges}>
       {scroll ? (
         <ScrollView
           ref={scrollRef}
@@ -61,6 +67,11 @@ const useStyles = createStyles((theme) => ({
   tab: {
     paddingHorizontal: theme.layout.screenGutter,
     paddingTop: theme.space.xl,
+    paddingBottom: theme.space.xxl,
+  },
+  tabBody: {
+    paddingHorizontal: theme.layout.screenGutter,
+    paddingTop: theme.space.sm,
     paddingBottom: theme.space.xxl,
   },
   flow: {

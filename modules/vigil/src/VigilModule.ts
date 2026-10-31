@@ -15,6 +15,17 @@ export type VigilNativeFocusConfig = {
   copy: Record<string, string>;
 };
 
+/** What setWakeWatch sends: the "Are you up?" prompt. Minutes from local midnight, `awakeDay` yyyy-MM-dd. */
+export type VigilNativeWakeWatch = {
+  enabled: boolean;
+  fromMinutes: number;
+  untilMinutes: number;
+  awakeDay: string | null;
+  title: string;
+  body: string;
+  channelName: string;
+};
+
 export type VigilNativeFocusEvent = { type: string; packageName: string | null };
 
 export type VigilNativeModule = {
@@ -25,6 +36,7 @@ export type VigilNativeModule = {
   launchApp(packageName: string): Promise<boolean>;
   startFocus(config: VigilNativeFocusConfig): Promise<void>;
   endFocus(): Promise<void>;
+  setWakeWatch(config: VigilNativeWakeWatch): Promise<void>;
   addListener(eventName: 'onFocusEvent', listener: (event: VigilNativeFocusEvent) => void): Subscription;
 };
 

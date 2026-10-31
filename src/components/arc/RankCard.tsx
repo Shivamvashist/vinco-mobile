@@ -30,7 +30,7 @@ export function RankCard({ rank }: RankCardProps) {
       : copy.top(current.meaning);
 
   return (
-    <Card style={styles.card}>
+    <Card glow={{ color: 'accent', intensity: 0.45 }} style={styles.card}>
       <View style={[styles.medallion, !current && styles.medallionLocked]}>
         <Txt variant="heading" color={current ? 'accent' : 'textFaint'}>
           {medallionName.slice(0, 2)}

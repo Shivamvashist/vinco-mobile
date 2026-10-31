@@ -1,27 +1,24 @@
-import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
-import { HudCounters } from '@/components/hud/HudCounters';
-import { Icon } from '@/components/Icon';
 import { TodayLabours } from '@/components/labours/TodayLabours';
-import { UserMenu } from '@/components/menu/UserMenu';
 import { OrderAmountSheet } from '@/components/orders/OrderAmountSheet';
 import { PlanOrderCard } from '@/components/orders/PlanOrderCard';
 import { CaloriesSheet } from '@/components/proof/CaloriesSheet';
 import { WeightSheet } from '@/components/proof/WeightSheet';
 import { Screen } from '@/components/Screen';
-import { ScreenHeader } from '@/components/ScreenHeader';
 import { TaskSheets, type TaskSheetTarget } from '@/components/tasks/TaskSheets';
 import { buildOrderRows } from '@/components/today/buildOrderRows';
+import { DailyLogButton } from '@/components/today/DailyLogButton';
+import { DailyLogSheet } from '@/components/today/DailyLogSheet';
 import { describeArcHeader } from '@/components/today/describeArcHeader';
 import { DawnCard } from '@/components/today/DawnCard';
 import { TodayHero } from '@/components/today/hero/TodayHero';
 import { DaySummarySheet } from '@/components/progress/DaySummarySheet';
 import { OrderList } from '@/components/today/OrderList';
-import { QuickLogs } from '@/components/today/QuickLogs';
 import { SealDayCard } from '@/components/today/SealDayCard';
 import { SickDayCard } from '@/components/today/SickDayCard';
 import { SickDaySheet } from '@/components/today/SickDaySheet';
@@ -32,7 +29,7 @@ import { TruceBanner } from '@/components/today/TruceBanner';
 import { WakeSheet } from '@/components/today/WakeSheet';
 import { WorkoutSheet } from '@/components/today/WorkoutSheet';
 import { Txt } from '@/components/Txt';
-import { commonCopy, proofCopy, todayCopy } from '@/copy';
+import { proofCopy, todayCopy } from '@/copy';
 import { FEATURES } from '@/config/features';
 import { arcEndDay } from '@/features/arc';
 import { planTrucePayment } from '@/features/campaign';
@@ -49,15 +46,17 @@ import { useOwnOrderActions } from '@/hooks/useOwnOrderActions';
 import { useSickDay } from '@/hooks/useSickDay';
 import { useTasks } from '@/hooks/useTasks';
 import { useTodayOrders } from '@/hooks/useTodayOrders';
-import { formatClockMinutes, parseClockMinutes, toDayKey, weekdayIndex } from '@/lib/dates';
+import { formatClockMinutes, parseClockMinutes, toDayKey } from '@/lib/dates';
 import { createStyles, useFeedback } from '@/theme';
 
-type Sheet = 'wake' | 'workout' | 'weight' | 'calories' | 'sick' | 'menu' | 'run' | 'summary' | null;
+type Sheet = 'wake' | 'workout' | 'weight' | 'calories' | 'log' | 'sick' | 'run' | 'summary' | null;
 
 /**
- * Veni: the day. The header (with the user menu), the quick logs, then one scroll: the orders
- * (done ones sink to the bottom) and the to-do. When every order is at its full goal the VINCO
- * stamp lands. Free training (the 'ludus' kind) has no streak to lose, only a run to keep going.
+ * Veni: the day, under the shared tabs header. The hero, then one scroll: the orders (done ones
+ * sink to the bottom) and the to-do. The daily log (selfie, weight, calories) sits behind one
+ * round button at the bottom right. When every order is at its full goal the VINCO stamp lands.
+ * Free training (the 'ludus' kind) has no streak to lose, only a run to keep going.
+ * Opened as /veni?wake=1 (the "Are you up?" notification), it opens the wake sheet if still at dawn.
  */
 export default function VeniScreen() {
   const styles = useStyles();
@@ -79,6 +78,8 @@ export default function VeniScreen() {
   const { today, targets, totalCount } = orders;
   const run = campaign.campaign;
   const close = () => setSheet(null);
+  const { wake: wakeParam } = useLocalSearchParams<{ wake?: string }>();
+  const navigation = useNavigation();
 
   const isLoaded = orders.isLoaded && activeArc.isLoaded;
   const isLudus = campaign.isLudus;
@@ -96,6 +97,52 @@ export default function VeniScreen() {
   const plannedWakeMinutes = arc ? parseClockMinutes(arc.wakeTime) : null;
   const wokeMinutes = orders.wokeAt ? orders.wokeAt.getHours() * 60 + orders.wokeAt.getMinutes() : null;
   const sleptMinutes = orders.sleptAt ? orders.sleptAt.getHours() * 60 + orders.sleptAt.getMinutes() : null;
+
+  // From the "Are you up?" notification: straight into the wake sheet while the day is at dawn.
+  // Handled once per link (state adjusted while rendering), then the link is cleared on this
+  // screen (the global router can't navigate yet on a cold start from the notification).
+  const isWakeLink = wakeParam === '1';
+  const [hasHandledWakeLink, setHasHandledWakeLink] = useState(false);
+  if (isWakeLink && isLoaded && !hasHandledWakeLink) {
+    setHasHandledWakeLink(true);
+    if (isDawn) setSheet('wake');
+  }
+  if (!isWakeLink && hasHandledWakeLink) setHasHandledWakeLink(false);
+  useEffect(() => {
+    if (isWakeLink && hasHandledWakeLink) navigation.setParams({ wake: undefined } as never);
+  }, [isWakeLink, hasHandledWakeLink, navigation]);
+
+  const logItems = [
+    {
+      key: 'selfie',
+      icon: 'camera',
+      title: todayCopy.quickLogs.selfie,
+      value: selfie.todayPath ? todayCopy.quickLogs.selfieDone : null,
+      hint: todayCopy.quickLogs.selfieHint,
+      onPress: () => {
+        close();
+        router.push('/selfie');
+      },
+    },
+    {
+      key: 'weight',
+      icon: 'scale',
+      title: todayCopy.quickLogs.weight,
+      value: selfie.weightKg != null ? todayCopy.quickLogs.weightDone(proofCopy.kg(selfie.weightKg)) : null,
+      hint: todayCopy.quickLogs.weightHint,
+      onPress: () => setSheet('weight'),
+    },
+    {
+      key: 'calories',
+      icon: 'plate',
+      title: todayCopy.quickLogs.calories,
+      value:
+        selfie.calories != null ? todayCopy.quickLogs.caloriesDone(proofCopy.kcal(selfie.calories)) : null,
+      hint: todayCopy.quickLogs.caloriesHint,
+      onPress: () => setSheet('calories'),
+    },
+  ] as const;
+  const loggedCount = logItems.filter((item) => item.value != null).length;
 
   const taps = useOrderTaps(orders, {
     openSheet: setSheet,
@@ -159,28 +206,7 @@ export default function VeniScreen() {
 
   return (
     <>
-      <Screen>
-        <ScreenHeader
-          eyebrow={header.eyebrow}
-          title={commonCopy.weekdays[weekdayIndex(today)] ?? ''}
-          accessory={
-            <View style={styles.headerTools}>
-              <HudCounters />
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={todayCopy.menuLabel}
-                onPress={() => {
-                  play('tap');
-                  setSheet('menu');
-                }}
-                style={({ pressed }) => [styles.userButton, pressed && styles.pressed]}
-              >
-                <Icon name="user" color="accent" />
-              </Pressable>
-            </View>
-          }
-        />
-
+      <Screen gutter="tabBody" contentStyle={arc && isLoaded ? styles.roomForLog : undefined}>
         {arc && isLoaded && campaign.isLoaded ? (
           <TodayHero
             orders={orders}
@@ -190,43 +216,6 @@ export default function VeniScreen() {
             plannedWakeMinutes={plannedWakeMinutes}
             onOpenSummary={() => setSheet('summary')}
             onOpenRun={() => setSheet('run')}
-          />
-        ) : null}
-
-        {arc && isLoaded ? (
-          <QuickLogs
-            logs={[
-              {
-                key: 'selfie',
-                icon: 'camera',
-                label: selfie.todayPath ? todayCopy.quickLogs.selfieDone : todayCopy.quickLogs.selfie,
-                isDone: selfie.todayPath != null,
-                hint: todayCopy.quickLogs.selfieHint,
-                onPress: () => router.push('/selfie'),
-              },
-              {
-                key: 'weight',
-                icon: 'scale',
-                label:
-                  selfie.weightKg != null
-                    ? todayCopy.quickLogs.weightDone(proofCopy.kg(selfie.weightKg))
-                    : todayCopy.quickLogs.weight,
-                isDone: selfie.weightKg != null,
-                hint: todayCopy.quickLogs.weightHint,
-                onPress: () => setSheet('weight'),
-              },
-              {
-                key: 'calories',
-                icon: 'plate',
-                label:
-                  selfie.calories != null
-                    ? todayCopy.quickLogs.caloriesDone(proofCopy.kcal(selfie.calories))
-                    : todayCopy.quickLogs.calories,
-                isDone: selfie.calories != null,
-                hint: todayCopy.quickLogs.caloriesHint,
-                onPress: () => setSheet('calories'),
-              },
-            ]}
           />
         ) : null}
 
@@ -326,7 +315,12 @@ export default function VeniScreen() {
         ) : null}
       </Screen>
 
-      <UserMenu visible={sheet === 'menu'} onClose={close} />
+      {arc && isLoaded ? (
+        <View style={styles.logButton} pointerEvents="box-none">
+          <DailyLogButton done={loggedCount} total={logItems.length} onPress={() => setSheet('log')} />
+        </View>
+      ) : null}
+      <DailyLogSheet visible={sheet === 'log'} onClose={close} items={logItems} />
       <RunPaySheet
         visible={sheet === 'run'}
         onClose={close}
@@ -428,18 +422,9 @@ export default function VeniScreen() {
 }
 
 const useStyles = createStyles((theme) => ({
-  headerTools: { flexDirection: 'row', alignItems: 'center', gap: theme.space.sm },
-  userButton: {
-    width: theme.layout.minTouchTarget,
-    height: theme.layout.minTouchTarget,
-    borderRadius: theme.radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: theme.layout.borderWidth,
-    borderColor: theme.colors.accentBorder,
-    backgroundColor: theme.colors.accentTint,
-  },
-  pressed: { opacity: 0.8 },
+  // The daily log button floats over the bottom of the scroll; the content ends above it.
+  logButton: { position: 'absolute', right: theme.layout.screenGutter, bottom: theme.space.lg },
+  roomForLog: { paddingBottom: theme.layout.buttonHeight + theme.space.xxl },
   notice: { marginTop: theme.space.lg },
   finished: { gap: theme.space.sm },
   noOrders: { gap: theme.space.sm },

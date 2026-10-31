@@ -215,7 +215,9 @@ describe('Focus tile on Today', () => {
     const app = renderRouter(APP_DIR, { initialUrl: '/veni' });
     fireEvent.press(await screen.findByLabelText(focusCopy.tile.label));
     expect(await screen.findByText(focusCopy.setup.title)).toBeTruthy();
-    startFocus(db, { day: today(), guard: 'custos', minutes: 25 });
+    await act(async () => {
+      startFocus(db, { day: today(), guard: 'custos', minutes: 25 });
+    });
     act(() => jest.advanceTimersByTime(25 * MINUTE + 1000));
     fireEvent.press(await screen.findByLabelText(focusCopy.complete.claimLabel(5, 25)));
     fireEvent.press(await screen.findByLabelText(focusCopy.complete.done));

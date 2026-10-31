@@ -59,6 +59,13 @@ export const todayCopy = {
     calories: 'Calories',
     caloriesDone: (kcal: string): string => `${kcal} kcal`,
     caloriesHint: "Logs today's calories",
+    /** The round button on Today that opens the daily log, and its sheet. */
+    open: 'Daily log',
+    openLabel: (done: number, total: number): string => `Daily log, ${done} of ${total} logged today`,
+    openHint: 'Opens the selfie, weight and calories for today',
+    sheetTitle: 'Daily log',
+    sheetCaption: 'Optional, and only for you. The orders decide the day.',
+    notYet: 'Not yet',
   },
 
   /** Free training has no streak to lose: just a nudge to keep a run of full days going. */

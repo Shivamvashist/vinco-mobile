@@ -1,7 +1,7 @@
 import { Children, Fragment, type ReactNode } from 'react';
 import { View } from 'react-native';
 
-import { createStyles } from '@/theme';
+import { cardSurface, createStyles } from '@/theme';
 
 import { SectionHeader } from '../SectionHeader';
 
@@ -35,8 +35,7 @@ export function SettingsGroup({ title, children }: SettingsGroupProps) {
 const useStyles = createStyles((theme) => ({
   card: {
     overflow: 'hidden',
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.surface,
+    ...cardSurface(theme),
   },
   divider: { height: theme.layout.hairline, backgroundColor: theme.colors.border },
 }));

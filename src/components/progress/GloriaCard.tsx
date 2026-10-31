@@ -37,7 +37,7 @@ export function GloriaCard({ total, thisWeek, conqueredDay, today }: GloriaCardP
   const weekTotal = thisWeek.reduce((sum, day) => sum + day.gloria, 0);
 
   return (
-    <Card bordered>
+    <Card glow={{ color: 'accent', origin: 'bottomRight', intensity: 0.4 }}>
       <View style={styles.header}>
         <View style={styles.title}>
           <Icon name="laurel" color="accent" />

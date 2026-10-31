@@ -19,19 +19,20 @@ import { createPhoneStorage } from './phoneStorage';
 
 /**
  * The onboarding screens after the Rubicon. Everyone starts on "plan" (your orders); "arc" and
- * "orders" (campaign length and Vinco's four) only come when the user chooses a campaign.
+ * "orders" (campaign length and Vinco's four) only come when the user chooses a campaign. "permissions" asks for what the oath and the selfie
+ * need, before them.
  */
-export const ONBOARDING_STEPS = ['plan', 'arc', 'orders', 'tone', 'oath', 'selfie'] as const;
+export const ONBOARDING_STEPS = ['plan', 'arc', 'orders', 'tone', 'permissions', 'oath', 'selfie'] as const;
 
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
 
 /** Steps taken on each path, in order. */
 const PATH_STEPS: Record<ArcKind, readonly OnboardingStep[]> = {
-  ludus: ['plan', 'tone', 'oath', 'selfie'],
-  campaign: ['plan', 'arc', 'orders', 'tone', 'oath', 'selfie'],
+  ludus: ['plan', 'tone', 'permissions', 'oath', 'selfie'],
+  campaign: ['plan', 'arc', 'orders', 'tone', 'permissions', 'oath', 'selfie'],
 };
 
-/** Where a step sits on the user's path: "II of IV" without a campaign, "II of VI" with one. */
+/** Where a step sits on the user's path: "II of V" without a campaign, "II of VII" with one. */
 export function getStepPosition(step: OnboardingStep, kind: ArcKind): { step: number; total: number } {
   const steps = PATH_STEPS[kind];
   return { step: Math.max(1, steps.indexOf(step) + 1), total: steps.length };
