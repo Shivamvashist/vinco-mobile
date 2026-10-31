@@ -6,7 +6,7 @@ import { fireEvent, screen } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
 
 import { FEATURES } from '@/config/features';
-import { progressCopy, todayCopy } from '@/copy';
+import { progressCopy, rewardsCopy, todayCopy } from '@/copy';
 import { addCustomOrder, db, getActiveArc, getDenariiBalance, saveOrderAmount } from '@/db';
 import { toDayKey } from '@/lib/dates';
 import { usePreferencesStore } from '@/stores';
@@ -68,12 +68,13 @@ describe('Denarii when the day holds', () => {
     holdAllButWater();
     renderRouter(APP_DIR, { initialUrl: '/veni' });
     fireEvent.press(await screen.findByLabelText(`${water.name}, ${water.line(0, 4, 'none')}`));
-    expect(await screen.findByText(todayCopy.denariiToast.paid(5))).toBeTruthy();
-    expect(screen.getByLabelText(todayCopy.tiles.purse.label(5, 5))).toBeTruthy();
+    expect(await screen.findByText(todayCopy.denariiNotice.paid(5))).toBeTruthy();
+    // The purse counter in the header (components/hud) shows the new total.
+    expect(screen.getByLabelText(rewardsCopy.hud.denariiLabel(5))).toBeTruthy();
     expect(getDenariiBalance(db)).toBe(5);
 
     fireEvent(screen.getByLabelText(`${water.name}, ${water.line(1, 4, 'min')}`), 'longPress');
-    expect(await screen.findByText(todayCopy.denariiToast.takenBack(5))).toBeTruthy();
+    expect(await screen.findByText(todayCopy.denariiNotice.takenBack(5))).toBeTruthy();
     expect(getDenariiBalance(db)).toBe(0);
   });
 
@@ -101,16 +102,34 @@ describe('Denarii when the day holds', () => {
 });
 
 describe('Order charts in Vidi', () => {
-  it('shows a chart per order and hides one with its chip, remembered', async () => {
+  it("charts only the user's own orders and hides one with its chip, remembered", async () => {
+    startArc();
+    markAwake();
+    const arc = getActiveArc(db);
+    if (!arc) throw new Error('No arc');
+    const order = { name: 'Read', unit: 'pages', min: 10, full: 10 };
+    addCustomOrder(db, arc.id, order, toDayKey(new Date()));
+    renderRouter(APP_DIR, { initialUrl: '/vidi' });
+    fireEvent.press(await screen.findByLabelText(progressCopy.segments.logs));
+    fireEvent.press(await screen.findByLabelText(progressCopy.logs.kinds.orders));
+    const chip = await screen.findByLabelText(order.name);
+    // Chip and chart title.
+    expect(screen.getAllByText(order.name).length).toBeGreaterThan(1);
+    // Vinco's orders have their own logs, never a chart here.
+    expect(screen.queryByLabelText(todayCopy.orders.meal.name)).toBeNull();
+    fireEvent.press(chip);
+    const hidden = usePreferencesStore.getState().hiddenOrderCharts;
+    expect(hidden).toHaveLength(1);
+    expect(hidden[0]).toMatch(/^own-\d+$/);
+    expect(screen.getAllByText(order.name)).toHaveLength(1);
+  });
+
+  it('says where the charts come from when there are no own orders', async () => {
     startArc();
     markAwake();
     renderRouter(APP_DIR, { initialUrl: '/vidi' });
     fireEvent.press(await screen.findByLabelText(progressCopy.segments.logs));
     fireEvent.press(await screen.findByLabelText(progressCopy.logs.kinds.orders));
-    const mealChip = await screen.findByLabelText(todayCopy.orders.meal.name);
-    expect(screen.getAllByText(todayCopy.orders.meal.name).length).toBeGreaterThan(1);
-    fireEvent.press(mealChip);
-    expect(usePreferencesStore.getState().hiddenOrderCharts).toEqual(['meal']);
-    expect(screen.getAllByText(todayCopy.orders.meal.name)).toHaveLength(1);
+    expect(await screen.findByText(progressCopy.logs.orders.empty)).toBeTruthy();
   });
 });

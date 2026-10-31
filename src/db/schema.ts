@@ -8,11 +8,12 @@
  * After changing this file: npm run db:generate, and commit the new migration.
  */
 import { sql } from 'drizzle-orm';
-import { index, integer, primaryKey, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 import type { DayResult, LedgerReason, TruceReason } from '@/features/campaign';
 import type { FocusGuard, FocusStatus } from '@/features/focus';
 import type { ForumItemId } from '@/features/forum';
+import type { ClaimKind } from '@/features/labours';
 import type { OrderKind } from '@/features/orders';
 import type { TaskRepeat } from '@/features/tasks';
 
@@ -256,6 +257,35 @@ export const focusSessions = sqliteTable(
   (table) => [index('focus_sessions_status_idx').on(table.status)],
 );
 
+/**
+ * Rewards claimed by hand (migration 0012): a Labour (once per day or week) or a Decoration (once,
+ * forever). (kind, key, period) is unique, so a double tap can never pay twice. The denarii are
+ * also a ledger row on the claim's day ('labour_<key>' or 'decoration_<key>'), a granted Truce a
+ * truces row; the Gloria lives only here. Claims are never taken back. See docs/REWARDS.md.
+ */
+export const claims = sqliteTable(
+  'claims',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    kind: text('kind').$type<ClaimKind>().notNull(),
+    /** The labour or decoration id. */
+    key: text('key').notNull(),
+    /** The day key (daily labour), the Monday of the week (weekly labour), or 'forever'. */
+    period: text('period').notNull(),
+    /** The local day it was claimed on: its denarii and Gloria count on this day. */
+    day: text('day').notNull(),
+    denarii: integer('denarii').notNull(),
+    gloria: integer('gloria').notNull(),
+    /** Truces granted (also a truces row, 'claim_<kind>_<key>'). 0 when none, or when at the cap. */
+    truces: integer('truces').notNull().default(0),
+    claimedAt: text('claimed_at').notNull(),
+  },
+  (table) => [
+    uniqueIndex('claims_kind_key_period_idx').on(table.kind, table.key, table.period),
+    index('claims_day_idx').on(table.day),
+  ],
+);
+
 export type ArcRow = typeof arcs.$inferSelect;
 export type ArcOrderRow = typeof arcOrders.$inferSelect;
 export type OrderLogRow = typeof orderLogs.$inferSelect;
@@ -269,3 +299,4 @@ export type TaskCompletionRow = typeof taskCompletions.$inferSelect;
 export type PurchaseRow = typeof purchases.$inferSelect;
 export type ItemUseRow = typeof itemUses.$inferSelect;
 export type FocusSessionRow = typeof focusSessions.$inferSelect;
+export type ClaimRow = typeof claims.$inferSelect;

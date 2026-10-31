@@ -1,4 +1,18 @@
-export { type GuardBridge, guardBridge, type GuardPermission, unsupportedGuardBridge } from './bridge';
+export {
+  createNativeGuardBridge,
+  type FocusApp,
+  type FocusEvent,
+  type FocusEventType,
+  type FocusGuardConfig,
+  type FocusOverlayCopy,
+  type GuardBridge,
+  guardBridge,
+  type GuardPermission,
+  selectGuardBridge,
+  toFocusEvent,
+  toNativeFocusConfig,
+  unsupportedGuardBridge,
+} from './bridge';
 export {
   clampReelBudget,
   DEFAULT_GUARD_LEVEL,

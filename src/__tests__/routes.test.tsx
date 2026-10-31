@@ -38,6 +38,7 @@ import {
   toOrderTargets,
 } from '@/db';
 import { FEATURES } from '@/config/features';
+import { NOTICE_TIMING } from '@/features/notices';
 import { DEFAULT_ORDER_TARGETS } from '@/features/orders';
 import { addDays, toDayKey } from '@/lib/dates';
 import { useDevStore, useOnboardingStore, usePreferencesStore } from '@/stores';
@@ -441,7 +442,7 @@ describe('Onboarding', () => {
     await screen.findByText(onboardingCopy.selfie.title);
     press(onboardingCopy.selfie.skip);
 
-    expect(await screen.findByText(todayCopy.ludusEyebrow('I'))).toBeTruthy();
+    expect(await screen.findByText(todayCopy.ludusEyebrow)).toBeTruthy();
     const arc = getActiveArc(db)!;
     expect(arc.kind).toBe('ludus');
     expect(Object.keys(toOrderTargets(selectArcOrders(db, arc.id).all(), arc.kind))).toEqual(['water']);
@@ -822,7 +823,7 @@ describe('Day card', () => {
     expect(screen.getByLabelText(dayCardCopy.styleLabel('Marble'))).toBeChecked();
 
     fireEvent.press(screen.getByLabelText(dayCardCopy.share));
-    expect(await screen.findByText(dayCardCopy.shared)).toBeTruthy();
+    await waitForNotice(dayCardCopy.shared);
     expect(Sharing.shareAsync).toHaveBeenCalledWith('file:///cache/day-card.png', expect.anything());
   });
 
@@ -830,6 +831,16 @@ describe('Day card', () => {
     (Sharing.isAvailableAsync as jest.Mock).mockResolvedValueOnce(false);
     await sealToday();
     fireEvent.press(screen.getByLabelText(dayCardCopy.share));
-    expect(await screen.findByText(dayCardCopy.shareUnavailable)).toBeTruthy();
+    await waitForNotice(dayCardCopy.shareUnavailable);
   });
+
+  /** Notices show one at a time: the day's "+5 denarii" goes first, then the share result. */
+  async function waitForNotice(message: string) {
+    // Let the share settle, then let the first notice run its time.
+    await act(async () => {
+      await Promise.resolve();
+    });
+    act(() => jest.advanceTimersByTime(NOTICE_TIMING.shortMs + 1000));
+    expect(await screen.findByText(message)).toBeTruthy();
+  }
 });

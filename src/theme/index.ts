@@ -4,6 +4,7 @@
  */
 export { themeEasing, themeSpring, themeTiming } from './animation';
 export { createStyles } from './createStyles';
+export type { ThemeEffects } from './effects';
 /** Re-applies the UI audio mode (quiet on silent, mixes with music). Call after recording. */
 export { configureUiAudio as restoreUiAudioMode } from './feedback/soundBank';
 export { useReduceMotion } from './ReduceMotionProvider';

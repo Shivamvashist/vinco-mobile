@@ -1,3 +1,4 @@
+import { buildEffects } from './effects';
 import { motion } from './tokens/motion';
 import { radius } from './tokens/radius';
 import { getTypeScale, scaleLayout, scaleSpace, scaleTypeScale } from './tokens/scale';
@@ -48,5 +49,6 @@ export function buildTheme(
     radius,
     layout: scaleLayout(layout, sizeScale),
     motion,
+    effects: buildEffects(colorScheme.colors, scheme),
   };
 }

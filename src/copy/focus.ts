@@ -1,24 +1,49 @@
-import type { FocusGuard } from '@/features/focus';
+import type { FocusGuard, RetreatPayment } from '@/features/focus';
 import type { Tone } from '@/features/tone';
 
 import type { ToneLines } from './toneLines';
 
-type GuardText = { name: string; plain: string; does: string };
+type GuardText = { name: string; plain: string; level: string; rules: readonly string[] };
+
+const ROMAN_LEVELS = ['I', 'II', 'III'] as const;
+
+/** "1h 30m", "45m", "2h": a length in the short form the presets and the log use. */
+function shortDuration(minutes: number): string {
+  const safe = Math.max(0, Math.round(minutes));
+  const hours = Math.floor(safe / 60);
+  const rest = safe % 60;
+  if (hours === 0) return `${rest}m`;
+  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
+}
+
+/** "1 hour 30 minutes": the same length, for screen readers. */
+function spokenDuration(minutes: number): string {
+  const safe = Math.max(0, Math.round(minutes));
+  const hours = Math.floor(safe / 60);
+  const rest = safe % 60;
+  const hourText = hours === 1 ? '1 hour' : `${hours} hours`;
+  const minuteText = rest === 1 ? '1 minute' : `${rest} minutes`;
+  if (hours === 0) return minuteText;
+  return rest === 0 ? hourText : `${hourText} ${minuteText}`;
+}
 
 /**
  * Focus ("Acies", the battle line). The voice changes only where it matters (the setup line, the
- * completion and its notification). Giving up stays neutral in every tone: it says plainly that it
- * pays nothing, and nothing more.
+ * empty log, the completion and its notification). Retreating, the stand-down and the costs stay
+ * neutral in every tone: they say plainly what happens, and nothing more.
  */
 export const focusCopy = {
-  cta: {
+  shortDuration,
+  spokenDuration,
+
+  tile: {
     title: 'Focus',
-    subtitle: '"Acies" · guard your time',
     ready: 'Ready',
-    left: (clock: string): string => `${clock} left`,
+    readyCaption: '"Acies" · guard your time',
+    left: 'left',
     label: 'Focus, "Acies", guard your time. Ready.',
     runningLabel: (clock: string): string => `Focus running, ${clock} left.`,
-    hint: 'Opens the focus view.',
+    hint: 'Opens the focus screen.',
   },
 
   setup: {
@@ -30,44 +55,162 @@ export const focusCopy = {
       roast: 'The feed will survive without you. Pick a time and prove it.',
     } satisfies ToneLines,
     close: 'Close focus',
-    minutesUnit: 'min',
-    minutes: (minutes: number): string => `${minutes} minutes`,
+    timeSection: 'Time',
+    presetsLabel: 'Quick lengths',
+    custom: 'Custom',
+    customLabel: 'Custom length',
     rulerLabel: 'Focus length',
     rulerHint: 'Swipe up or down to change it by 5 minutes.',
-    presetsLabel: 'Quick lengths',
     guardSection: 'Guard',
+    level: (index: number): string => `Level ${ROMAN_LEVELS[index] ?? String(index + 1)}`,
     guards: {
-      custos: { name: '"Custos"', plain: 'Limit apps', does: 'Marked apps allowed for 5 minutes in all.' },
-      imperium: { name: '"Imperium"', plain: 'Block apps', does: 'Marked apps blocked.' },
+      custos: {
+        name: '"Custos"',
+        plain: 'Watch',
+        level: 'Level I',
+        rules: [
+          'Opening an app outside your companions shows an alert.',
+          'A small floating timer stays on screen.',
+          'Every 3 minutes in such an app, a "back to the line" popup.',
+        ],
+      },
+      imperium: {
+        name: '"Imperium"',
+        plain: 'Limit',
+        level: 'Level II',
+        rules: [
+          'Opening an app outside your companions shows an overlay and starts a 3-minute timer.',
+          'At 3 minutes Vinco closes the app and brings you back here.',
+          'That app rests for 3 minutes before it opens again.',
+        ],
+      },
       silentium: {
         name: '"Silentium"',
-        plain: 'Block everything',
-        does: 'Everything but calls, messages and Vinco.',
+        plain: 'Lockdown',
+        level: 'Level III',
+        rules: [
+          'Only Vinco, your companions and the Phone app.',
+          'No home screen, no notification shade, no recent apps.',
+          "Back can't leave the focus screen. Calls always come through.",
+        ],
       },
     } satisfies Record<FocusGuard, GuardText>,
     rate: (perTenMinutes: number): string => `${perTenMinutes} denarii per 10 min`,
-    notYet: 'Blocking arrives with the Vigil. The timer and the reward work now.',
-    reward: (denarii: number): string => `Hold the line to the end: +${denarii} denarii`,
+    notYet: 'Blocking arrives with the Vinco build. The timer and the reward work now.',
+    reward: (denarii: number, gloria: number): string =>
+      `Hold to the end: +${denarii} denarii · +${gloria} glory points`,
+    rewardGloriaOnly: (gloria: number): string => `Hold to the end: +${gloria} glory points`,
     rewardTooShort: 'Ten minutes or more earn denarii.',
-    rewardDailyLimit: 'Three focuses paid today. This one is for the work itself.',
-    begin: 'Begin',
+    rewardDailyLimit: 'Three focuses paid in denarii today. Glory points still count.',
+    begin: 'Slide to begin',
+    beginHint: 'Slide the knob to the end to begin the focus.',
     busy: 'A focus is already running.',
     failed: 'The focus could not start. Try again.',
   },
 
-  running: {
+  custom: {
+    title: 'Custom length',
+    hours: 'Hours',
+    minutes: 'Minutes',
+    hint: 'Any whole minute from 5 minutes to 3 hours.',
+    invalid: 'Pick a length from 5 minutes to 3 hours.',
+    set: 'Set',
+  },
+
+  comites: {
+    section: '"Comites" · your companions',
+    caption: 'Up to three apps allowed during every guard. The Phone app always is.',
+    phone: 'Phone',
+    add: 'Add an app',
+    remove: (label: string): string => `${label}, a companion. Double tap to remove.`,
+    pickerTitle: 'Choose your companions',
+    search: 'Search apps',
+    chosen: (count: number): string => `${count} of 3 chosen`,
+    loading: 'Reading your apps...',
+    empty: 'No apps match.',
+    full: 'Three companions chosen. Remove one to add another.',
+    unsupported: 'Your apps arrive with the Vinco build. For now the Phone app is always allowed.',
+    done: 'Done',
+  },
+
+  permission: {
+    title: 'Let the guard watch',
+    body: "To guard a focus you start, Vinco uses Android's accessibility service.",
+    watches: 'It sees only which app is in front. It never reads what is on the screen.',
+    acts: "During a focus it shows the guard's alerts, closes apps outside the focus, and brings you back here.",
+    stays: 'Nothing is recorded or sent off this phone. It does nothing when no focus is running.',
+    open: 'Turn on the guard',
+    openHint: 'Opens the accessibility settings. Find "Vinco focus guard" and turn it on.',
+    overlayTitle: 'Show the guard over other apps',
+    overlayBody:
+      '"Custos" shows its alert and the floating timer over other apps. Allow "Display over other apps".',
+    overlayOpen: 'Allow the overlay',
+    blockingOff: 'Blocking is off until the permission is on. The timer and the reward still work.',
+  },
+
+  noTruce: {
+    title: 'No Truce',
+    body: (price: number, seconds: number): string =>
+      `Retreating early will cost ${price} denarii, or a ${seconds}-second stand-down if the purse is short.`,
+    getTruce: 'Get a Truce',
+    beginAnyway: 'Begin anyway',
+  },
+
+  log: {
+    section: 'Focus log',
+    today: 'Today',
+    week: 'This week',
+    allTime: 'All time',
+    empty: {
+      philosopher: 'No focus kept yet. The first one is the hardest to begin.',
+      centurion: 'No focus on the record. Slide and start one.',
+      roast: 'Zero minutes of focus. The phone is winning on points. Start one.',
+    } satisfies ToneLines,
+    held: 'Held',
+    retreated: 'Retreated',
+    row: (day: string, time: string, guard: string, minutes: string, result: string): string =>
+      `${day}, ${time}, ${guard}, ${minutes}, ${result}.`,
+  },
+
+  active: {
     eyebrow: (guardName: string): string => `"Acies" · ${guardName}`,
-    left: 'left',
-    endsAt: (time: string): string => `Ends at ${time}`,
     timeLeftLabel: (clock: string): string => `${clock} left`,
+    ends: 'Ends',
+    endsAt: (time: string): string => `Ends at ${time}`,
+    truces: 'Truces held',
+    rain: 'Rain',
     minimise: 'Minimise focus',
-    retreat: 'Hold to retreat',
-    retreatHint: 'Hold for a second and a half to give up. Giving up pays nothing.',
+    locked: 'Lockdown: this screen stays until the focus ends.',
+    retreat: 'Slide to retreat',
+    retreatHint: (payment: RetreatPayment, price: number, seconds: number): string => {
+      const lines: Record<RetreatPayment, string> = {
+        truce: 'Spends a Truce. Retreating pays nothing.',
+        denarii: `No Truce held: costs ${price} denarii. Retreating pays nothing.`,
+        standDown: `No Truce and too few denarii: a ${seconds}-second stand-down first. Retreating pays nothing.`,
+      };
+      return lines[payment];
+    },
+    standDownTitle: 'Standing down',
+    standDownLeft: (seconds: number): string => `Retreat in ${seconds}s`,
+    standDownCancel: 'Stay in the line',
+    retreatFailed: 'The retreat could not be saved. Try again.',
+    dock: 'Companions',
+    phone: 'Phone',
+    open: (label: string): string => `Open ${label}`,
+    addExplain: 'Companions are chosen on the setup screen, before a focus begins.',
+    launchFailed: 'That app could not be opened.',
+    events: {
+      nudge: 'Back to the line.',
+      appBlocked: 'That app is outside your focus.',
+      appClosed: 'An app was closed to keep the focus.',
+    },
+    wake: 'Tap anywhere to wake the screen.',
   },
 
   complete: {
     title: 'Line held',
     earned: (denarii: number): string => `+${denarii} denarii`,
+    gloria: (gloria: number): string => `+${gloria} glory points`,
     minutesHeld: (minutes: number): string => `${minutes} minutes held`,
     line: {
       philosopher: 'You kept the time you promised yourself. That is the whole of it.',
@@ -76,9 +219,26 @@ export const focusCopy = {
     } satisfies ToneLines,
     tooShort: 'Under 10 minutes, so no denarii this time.',
     dailyLimit: 'Three focuses were already paid today. The work still counts.',
+    claim: 'Claim',
+    claimLabel: (denarii: number, gloria: number): string =>
+      `Claim ${denarii} denarii and ${gloria} glory points`,
+    claimed: 'Claimed',
     retreatTitle: 'Retreated',
     retreatBody: 'This focus was given up. It pays nothing.',
     done: 'Done',
+  },
+
+  /** The native guard's overlays over other apps (modules/vigil). Plain and short, the same in every tone. */
+  overlay: {
+    alertTitle: 'Focus is on',
+    alertBody: 'This app is outside your focus.',
+    nudgeTitle: 'Back to the line',
+    nudgeBody: 'Three minutes away from your focus.',
+    openVinco: 'Open Vinco',
+    /** Followed by the countdown: "Closes in 2:41". */
+    closingIn: 'Closes in',
+    /** Followed by the time left: "Resting. Opens again in 1:20". */
+    cooldown: 'Resting. Opens again in',
   },
 
   notification: {

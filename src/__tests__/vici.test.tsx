@@ -20,13 +20,12 @@ describe('Vici', () => {
     expect(screen.getByLabelText(`2 ${arcCopy.stats.held}`)).toBeTruthy();
     expect(screen.getByLabelText(arcCopy.treasury.denarii(10))).toBeTruthy();
     expect(screen.getByLabelText(arcCopy.treasury.truces(1))).toBeTruthy();
+    // Each decoration's label goes on with what it pays (docs/REWARDS.md).
+    const decoration = (name: string, status: string) =>
+      screen.getByLabelText(new RegExp(`^${escapeRegExp(`${name}, ${status}`)}`));
+    expect(decoration(arcCopy.decorations.items.firstSeal.name, arcCopy.decorations.earned)).toBeTruthy();
     expect(
-      screen.getByLabelText(`${arcCopy.decorations.items.firstSeal.name}, ${arcCopy.decorations.earned}`),
-    ).toBeTruthy();
-    expect(
-      screen.getByLabelText(
-        `${arcCopy.decorations.items.ironWeek.name}, ${arcCopy.decorations.items.ironWeek.how}`,
-      ),
+      decoration(arcCopy.decorations.items.ironWeek.name, arcCopy.decorations.items.ironWeek.how),
     ).toBeTruthy();
   });
 
@@ -94,3 +93,7 @@ describe('Vici', () => {
     expect(screen.getByLabelText(arcCopy.choice.toLudus)).toBeTruthy();
   });
 });
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}

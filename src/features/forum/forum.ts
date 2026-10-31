@@ -109,7 +109,8 @@ export const EARN_WAYS: readonly EarnWay[] = [
     source: 'live',
   },
   { id: 'focus', amount: { from: 2, to: 48 }, source: 'live' },
+  // Claimed by hand on Vici since 31 Oct (docs/REWARDS.md); numbers in features/labours.
+  { id: 'decorations', amount: { from: 10, to: 100 }, source: 'live' },
   { id: 'auroraFirstTry', amount: AURORA_FIRST_TRY_DENARII, source: 'aurora' },
   { id: 'underReelBudget', amount: 3, source: 'vigil' },
-  { id: 'decorations', amount: { from: 10, to: 100 }, source: 'decorations' },
 ];

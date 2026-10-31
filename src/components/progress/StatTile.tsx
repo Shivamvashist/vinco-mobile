@@ -1,6 +1,8 @@
 import { View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { type ColorRole, createStyles } from '@/theme';
+import { useTabReturn } from '@/hooks/useTabReturn';
+import { type ColorRole, createStyles, motion, useReduceMotion } from '@/theme';
 
 import { Txt } from '../Txt';
 
@@ -11,14 +13,31 @@ export type StatTileProps = {
   color?: ColorRole;
 };
 
-/** A big number over its label, as in Vidi's stat row. Read as one item by screen readers. */
+/** On coming back to the tab, the number rolls up into place on the settle spring. */
+const ROLL_IN = FadeInDown.springify()
+  .damping(motion.spring.settle.damping)
+  .stiffness(motion.spring.settle.stiffness)
+  .mass(motion.spring.settle.mass);
+
+/**
+ * A big number over its label, as in Vidi's stat row. Read as one item by screen readers.
+ * Each time the user comes back to the tab the number rolls in again (not on first open, and
+ * never with reduce motion on).
+ */
 export function StatTile({ value, label, color = 'text' }: StatTileProps) {
   const styles = useStyles();
+  const reduceMotion = useReduceMotion();
+  const returns = useTabReturn();
+
   return (
     <View style={styles.tile} accessible accessibilityLabel={`${value} ${label}`}>
-      <Txt variant="heading" color={color} numberOfLines={1}>
-        {value}
-      </Txt>
+      <View style={styles.window}>
+        <Animated.View key={returns} entering={returns > 0 && !reduceMotion ? ROLL_IN : undefined}>
+          <Txt variant="heading" color={color} numberOfLines={1}>
+            {value}
+          </Txt>
+        </Animated.View>
+      </View>
       <Txt variant="micro" numberOfLines={2} style={styles.label}>
         {label}
       </Txt>
@@ -34,5 +53,6 @@ const useStyles = createStyles((theme) => ({
     borderRadius: theme.radius.md,
     backgroundColor: theme.colors.surface,
   },
+  window: { overflow: 'hidden' },
   label: { marginTop: theme.space.xxs },
 }));

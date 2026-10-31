@@ -2,24 +2,26 @@
 
 Read this before every task. Then read [HISTORY.md](../HISTORY.md) for the current state.
 
-| Doc                                                           | What's in it                                                                             |
-| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| [HISTORY.md](../HISTORY.md)                                   | Current state, architecture, decisions, milestone log. **Update after every milestone**  |
-| [docs/CONVENTIONS.md](../docs/CONVENTIONS.md)                 | Naming, exports, folders, edge-case checklist, UI process. **Follow it**                 |
-| [docs/DESIGN-SYSTEM.md](../docs/DESIGN-SYSTEM.md)             | Theme, colour roles, type, sounds, haptics, adding a theme                               |
-| [docs/ORDERS-AND-TASKS.md](../docs/ORDERS-AND-TASKS.md)       | Orders (decide the day) vs daily and day tasks (the plan): rules, screens, data          |
-| [docs/DAY-FLOW.md](../docs/DAY-FLOW.md)                       | The day screen by screen: dawn and wake sheet, orders, proof, Commentarii, sounds        |
-| [docs/docs-v1.0.0/](../docs/docs-v1.0.0/)                     | Archived plans, done and partly superseded: WAVE-2.md (Forum, Aerarium, Vici, 10 Oct)    |
-| [docs/releases/](../docs/releases/README.md)                  | Versions: numbering rules, one file per version (features, changes, release notes)       |
-| [docs/TASKS-2026-10-13.md](../docs/TASKS-2026-10-13.md)       | Wave 3: orders-first onboarding, clean Today, user menu, calories, day summary (13 Oct)  |
-| [docs/TASKS-2026-10-31.md](../docs/TASKS-2026-10-31.md)       | Wave 4: dev build, Aurora native, reminders, palettes, live denarii and run pay (31 Oct) |
-| [docs/TODAY-AND-FOCUS.md](../docs/TODAY-AND-FOCUS.md)         | Today's hero (Dies), tiles, spring motion, Focus (Acies): UX, rules, data                |
-| [docs/NOTIFICATIONS.md](../docs/NOTIFICATIONS.md)             | Reminders (local), the Aurora channel, admin push later: rules, cap, channels, links     |
-| [docs/GUARDIANS.md](../docs/GUARDIANS.md)                     | Pax, Vigil, Guard, Imperium and Aurora: built base, native plan, permissions             |
-| [docs/BACKEND-PLAN.md](../docs/BACKEND-PLAN.md)               | vinco-backend: data, sync, endpoints, trust, and features that need the server           |
-| [docs/v1-docs/BUILD-STEPS.md](../docs/v1-docs/BUILD-STEPS.md) | The step-by-step plan and what's next                                                    |
-| [docs/v1-docs/PLAN.md](../docs/v1-docs/PLAN.md)               | Full product plan (7 Oct; its top note lists what changed since)                         |
-| `docs/v1-reference/Vinco app UI.html`                         | Clickable prototype of all 18 screens: exact layouts, copy, motion and sounds            |
+| Doc                                                                 | What's in it                                                                                  |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| [HISTORY.md](../HISTORY.md)                                         | Current state, architecture, decisions, milestone log. **Update after every milestone**       |
+| [docs/CONVENTIONS.md](../docs/CONVENTIONS.md)                       | Naming, exports, folders, edge-case checklist, UI process. **Follow it**                      |
+| [docs/DESIGN-SYSTEM.md](../docs/DESIGN-SYSTEM.md)                   | Theme, colour roles, type, sounds, haptics, adding a theme                                    |
+| [docs/ORDERS-AND-TASKS.md](../docs/ORDERS-AND-TASKS.md)             | Orders (decide the day) vs daily and day tasks (the plan): rules, screens, data               |
+| [docs/DAY-FLOW.md](../docs/DAY-FLOW.md)                             | The day screen by screen: dawn and wake sheet, orders, proof, Commentarii, sounds             |
+| [docs/docs-v1.0.0/](../docs/docs-v1.0.0/)                           | Archived plans, done and partly superseded: WAVE-2.md (Forum, Aerarium, Vici, 10 Oct)         |
+| [docs/releases/](../docs/releases/README.md)                        | Versions: numbering rules, one file per version (features, changes, release notes)            |
+| [docs/TASKS-2026-10-13.md](../docs/TASKS-2026-10-13.md)             | Wave 3: orders-first onboarding, clean Today, user menu, calories, day summary (13 Oct)       |
+| [docs/TASKS-2026-10-31.md](../docs/TASKS-2026-10-31.md)             | Wave 4: dev build, Aurora native, reminders, palettes, live denarii and run pay (31 Oct)      |
+| [docs/TASKS-2026-10-31-wave5.md](../docs/TASKS-2026-10-31-wave5.md) | Wave 5: HUD counters, Labours, Gloria, Focus with native guards, tab motion, notices (31 Oct) |
+| [docs/REWARDS.md](../docs/REWARDS.md)                               | Labours, claimable Decorations, Gloria (XP), claims data, the reward flight                   |
+| [docs/TODAY-AND-FOCUS.md](../docs/TODAY-AND-FOCUS.md)               | Today's hero (Dies), tiles, spring motion, Focus (Acies): UX, rules, data                     |
+| [docs/NOTIFICATIONS.md](../docs/NOTIFICATIONS.md)                   | Reminders (local), the Aurora channel, admin push later: rules, cap, channels, links          |
+| [docs/GUARDIANS.md](../docs/GUARDIANS.md)                           | Pax, Vigil, Guard, Imperium and Aurora: built base, native plan, permissions                  |
+| [docs/BACKEND-PLAN.md](../docs/BACKEND-PLAN.md)                     | vinco-backend: data, sync, endpoints, trust, and features that need the server                |
+| [docs/v1-docs/BUILD-STEPS.md](../docs/v1-docs/BUILD-STEPS.md)       | The step-by-step plan and what's next                                                         |
+| [docs/v1-docs/PLAN.md](../docs/v1-docs/PLAN.md)                     | Full product plan (7 Oct; its top note lists what changed since)                              |
+| `docs/v1-reference/Vinco app UI.html`                               | Clickable prototype of all 18 screens: exact layouts, copy, motion and sounds                 |
 
 ## Working rules (non-negotiable)
 

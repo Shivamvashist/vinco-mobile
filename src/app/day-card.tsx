@@ -1,6 +1,6 @@
 import * as Sharing from 'expo-sharing';
 import { router } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { captureRef } from 'react-native-view-shot';
@@ -9,8 +9,8 @@ import { Button } from '@/components/Button';
 import { type DayCardRow, DayCard } from '@/components/dayCard/DayCard';
 import { DesignPicker } from '@/components/dayCard/DesignPicker';
 import { IconButton } from '@/components/IconButton';
+import { notify } from '@/components/notices';
 import { Screen } from '@/components/Screen';
-import { Toast } from '@/components/Toast';
 import { Txt } from '@/components/Txt';
 import { dayCardCopy } from '@/copy';
 import { getArcPosition } from '@/features/arc';
@@ -65,8 +65,6 @@ export default function DayCardScreen() {
     styleOptions.find((option) => option.id === saved.styleId) ?? (DAY_CARD_STYLES[0] as DayCardStyle);
   const cardRef = useRef<View>(null);
   const [isSharing, setIsSharing] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
-  const hideToast = useCallback(() => setToast(null), []);
 
   const position = arc ? getArcPosition(arc.startDay, arc.lengthDays, orders.today) : null;
   const dayNumber = campaign.isLudus
@@ -85,16 +83,16 @@ export default function DayCardScreen() {
     setIsSharing(true);
     try {
       if (!(await Sharing.isAvailableAsync())) {
-        setToast(dayCardCopy.shareUnavailable);
+        notify({ kind: 'warning', message: dayCardCopy.shareUnavailable });
         return;
       }
       const uri = await captureRef(cardRef, { format: 'png', quality: 1, result: 'tmpfile' });
       await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: dayCardCopy.share });
       play('confirm');
-      setToast(dayCardCopy.shared);
+      notify({ kind: 'success', message: dayCardCopy.shared });
     } catch (error) {
       if (__DEV__) console.warn('[day card] Sharing failed.', error);
-      setToast(dayCardCopy.shareFailed);
+      notify({ kind: 'error', message: dayCardCopy.shareFailed });
     } finally {
       setIsSharing(false);
     }
@@ -185,7 +183,6 @@ export default function DayCardScreen() {
           onPress={() => router.navigate('/vidi')}
         />
       </View>
-      <Toast message={toast} onHide={hideToast} />
     </Screen>
   );
 }

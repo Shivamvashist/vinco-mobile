@@ -110,8 +110,10 @@ describe('palette registry', () => {
   });
 
   it('falls back to the default for an unknown id or the wrong scheme', () => {
-    expect(getPalette('neon', 'dark').id).toBe('basalt');
-    expect(getPalette('papyrus', 'dark').id).toBe('basalt');
-    expect(getPalette('nox', 'dark').id).toBe('nox');
+    expect(getPalette('neon', 'dark').id).toBe('nox');
+    expect(getPalette('papyrus', 'dark').id).toBe('nox');
+    expect(getPalette('basalt', 'dark').id).toBe('basalt');
+    expect(getPalette('alba', 'light').id).toBe('alba');
+    expect(getPalette('alba', 'dark').id).toBe('nox');
   });
 });

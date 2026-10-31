@@ -22,7 +22,17 @@ export const TRUCES = {
  * refunded: a sick-day Truce comes back when the day was held anyway.
  * forum: bought ahead in the Forum (its denarii are a purchase row, not a ledger row).
  */
-export type TruceReason = 'arc_start' | 'campaign_week' | 'bought' | 'spent' | 'refunded' | 'forum';
+export type TruceReason =
+  | 'arc_start'
+  | 'campaign_week'
+  | 'bought'
+  | 'spent'
+  | 'refunded'
+  | 'forum'
+  /** Spent on retreating from one focus session (-1); one reason per session (features/focus). */
+  | `focus_retreat_${number}`
+  /** Granted by a claimed Labour or Decoration (+1): 'claim_labour_<id>' or 'claim_decoration_<id>' (docs/REWARDS.md). */
+  | `claim_${string}`;
 
 export type TrucePayment = {
   /** Truces taken from the reserve. */

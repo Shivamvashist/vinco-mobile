@@ -19,10 +19,12 @@ export {
   DECORATION_RULES,
   type DecorationId,
   type DecorationInput,
+  type DecorationProgress,
   getDecorations,
 } from './decorations';
 export {
   AURORA_FIRST_TRY_DENARII,
+  type ClaimReason,
   DENARII,
   DEV_GRANT_DENARII,
   FOCUS_REASONS,
@@ -42,6 +44,12 @@ export {
   STREAK,
   type StreakAward,
 } from './streak';
+export {
+  findLossToNotify,
+  type LossNoticeArc,
+  type LossNoticeInput,
+  shouldLeaveLossScreen,
+} from './lossNotice';
 export { CAESAR, CAESAR_ARC_LENGTH, getRankStatus, type Rank, RANKS, type RankStatus } from './ranks';
 export {
   earnsTruce,

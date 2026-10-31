@@ -1,20 +1,22 @@
 import { router } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { View } from 'react-native';
 
+import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
 import { EarnList } from '@/components/forum/EarnList';
 import { ForumItemCard } from '@/components/forum/ForumItemCard';
 import { PurchaseSheet } from '@/components/forum/PurchaseSheet';
 import { TreasuryHistory } from '@/components/forum/TreasuryHistory';
 import { Icon } from '@/components/Icon';
 import { IconButton } from '@/components/IconButton';
+import { notify } from '@/components/notices';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionHeader } from '@/components/SectionHeader';
 import { SegmentedControl } from '@/components/SegmentedControl';
-import { Toast } from '@/components/Toast';
 import { Txt } from '@/components/Txt';
-import { forumCopy } from '@/copy';
+import { forumCopy, rewardsCopy } from '@/copy';
 import { type ForumCategory, FORUM_ITEMS, type ForumItem } from '@/features/forum';
 import { useActiveArc } from '@/hooks/useActiveArc';
 import { useForum } from '@/hooks/useForum';
@@ -42,8 +44,6 @@ export default function ForumScreen() {
   const [segment, setSegment] = useState<Segment>('shop');
   const [selected, setSelected] = useState<ForumItem | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
-  const hideToast = useCallback(() => setToast(null), []);
 
   const back = () => {
     if (router.canGoBack()) router.back();
@@ -60,7 +60,7 @@ export default function ForumScreen() {
     const problem = forum.buy(selected.id);
     if (problem === null) {
       play('chime');
-      setToast(forumCopy.sheet.bought(forumCopy.items[selected.id].name));
+      notify({ kind: 'success', message: forumCopy.sheet.bought(forumCopy.items[selected.id].name) });
       close();
       return;
     }
@@ -117,6 +117,17 @@ export default function ForumScreen() {
           : null}
         {segment === 'earn' ? (
           <View style={styles.block}>
+            {/* The bounties live on their own board; the Aerarium lists the wages. */}
+            <Card bordered style={styles.labours}>
+              <Txt variant="label">{rewardsCopy.labours.forumTitle}</Txt>
+              <Txt variant="caption">{rewardsCopy.labours.forumBody}</Txt>
+              <Button
+                label={rewardsCopy.labours.forumAction}
+                variant="secondary"
+                size="compact"
+                onPress={() => router.push('/labours')}
+              />
+            </Card>
             <EarnList isLudus={arc?.kind === 'ludus'} />
           </View>
         ) : null}
@@ -139,7 +150,6 @@ export default function ForumScreen() {
         onBuy={buy}
         onClose={close}
       />
-      <Toast message={toast} onHide={hideToast} />
     </>
   );
 }
@@ -161,5 +171,6 @@ const useStyles = createStyles((theme) => ({
   segments: { marginTop: theme.space.lg },
   list: { gap: theme.space.sm },
   block: { marginTop: theme.space.xxl },
+  labours: { gap: theme.space.sm, marginBottom: theme.space.xxl },
   rule: { marginTop: theme.space.xxl },
 }));

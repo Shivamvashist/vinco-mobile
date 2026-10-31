@@ -11,6 +11,8 @@ export type IconButtonProps = {
   onPress: () => void;
   color?: ColorRole;
   cue?: FeedbackCue | null;
+  /** Dimmed and not tappable, still announced (as disabled) to a screen reader. */
+  disabled?: boolean;
 };
 
 /** A 44 by 44 tappable icon: back, close, flip camera. */
@@ -20,6 +22,7 @@ export function IconButton({
   onPress,
   color = 'text',
   cue = null,
+  disabled = false,
 }: IconButtonProps) {
   const styles = useStyles();
   const play = useFeedback();
@@ -33,10 +36,12 @@ export function IconButton({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      accessibilityState={disabled ? { disabled: true } : undefined}
+      disabled={disabled}
       onPress={handlePress}
       style={({ pressed }) => [styles.base, pressed && styles.pressed]}
     >
-      <Icon name={icon} color={color} />
+      <Icon name={icon} color={disabled ? 'textFaint' : color} />
     </Pressable>
   );
 }

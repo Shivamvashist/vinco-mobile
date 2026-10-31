@@ -89,7 +89,7 @@ export const forumCopy = {
 
   earn: {
     title: 'The Aerarium',
-    subtitle: '"Aerarium" (the treasury): every way to fill your purse.',
+    subtitle: '"Aerarium" (the treasury): the wages that land on their own.',
     ways: {
       dayHeld: 'Hold the line for a day',
       dayConquered: 'Conquer a day',
@@ -98,7 +98,7 @@ export const forumCopy = {
       focus: 'Hold a focus to the end (up to three a day)',
       auroraFirstTry: 'Beat Aurora on the first try',
       underReelBudget: 'Stay under your reel budget',
-      decorations: 'Earn a decoration',
+      decorations: 'Claim a decoration (on Vici)',
     },
     amount: (value: number | { from: number; to: number }): string =>
       typeof value === 'number' ? `+${value}` : `+${value.from} to ${value.to}`,
@@ -128,6 +128,8 @@ export const forumCopy = {
       focus_3: 'Focus held',
       truce_bought: 'Truce, at the moment of need',
     } as Record<string, string>,
+    /** A retreat from a focus paid in denarii (a Truce bought on the spot). */
+    focusRetreat: 'Focus retreat, Truce bought on the spot',
     purchase: (name: string): string => name,
     amount: (value: number): string => (value > 0 ? `+${value}` : `${value}`),
   },

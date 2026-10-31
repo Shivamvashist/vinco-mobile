@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 import { type AuroraSettings, DEFAULT_AURORA_SETTINGS, sanitizeAuroraSettings } from '@/features/aurora';
+import { type FocusComes, sanitizeComites, toggleComes } from '@/features/focus';
 import {
   clampReelBudget,
   DEFAULT_GUARD_LEVEL,
@@ -13,19 +14,24 @@ import {
 import { createPhoneStorage } from './phoneStorage';
 
 /**
- * The user's guard level, reel budget and Aurora alarm. Choices only: counts and alarms live in
- * the native modules once they ship (docs/GUARDIANS.md). Saved on the phone.
+ * The user's guard level, reel budget, Aurora alarm and focus Comites (the apps kept during a
+ * focus). Choices only: counts and alarms live in the native modules (docs/GUARDIANS.md). Saved
+ * on the phone.
  */
 export type GuardState = {
   level: GuardLevel;
   reelBudget: number;
   aurora: AuroraSettings;
+  /** Up to three apps allowed during every focus guard, besides the Phone app. */
+  comites: FocusComes[];
 };
 
 type GuardActions = {
   setLevel: (level: GuardLevel) => void;
   setReelBudget: (budget: number) => void;
   updateAurora: (patch: Partial<AuroraSettings>) => void;
+  /** Adds an app to the Comites, or removes it when it is already there (at most three). */
+  toggleComes: (app: FocusComes) => void;
   reset: () => void;
 };
 
@@ -35,6 +41,7 @@ export const DEFAULT_GUARD_STATE: GuardState = {
   level: DEFAULT_GUARD_LEVEL,
   reelBudget: GUARD_RULES.defaultReelBudget,
   aurora: DEFAULT_AURORA_SETTINGS,
+  comites: [],
 };
 
 /** Keeps only valid saved values; anything else falls back to the default. */
@@ -44,6 +51,7 @@ export function sanitizeGuardState(saved: unknown): GuardState {
     level: isGuardLevel(value.level) ? value.level : DEFAULT_GUARD_LEVEL,
     reelBudget: clampReelBudget(value.reelBudget),
     aurora: sanitizeAuroraSettings(value.aurora),
+    comites: sanitizeComites(value.comites),
   };
 }
 
@@ -55,13 +63,15 @@ export const useGuardStore = create<GuardStore>()(
       setReelBudget: (budget) => set({ reelBudget: clampReelBudget(budget) }),
       updateAurora: (patch) =>
         set((state) => ({ aurora: sanitizeAuroraSettings({ ...state.aurora, ...patch }) })),
+      toggleComes: (app) => set((state) => ({ comites: toggleComes(state.comites, app) })),
       reset: () => set(DEFAULT_GUARD_STATE),
     }),
     {
       name: 'vinco.guard',
-      version: 1,
+      // 2 (31 Oct): the focus Comites. Older saves start with none.
+      version: 2,
       storage: createPhoneStorage<GuardState>(),
-      partialize: ({ level, reelBudget, aurora }) => ({ level, reelBudget, aurora }),
+      partialize: ({ level, reelBudget, aurora, comites }) => ({ level, reelBudget, aurora, comites }),
       migrate: (saved) => sanitizeGuardState(saved),
       merge: (saved, current) => ({ ...current, ...sanitizeGuardState(saved) }),
     },

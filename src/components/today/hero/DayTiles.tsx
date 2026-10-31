@@ -6,6 +6,7 @@ import { createStyles } from '@/theme';
 
 import { RollingNumber } from '../../RollingNumber';
 import { Txt } from '../../Txt';
+import { FocusTile } from './FocusTile';
 import { HeroTile } from './HeroTile';
 
 export type DayTilesProps = {
@@ -13,10 +14,7 @@ export type DayTilesProps = {
   isTodayHeld: boolean;
   isLudus: boolean;
   nextReward: NextStreakReward;
-  denarii: number;
-  todayEarned: number;
   onOpenRun: () => void;
-  onOpenPurse: () => void;
 };
 
 /** Below this window width the tiles stack, so the numbers never squeeze. */
@@ -26,19 +24,10 @@ const PAY_DAYS = new Set<number>(STREAK.weekly.map((step) => step.dayOfWeek));
 const copy = todayCopy.tiles;
 
 /**
- * The two tiles under the hero: the run (with this week's seven steps, paying days marked) and the
- * purse (with today's pay). They replace the campaign and denarii chips and the Stipendium card.
+ * The two tiles under the hero: the run (with this week's seven steps, paying days marked) and
+ * Focus ("Ready", or the time left while one runs). The purse lives in the header counter.
  */
-export function DayTiles({
-  run,
-  isTodayHeld,
-  isLudus,
-  nextReward,
-  denarii,
-  todayEarned,
-  onOpenRun,
-  onOpenPurse,
-}: DayTilesProps) {
+export function DayTiles({ run, isTodayHeld, isLudus, nextReward, onOpenRun }: DayTilesProps) {
   const styles = useStyles();
   const { width } = useWindowDimensions();
   // A finished week starts the next one empty until today holds.
@@ -78,24 +67,7 @@ export function DayTiles({
         </View>
       </HeroTile>
 
-      <HeroTile
-        icon="coin"
-        title={copy.purse.title}
-        glow="currency"
-        glowOrigin="bottomRight"
-        isLit={todayEarned > 0}
-        onPress={onOpenPurse}
-        accessibilityLabel={copy.purse.label(denarii, todayEarned)}
-        accessibilityHint={copy.purse.hint}
-      >
-        <View style={styles.figure}>
-          <RollingNumber value={String(denarii)} variant="display" />
-          <Txt variant="caption">{copy.purse.unit}</Txt>
-        </View>
-        <Txt variant="caption" color={todayEarned > 0 ? 'currency' : 'textMuted'} numberOfLines={1}>
-          {todayEarned > 0 ? copy.purse.today(todayEarned) : copy.purse.none}
-        </Txt>
-      </HeroTile>
+      <FocusTile />
     </View>
   );
 }

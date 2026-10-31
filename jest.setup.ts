@@ -156,3 +156,15 @@ jest.mock('drizzle-orm/expo-sqlite', () => {
     },
   };
 });
+
+// Focus screensaver: the window brightness and the keep-awake lock do nothing in tests.
+jest.mock('expo-brightness', () => ({
+  getBrightnessAsync: jest.fn(() => Promise.resolve(0.5)),
+  setBrightnessAsync: jest.fn(() => Promise.resolve()),
+  restoreSystemBrightnessAsync: jest.fn(() => Promise.resolve()),
+}));
+jest.mock('expo-keep-awake', () => ({
+  useKeepAwake: jest.fn(),
+  activateKeepAwakeAsync: jest.fn(() => Promise.resolve()),
+  deactivateKeepAwake: jest.fn(() => Promise.resolve()),
+}));

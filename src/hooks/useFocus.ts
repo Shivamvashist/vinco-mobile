@@ -4,10 +4,11 @@ import { AppState } from 'react-native';
 
 import { focusCopy } from '@/copy';
 import {
-  abandonFocus,
   db,
   FocusError,
+  type FocusRetreat,
   type FocusSessionRow,
+  retreatFocus,
   selectFocusOn,
   selectLatestFocus,
   settleFocus,
@@ -16,7 +17,6 @@ import {
 import {
   type ClockAnchor,
   expectedFocusReward,
-  focusAllowanceMinutes,
   type FocusGuard,
   getFocusState,
   getTrustedNow,
@@ -25,16 +25,27 @@ import {
 import { guardBridge } from '@/features/guard';
 import type { DayKey } from '@/lib/dates';
 import { cancelFocusHeld, scheduleFocusHeld } from '@/notifications';
-import { usePreferencesStore } from '@/stores';
+import { useFocusUiStore, usePreferencesStore } from '@/stores';
 
 import { useToday } from './useToday';
 
 /** A tick lands this long after the second turns, so the clock never shows the old second. */
 const TICK_LEAD_MS = 20;
 
+/**
+ * When this app process started. A focus that finished after it (here, or while the app was closed
+ * and settled on opening) shows its result once; older ones are history.
+ */
+const APP_OPENED_AT = new Date().toISOString();
+
 export type FocusStartResult = 'started' | 'busy' | 'failed';
 
+/** What a retreat did: given up (paid), waiting on the stand-down, nothing running, or an error. */
+export type FocusRetreatResult = FocusRetreat['status'] | 'failed';
+
 export type FocusController = {
+  /** False until the sessions have been read once. */
+  isLoaded: boolean;
   today: DayKey;
   /** The focus running now, or null. */
   running: FocusSessionRow | null;
@@ -42,11 +53,13 @@ export type FocusController = {
   remainingMs: number;
   /** Focus sessions already paid today (at most three are). */
   rewardedToday: number;
-  /** A focus that finished (held or given up) since the app opened, until dismissed. */
+  /** A focus that finished (held or given up) since the app opened, until the user has seen it. */
   settled: FocusSessionRow | null;
-  start: (minutes: number, guard: FocusGuard) => FocusStartResult;
-  /** Gives up the running focus. It pays nothing. */
-  retreat: () => boolean;
+  /** `allowedPackages`: the Comites and the Phone app, passed to the native guard. */
+  start: (minutes: number, guard: FocusGuard, allowedPackages: readonly string[]) => FocusStartResult;
+  /** Gives up the running focus, paid with a Truce or denarii, or after the stand-down. Never pays. */
+  retreat: (options?: { afterStandDown?: boolean }) => FocusRetreatResult;
+  /** The settled result was seen (claimed or dismissed): it won't open again. */
   dismissSettled: () => void;
 };
 
@@ -58,12 +71,11 @@ export type FocusController = {
 export function useFocus(): FocusController {
   const today = useToday();
   const tone = usePreferencesStore((state) => state.tone);
+  const seenSessionId = useFocusUiStore((state) => state.seenSessionId);
+  const markSeen = useFocusUiStore((state) => state.markSeen);
   const latestRows = useLiveQuery(selectLatestFocus(db));
   const todayRows = useLiveQuery(selectFocusOn(db, today), [today]);
-  // Read before `now`, so a focus settled on opening (the app was closed at its end) counts as new.
-  const [openedAt] = useState(() => new Date().toISOString());
   const [now, setNow] = useState(() => new Date());
-  const [dismissedId, setDismissedId] = useState<number | null>(null);
   // Wall and monotonic clocks read together when this focus began; dropped when the app leaves the
   // foreground (the monotonic clock may pause while the phone sleeps).
   const anchor = useRef<(ClockAnchor & { sessionId: number }) | null>(null);
@@ -73,10 +85,12 @@ export function useFocus(): FocusController {
   const runningId = running?.id ?? null;
   const runningEndsAt = running?.endsAt ?? null;
   const settled =
-    latest && latest.status !== 'running' && latest.endedAt != null && latest.endedAt >= openedAt
-      ? latest.id === dismissedId
-        ? null
-        : latest
+    latest &&
+    latest.status !== 'running' &&
+    latest.endedAt != null &&
+    latest.endedAt >= APP_OPENED_AT &&
+    latest.id !== seenSessionId
+      ? latest
       : null;
   const rewardedToday = todayRows.data.filter((row) => row.reward > 0).length;
 
@@ -123,7 +137,11 @@ export function useFocus(): FocusController {
     }
   }, [running, now]);
 
-  const start = (minutes: number, guard: FocusGuard): FocusStartResult => {
+  const start = (
+    minutes: number,
+    guard: FocusGuard,
+    allowedPackages: readonly string[],
+  ): FocusStartResult => {
     try {
       const startedAt = new Date();
       const session = startFocus(db, { day: today, guard, minutes }, startedAt);
@@ -136,8 +154,9 @@ export function useFocus(): FocusController {
         title: focusCopy.notification.title,
         body: focusCopy.notification.body(expectedFocusReward(session.minutes, guard, rewardedToday), tone),
       });
+      // The native side always adds Vinco, calls and emergency to the allowed list.
       void guardBridge
-        .startFocus({ mode: guard, endsAt, allowanceMinutes: focusAllowanceMinutes(guard) })
+        .startFocus({ guard, startedAt, endsAt, allowedPackages, copy: focusCopy.overlay })
         .catch(warnBridge);
       return 'started';
     } catch (error) {
@@ -147,22 +166,24 @@ export function useFocus(): FocusController {
     }
   };
 
-  const retreat = (): boolean => {
-    if (runningId == null) return false;
+  const retreat = ({ afterStandDown = false }: { afterStandDown?: boolean } = {}): FocusRetreatResult => {
+    if (runningId == null) return 'none';
     try {
-      const given = abandonFocus(db, runningId, new Date());
-      if (!given) return false;
-      anchor.current = null;
-      void cancelFocusHeld(given.id);
-      void guardBridge.endFocus().catch(warnBridge);
-      return true;
+      const result = retreatFocus(db, runningId, new Date(), { afterStandDown });
+      if (result.status === 'retreated') {
+        anchor.current = null;
+        void cancelFocusHeld(result.session.id);
+        void guardBridge.endFocus().catch(warnBridge);
+      }
+      return result.status;
     } catch (error) {
-      if (__DEV__) console.warn('[focus] Could not give up the focus.', error);
-      return false;
+      if (__DEV__) console.warn('[focus] Could not retreat from the focus.', error);
+      return 'failed';
     }
   };
 
   return {
+    isLoaded: latestRows.updatedAt != null,
     today,
     running,
     remainingMs: running ? remainingMs(running, now) : 0,
@@ -171,7 +192,7 @@ export function useFocus(): FocusController {
     start,
     retreat,
     dismissSettled: () => {
-      if (settled) setDismissedId(settled.id);
+      if (settled) markSeen(settled.id);
     },
   };
 }

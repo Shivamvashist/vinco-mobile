@@ -1,6 +1,7 @@
 import type { AudioSource } from 'expo-audio';
 import type { TextStyle } from 'react-native';
 
+import type { ThemeEffects } from './effects';
 import type { motion } from './tokens/motion';
 import type { radius } from './tokens/radius';
 import type { LayoutTokens, SpaceTokens } from './tokens/scale';
@@ -69,7 +70,7 @@ export type ColorPalette = {
   /** Behind full-screen moments like the VINCO stamp. */
   overlay: string;
 
-  /** Inverted chips: selected segment, toast. */
+  /** Inverted chips: the selected segment. */
   inverse: string;
   onInverse: string;
 };
@@ -146,7 +147,16 @@ export type FeedbackCue =
   | 'rise'
   | 'truce'
   | 'denied'
-  | 'whoosh';
+  | 'whoosh'
+  | 'focusStart'
+  | 'focusHeld'
+  | 'retreat'
+  | 'standDown'
+  | 'coin'
+  /** An in-app notice arriving: a haptic only, never a sound. */
+  | 'notice'
+  /** A warning or error notice arriving: a firmer haptic only. */
+  | 'noticeAlert';
 
 export type HapticPattern =
   'none' | 'selection' | 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error';
@@ -190,6 +200,8 @@ export type Theme = {
   radius: typeof radius;
   layout: LayoutTokens;
   motion: typeof motion;
+  /** Glow strength, card hairline and shadow for this scheme (effects.ts). */
+  effects: ThemeEffects;
 };
 
 export type ThemePreferences = {

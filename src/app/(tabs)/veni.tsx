@@ -1,10 +1,12 @@
 import { router } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { HudCounters } from '@/components/hud/HudCounters';
 import { Icon } from '@/components/Icon';
+import { TodayLabours } from '@/components/labours/TodayLabours';
 import { UserMenu } from '@/components/menu/UserMenu';
 import { OrderAmountSheet } from '@/components/orders/OrderAmountSheet';
 import { PlanOrderCard } from '@/components/orders/PlanOrderCard';
@@ -12,7 +14,6 @@ import { CaloriesSheet } from '@/components/proof/CaloriesSheet';
 import { WeightSheet } from '@/components/proof/WeightSheet';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { Toast } from '@/components/Toast';
 import { TaskSheets, type TaskSheetTarget } from '@/components/tasks/TaskSheets';
 import { buildOrderRows } from '@/components/today/buildOrderRows';
 import { describeArcHeader } from '@/components/today/describeArcHeader';
@@ -40,7 +41,7 @@ import { toWakeMoments } from '@/features/sleep';
 import { useActiveArc } from '@/hooks/useActiveArc';
 import { useCampaign } from '@/hooks/useCampaign';
 import { useDailySelfie } from '@/hooks/useDailySelfie';
-import { useDenariiToast } from '@/hooks/useDenariiToast';
+import { useDenariiNotice } from '@/hooks/useDenariiNotice';
 import { useLatestBedtime } from '@/hooks/useLatestBedtime';
 import { useLiveAwards } from '@/hooks/useLiveAwards';
 import { useOrderTaps } from '@/hooks/useOrderTaps';
@@ -75,8 +76,6 @@ export default function VeniScreen() {
   const [sickError, setSickError] = useState<string | null>(null);
   const [todoTarget, setTodoTarget] = useState<TaskSheetTarget>(null);
   const [amountOrder, setAmountOrder] = useState<{ order: CustomOrder; amount: number } | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
-  const hideToast = useCallback(() => setToast(null), []);
   const { today, targets, totalCount } = orders;
   const run = campaign.campaign;
   const close = () => setSheet(null);
@@ -111,10 +110,7 @@ export default function VeniScreen() {
     campaign.todayStatus === 'open' ? run : run - 1,
     isLoaded && campaign.isLoaded,
   );
-  useDenariiToast(campaign.todayEarned, campaign.isLoaded, today, (message) => {
-    if (message.amount > 0) play('confirm');
-    setToast(message.text);
-  });
+  useDenariiNotice(campaign.todayEarned, campaign.isLoaded, today);
 
   const handleSickConfirm = () => {
     const problem = sickDay.call();
@@ -168,17 +164,20 @@ export default function VeniScreen() {
           eyebrow={header.eyebrow}
           title={commonCopy.weekdays[weekdayIndex(today)] ?? ''}
           accessory={
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={todayCopy.menuLabel}
-              onPress={() => {
-                play('tap');
-                setSheet('menu');
-              }}
-              style={({ pressed }) => [styles.userButton, pressed && styles.pressed]}
-            >
-              <Icon name="user" color="accent" />
-            </Pressable>
+            <View style={styles.headerTools}>
+              <HudCounters />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={todayCopy.menuLabel}
+                onPress={() => {
+                  play('tap');
+                  setSheet('menu');
+                }}
+                style={({ pressed }) => [styles.userButton, pressed && styles.pressed]}
+              >
+                <Icon name="user" color="accent" />
+              </Pressable>
+            </View>
           }
         />
 
@@ -314,6 +313,9 @@ export default function VeniScreen() {
           </View>
         ) : null}
 
+        {/* Labours sit after the orders and the seal, so the core job stays at the top. */}
+        {arc && isLoaded ? <TodayLabours /> : null}
+
         {FEATURES.tasks && arc && isLoaded && tasks.isLoaded ? (
           <TodayTodo
             tasks={tasks}
@@ -421,12 +423,12 @@ export default function VeniScreen() {
         }}
         onBack={orders.dismissStamp}
       />
-      <Toast message={toast} onHide={hideToast} />
     </>
   );
 }
 
 const useStyles = createStyles((theme) => ({
+  headerTools: { flexDirection: 'row', alignItems: 'center', gap: theme.space.sm },
   userButton: {
     width: theme.layout.minTouchTarget,
     height: theme.layout.minTouchTarget,

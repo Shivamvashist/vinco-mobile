@@ -293,6 +293,55 @@ const RECIPES = {
     duration: 0.14,
     layers: [whoosh({ length: 0.12, volume: 1, from: 900, to: 2400, q: 1.6 })],
   },
+  // Focus begins (slide to begin): a soft drum, then a rising fifth
+  focusStart: {
+    level: 'moment',
+    duration: 0.75,
+    layers: [
+      tone({ frequency: 110, sweepTo: 55, sweepTime: 0.2, volume: 0.3, attack: 0, length: 0.25 }),
+      ...notes([392, 587.33], {
+        at: 0.12,
+        gap: 0.12,
+        type: 'triangle',
+        volume: 0.1,
+        attack: 0.02,
+        length: 0.5,
+      }),
+    ],
+  },
+  // A focus held to the end: a bright four-note rise
+  focusHeld: {
+    level: 'moment',
+    duration: 1.0,
+    layers: notes([523.25, 659.25, 783.99, 1046.5], {
+      gap: 0.09,
+      type: 'triangle',
+      volume: 0.09,
+      attack: 0.015,
+      length: 0.55,
+    }),
+  },
+  // Retreat from a focus: two quiet falling notes, neutral, never a fanfare
+  retreat: {
+    level: 'soft',
+    duration: 0.6,
+    layers: notes([440, 329.63], { gap: 0.14, volume: 0.1, attack: 0.02, length: 0.4 }),
+  },
+  // The stand-down counting: a soft tick each second
+  standDown: {
+    level: 'soft',
+    duration: 0.08,
+    layers: [tone({ frequency: 1200, type: 'triangle', volume: 0.08, attack: 0, length: 0.04 })],
+  },
+  // A coin lands in the purse: a short, bright two-note ring
+  coin: {
+    level: 'tick',
+    duration: 0.32,
+    layers: [
+      ...notes([1318.51, 1975.53], { gap: 0.06, volume: 0.1, attack: 0.003, length: 0.24 }),
+      noise({ length: 0.012, volume: 0.05, curve: 2, seed: 41 }),
+    ],
+  },
 };
 
 function renderCue({ duration, layers }) {

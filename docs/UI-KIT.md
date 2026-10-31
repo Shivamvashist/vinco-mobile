@@ -139,11 +139,11 @@ Shared rules for all components:
 
 ---
 
-### Toast
+### Notices (replaced Toast, 31 Oct)
 
-- **Used in:** day card (shared, unavailable, failed).
-- **Props:** `message` (null hides it), `onHide`.
-- **Behaviour:** inverse pill near the bottom, rises in, leaves after 2.4 s; a new message restarts the timer; announced politely to screen readers; still with reduced motion.
+- **Used in:** Today (denarii paid or taken back), the Forum (bought), the day card (shared, unavailable, failed), the campaign-lost Truce, the running focus (guard events, the dock).
+- **API:** `notify({ kind, message, action?, id? })` and `dismissNotice(id)` from `@/components/notices`; `NoticeHost` in the root layout and inside each open `BottomSheet`.
+- **Behaviour:** a quiet capsule under the status bar, one at a time, queued; details in DESIGN-SYSTEM.md, "Notices".
 
 ### SelfieCapture
 

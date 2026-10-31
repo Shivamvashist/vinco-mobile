@@ -13,6 +13,7 @@ import { RankCard } from '@/components/arc/RankCard';
 import { RecordGrid } from '@/components/arc/RecordGrid';
 import { TreasuryCard } from '@/components/arc/TreasuryCard';
 import { BottomSheet } from '@/components/BottomSheet';
+import { HudCounters } from '@/components/hud/HudCounters';
 import { Screen } from '@/components/Screen';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionHeader } from '@/components/SectionHeader';
@@ -26,6 +27,7 @@ import { useArcChoice } from '@/hooks/useArcChoice';
 import { useArcHistory } from '@/hooks/useArcHistory';
 import { useCampaign } from '@/hooks/useCampaign';
 import { useForum } from '@/hooks/useForum';
+import { useLabours } from '@/hooks/useLabours';
 import { useSelfieReel } from '@/hooks/useSelfieReel';
 import { useToday } from '@/hooks/useToday';
 import { dayOfArc } from '@/lib/dates';
@@ -46,6 +48,8 @@ export default function ViciScreen() {
   const { arc, targets, isLoaded } = useActiveArc();
   const campaign = useCampaign(arc, targets, today);
   const forum = useForum();
+  const labours = useLabours();
+  const [decorationProblem, setDecorationProblem] = useState<string | null>(null);
   const pastArcs = useArcHistory();
   const choice = useArcChoice();
   // Vici looks across every arc; Today and Vidi look at this campaign only.
@@ -57,7 +61,7 @@ export default function ViciScreen() {
   if (!arc) {
     return (
       <Screen>
-        <ScreenHeader eyebrow={arcCopy.eyebrow} title={arcCopy.title} />
+        <ScreenHeader eyebrow={arcCopy.eyebrow} title={arcCopy.title} accessory={<HudCounters />} />
         {isLoaded ? (
           <View style={styles.section}>
             <ToneLine line={pickTone(arcCopy.emptyLine, tone)} tone={tone} />
@@ -89,7 +93,7 @@ export default function ViciScreen() {
       ? arcCopy.names[arc.lengthDays]
       : arcCopy.fallbackName;
   const caption = isLudus
-    ? arcCopy.ludusCaption(startLabel, toRoman(Math.min(dayNumber, 3999)))
+    ? arcCopy.ludusCaption(startLabel)
     : position.phase === 'finished'
       ? arcCopy.datesFinished(startLabel, endLabel)
       : arcCopy.dates(startLabel, endLabel, toRoman(dayNumber), toRoman(arc.lengthDays));
@@ -113,7 +117,7 @@ export default function ViciScreen() {
   return (
     <>
       <Screen>
-        <ScreenHeader eyebrow={arcCopy.eyebrow} title={title} caption={caption} />
+        <ScreenHeader eyebrow={arcCopy.eyebrow} title={title} caption={caption} accessory={<HudCounters />} />
 
         {isLudus ? null : (
           <View style={styles.journey}>
@@ -161,7 +165,21 @@ export default function ViciScreen() {
         />
 
         <SectionHeader title={arcCopy.decorations.section} />
-        <DecorationGrid decorations={decorations} />
+        <DecorationGrid
+          decorations={decorations}
+          claimed={labours.claimed}
+          truceReserve={labours.truceReserve}
+          onClaim={(id) => {
+            setDecorationProblem(null);
+            return labours.claimDecoration(id);
+          }}
+          onProblem={setDecorationProblem}
+        />
+        {decorationProblem ? (
+          <Txt variant="caption" color="danger" accessibilityRole="alert" style={styles.problem}>
+            {decorationProblem}
+          </Txt>
+        ) : null}
 
         <View style={styles.section}>
           <AllProofCard
@@ -213,4 +231,5 @@ const useStyles = createStyles((theme) => ({
   journey: { marginTop: theme.space.xxl },
   section: { marginTop: theme.space.lg },
   leave: { marginTop: theme.space.xxl },
+  problem: { marginTop: theme.space.sm },
 }));

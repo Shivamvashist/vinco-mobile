@@ -2,6 +2,7 @@ import type { AppDatabase } from './database';
 import {
   arcOrders,
   arcs,
+  claims,
   customOrderLogs,
   customOrders,
   dayLogs,
@@ -17,11 +18,12 @@ import {
 
 /**
  * Deletes every record of the user's journey (arcs, orders, days, tasks, denarii, Forum
- * purchases, Truces, focus sessions) in one
+ * purchases, Truces, focus sessions, claimed rewards) in one
  * transaction, keeping the tables. Media files are deleted separately (src/media).
  */
 export function clearJourney(db: AppDatabase): void {
   db.transaction((tx) => {
+    tx.delete(claims).run();
     tx.delete(focusSessions).run();
     tx.delete(itemUses).run();
     tx.delete(purchases).run();

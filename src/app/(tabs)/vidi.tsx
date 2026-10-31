@@ -5,9 +5,12 @@ import { router } from 'expo-router';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { HudCounters } from '@/components/hud/HudCounters';
 import { Commentarii } from '@/components/progress/Commentarii';
 import { DaySummarySheet } from '@/components/progress/DaySummarySheet';
-import { type CalendarDay, type CalendarDayStatus, MonthCalendar } from '@/components/progress/MonthCalendar';
+import { GloriaCard } from '@/components/progress/GloriaCard';
+import { ArcCalendar } from '@/components/progress/ArcCalendar';
+import { type CalendarDayStatus } from '@/components/progress/MonthCalendar';
 import { StatTile } from '@/components/progress/StatTile';
 import { WeightSheet } from '@/components/proof/WeightSheet';
 import { ProgressBar } from '@/components/ProgressBar';
@@ -17,17 +20,19 @@ import { SegmentedControl } from '@/components/SegmentedControl';
 import { ToneLine } from '@/components/ToneLine';
 import { Txt } from '@/components/Txt';
 import { pickTone, progressCopy } from '@/copy';
-import { arcEndDay, getArcPosition, TIMELAPSE_SELFIES } from '@/features/arc';
-import { type Campaign, useCampaign } from '@/hooks/useCampaign';
+import { getArcPosition, TIMELAPSE_SELFIES } from '@/features/arc';
+import { conqueredDayGloria } from '@/features/gloria';
+import { useCampaign } from '@/hooks/useCampaign';
 import { useActiveArc } from '@/hooks/useActiveArc';
 import { useDailySelfie } from '@/hooks/useDailySelfie';
+import { useGloria } from '@/hooks/useGloria';
+import { useSealedResults } from '@/hooks/useSealedResults';
 import { useToday } from '@/hooks/useToday';
-import { type DayKey, daysBetween, parseDayKey, shiftMonth } from '@/lib/dates';
+import type { DayKey } from '@/lib/dates';
 import { toRoman } from '@/lib/toRoman';
 import { usePreferencesStore } from '@/stores';
 import { createStyles } from '@/theme';
 
-type YearMonth = { year: number; month: number };
 type Segment = 'calendar' | 'logs';
 
 const SEGMENTS: readonly { value: Segment; label: string }[] = [
@@ -46,11 +51,15 @@ export default function VidiScreen() {
   const { arc, targets, isLoaded: isArcLoaded } = useActiveArc();
   const campaign = useCampaign(arc, targets, today);
   const selfie = useDailySelfie(today);
+  const sealed = useSealedResults();
+  const gloria = useGloria();
   const [segment, setSegment] = useState<Segment>('calendar');
   const [isWeightSheetOpen, setIsWeightSheetOpen] = useState(false);
   const [openDay, setOpenDay] = useState<{ day: DayKey; status: CalendarDayStatus } | null>(null);
 
-  const header = <ScreenHeader eyebrow={progressCopy.eyebrow} title={progressCopy.title} />;
+  const header = (
+    <ScreenHeader eyebrow={progressCopy.eyebrow} title={progressCopy.title} accessory={<HudCounters />} />
+  );
 
   if (!arc) {
     return (
@@ -100,6 +109,14 @@ export default function VidiScreen() {
             </>
           )}
         </View>
+        <View style={styles.section}>
+          <GloriaCard
+            total={gloria.total}
+            thisWeek={gloria.thisWeek}
+            conqueredDay={conqueredDayGloria(gloria.dayOf(today)?.orderStatuses.length ?? 0)}
+            today={today}
+          />
+        </View>
         <View style={styles.segments}>
           <SegmentedControl options={SEGMENTS} value={segment} onChange={setSegment} />
         </View>
@@ -109,8 +126,13 @@ export default function VidiScreen() {
               <ArcCalendar
                 arc={arc}
                 today={today}
-                campaign={campaign}
+                records={campaign.records}
+                todayStatus={campaign.todayStatus}
+                isLudus={campaign.isLudus}
+                pastResults={sealed.results}
+                firstRecordDay={sealed.firstDay}
                 onOpenDay={(day, status) => setOpenDay({ day, status })}
+                gloriaByDay={gloria.byDay}
               />
             </View>
             <View style={styles.section}>
@@ -151,49 +173,6 @@ export default function VidiScreen() {
   );
 }
 
-type ArcCalendarProps = {
-  arc: { startDay: DayKey; lengthDays: number };
-  today: DayKey;
-  campaign: Campaign;
-  onOpenDay: (day: DayKey, status: CalendarDayStatus) => void;
-};
-
-/** The calendar, limited to the months the arc covers, opening on this month. Tap a day for its summary. */
-function ArcCalendar({ arc, today, campaign, onOpenDay }: ArcCalendarProps) {
-  const endDay = arcEndDay(arc.startDay, arc.lengthDays);
-  const firstMonth = toYearMonth(arc.startDay);
-  const lastMonth = toYearMonth(daysBetween(today, endDay) < 0 ? endDay : today);
-  const [shown, setShown] = useState<YearMonth>(lastMonth);
-  const visible = clampMonth(shown, firstMonth, lastMonth);
-  const results = new Map(campaign.records.map((record) => [record.day, record.result]));
-
-  const describeDay = (day: DayKey): CalendarDay => {
-    const isToday = day === today;
-    if (daysBetween(arc.startDay, day) < 0 || daysBetween(day, endDay) < 0)
-      return { status: 'outside', isToday };
-    if (isToday) return { status: campaign.todayStatus, isToday };
-    if (daysBetween(today, day) > 0) return { status: 'future', isToday };
-    // A past day not sealed yet (sealing runs on open) reads as open until it is.
-    const result = results.get(day) ?? 'open';
-    // Free training has no streak: a day without every order done is a day off, not a miss.
-    return { status: result === 'missed' && campaign.isLudus ? 'rest' : result, isToday };
-  };
-
-  return (
-    <MonthCalendar
-      year={visible.year}
-      month={visible.month}
-      describeDay={describeDay}
-      canGoBack={compareMonths(visible, firstMonth) > 0}
-      canGoForward={compareMonths(visible, lastMonth) < 0}
-      onPrevious={() => setShown(shiftMonth(visible.year, visible.month, -1))}
-      onNext={() => setShown(shiftMonth(visible.year, visible.month, 1))}
-      onDayPress={(day) => onOpenDay(day, describeDay(day).status)}
-      isLudus={campaign.isLudus}
-    />
-  );
-}
-
 /** Selfies collected toward the first timelapse, and a way to play them once there are two. */
 function TimelapseCard({ selfies }: { selfies: number }) {
   const styles = useStyles();
@@ -221,21 +200,6 @@ function TimelapseCard({ selfies }: { selfies: number }) {
       ) : null}
     </Card>
   );
-}
-
-function toYearMonth(day: DayKey): YearMonth {
-  const { year, month } = parseDayKey(day);
-  return { year, month };
-}
-
-function compareMonths(a: YearMonth, b: YearMonth): number {
-  return a.year * 12 + a.month - (b.year * 12 + b.month);
-}
-
-function clampMonth(month: YearMonth, first: YearMonth, last: YearMonth): YearMonth {
-  if (compareMonths(month, first) < 0) return first;
-  if (compareMonths(month, last) > 0) return last;
-  return month;
 }
 
 const useStyles = createStyles((theme) => ({

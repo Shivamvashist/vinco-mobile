@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 import { useEffect } from 'react';
 
-import { findLatestLoss } from '@/features/campaign';
+import { db, getActiveArc } from '@/db';
+import { findLossToNotify } from '@/features/campaign';
 import { useNoticesStore } from '@/stores';
 
 import { useActiveArc } from './useActiveArc';
@@ -16,24 +17,40 @@ import { useToday } from './useToday';
  * is one break, shown once. It is marked as seen the moment the screen opens (not when the
  * screen mounts), so a re-render in between can never open it twice. Only a break later
  * than the last one shown counts: calling a Truce can uncover an older break, already seen.
+ *
+ * Only a loaded campaign arc can break (free training has nothing to lose), and only on or
+ * after its start day. Before opening, the arc is read again from the database: right after
+ * "Reset the journey" the live queries can still hold the old arc for a render while the
+ * notices are already cleared, and that stale break must never open the screen.
  */
 export function useLossNotice(): void {
   const today = useToday();
-  const { arc, targets } = useActiveArc();
+  const { arc, targets, isLoaded: isArcLoaded } = useActiveArc();
   const campaign = useCampaign(arc, targets, today);
   const acknowledgedLossDay = useNoticesStore((state) => state.acknowledgedLossDay);
   const acknowledgeLoss = useNoticesStore((state) => state.acknowledgeLoss);
-  // The Ludus has no campaign to lose: a missed day there is just a day off.
-  const breakDay =
-    campaign.isLoaded && !campaign.isLudus
-      ? (findLatestLoss(campaign.records)?.firstMissedDay ?? null)
-      : null;
+  const breakDay = findLossToNotify({
+    arc,
+    isLoaded: isArcLoaded && campaign.isLoaded,
+    records: campaign.records,
+    acknowledgedLossDay,
+  });
+  const arcId = arc?.id ?? null;
 
   useEffect(() => {
-    // Day keys sort as text.
-    const isNewBreak = breakDay != null && (acknowledgedLossDay == null || breakDay > acknowledgedLossDay);
-    if (!isNewBreak) return;
+    if (breakDay == null || arcId == null || !isStillActiveArc(arcId)) return;
     acknowledgeLoss(breakDay);
     router.push('/campaign-lost');
-  }, [breakDay, acknowledgedLossDay, acknowledgeLoss]);
+  }, [breakDay, arcId, acknowledgeLoss]);
+}
+
+/** True when the arc the live queries show is still the active one in the database. */
+function isStillActiveArc(arcId: number): boolean {
+  try {
+    const stored = getActiveArc(db);
+    return stored?.id === arcId && stored.kind === 'campaign';
+  } catch (error) {
+    if (__DEV__) console.warn('[campaign] Could not read the active arc.', error);
+    return false;
+  }
 }

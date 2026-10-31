@@ -1,6 +1,7 @@
 import { View } from 'react-native';
 
-import { commonCopy, forumCopy } from '@/copy';
+import { commonCopy, forumCopy, rewardsCopy } from '@/copy';
+import { isFocusRetreatReason } from '@/features/focus';
 import type { TreasuryEntry } from '@/hooks/useForum';
 import type { DayKey } from '@/lib/dates';
 import { createStyles } from '@/theme';
@@ -32,7 +33,7 @@ export function TreasuryHistory({ entries, today }: TreasuryHistoryProps) {
         const label =
           entry.source.type === 'purchase'
             ? copy.purchase(forumCopy.items[entry.source.itemId].name)
-            : (copy.reasons[entry.source.reason] ?? entry.source.reason);
+            : describeReason(entry.source.reason);
         const amount = copy.amount(entry.amount);
         const date = commonCopy.dayLabel(entry.day, today);
         return (
@@ -54,6 +55,12 @@ export function TreasuryHistory({ entries, today }: TreasuryHistoryProps) {
       })}
     </View>
   );
+}
+
+/** A ledger row's line: a known reason, a focus retreat, a claim (labour or decoration), or the raw key. */
+function describeReason(reason: string): string {
+  if (isFocusRetreatReason(reason)) return copy.focusRetreat;
+  return copy.reasons[reason] ?? rewardsCopy.ledger.claim(reason) ?? reason;
 }
 
 const useStyles = createStyles((theme) => ({

@@ -54,6 +54,7 @@ export const settingsCopy = {
     marble: 'Light stone',
     papyrus: 'Parchment',
     calx: 'Limestone',
+    alba: 'First light',
   },
 
   colorModes: {

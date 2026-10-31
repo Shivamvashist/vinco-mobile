@@ -5,6 +5,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
+import { RewardFlightLayer } from '@/components/hud/RewardFlightLayer';
+import { NoticeHost } from '@/components/notices/NoticeHost';
 import { StartupError } from '@/components/StartupError';
 import { useDatabaseMigrations } from '@/db';
 import { selectThemePreferences, usePreferencesStore } from '@/stores';
@@ -77,10 +79,18 @@ function RootNavigator() {
         <Stack.Screen name="day-card" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="timelapse" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen
+          name="focus"
+          options={{ presentation: 'fullScreenModal', animation: 'fade_from_bottom' }}
+        />
+        <Stack.Screen
           name="selfie"
           options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
         />
       </Stack>
+      {/* Claimed rewards fly over every screen to the HUD counters (components/hud). */}
+      <RewardFlightLayer />
+      {/* In-app notices, over every screen (components/notices; sheets mount their own). */}
+      <NoticeHost />
     </>
   );
 }

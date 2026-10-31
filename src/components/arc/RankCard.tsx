@@ -1,11 +1,14 @@
+import { useEffect } from 'react';
 import { View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 
 import { arcCopy } from '@/copy';
 import type { RankStatus } from '@/features/campaign';
-import { createStyles } from '@/theme';
+import { useTabReturn } from '@/hooks/useTabReturn';
+import { clampProgress } from '@/lib/progress';
+import { createStyles, motion, themeTiming, useReduceMotion } from '@/theme';
 
 import { Card } from '../Card';
-import { ProgressBar } from '../ProgressBar';
 import { Txt } from '../Txt';
 
 export type RankCardProps = {
@@ -42,11 +45,45 @@ export function RankCard({ rank }: RankCardProps) {
         </Txt>
         {next ? (
           <View style={styles.progress}>
-            <ProgressBar value={rank.progress} accessibilityLabel={copy.progressLabel} />
+            <RankBar value={rank.progress} />
           </View>
         ) : null}
       </View>
     </Card>
+  );
+}
+
+/**
+ * The bar towards the next rank, like ProgressBar's regular bar. A change eases to the new value;
+ * each time the user comes back to the tab it fills again from empty (never with reduce motion).
+ */
+function RankBar({ value }: { value: number }) {
+  const styles = useStyles();
+  const reduceMotion = useReduceMotion();
+  const progress = clampProgress(value);
+  const fill = useSharedValue(progress);
+
+  useEffect(() => {
+    fill.set(reduceMotion ? progress : withTiming(progress, themeTiming('base')));
+  }, [fill, progress, reduceMotion]);
+
+  useTabReturn(() => {
+    if (reduceMotion) return;
+    fill.set(0);
+    fill.set(withDelay(motion.duration.instant, withTiming(progress, themeTiming('slow'))));
+  });
+
+  const fillStyle = useAnimatedStyle(() => ({ width: `${fill.get() * 100}%` }));
+
+  return (
+    <View
+      style={styles.track}
+      accessibilityRole="progressbar"
+      accessibilityLabel={copy.progressLabel}
+      accessibilityValue={{ min: 0, max: 100, now: Math.round(progress * 100) }}
+    >
+      <Animated.View style={[styles.fill, fillStyle]} />
+    </View>
   );
 }
 
@@ -65,4 +102,12 @@ const useStyles = createStyles((theme) => ({
   text: { flex: 1, minWidth: 0 },
   detail: { marginTop: theme.space.xxs },
   progress: { marginTop: theme.space.sm },
+  track: {
+    width: '100%',
+    height: theme.layout.barHeightRegular,
+    overflow: 'hidden',
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.colors.border,
+  },
+  fill: { height: '100%', borderRadius: theme.radius.pill, backgroundColor: theme.colors.accent },
 }));

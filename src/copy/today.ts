@@ -16,8 +16,8 @@ export const todayCopy = {
   /** "Day XII of LX" (shown in caps). */
   arcEyebrow: (dayRoman: string, lengthRoman: string): string => `Day ${dayRoman} of ${lengthRoman}`,
   arcFinishedEyebrow: 'Arc complete',
-  /** "Free training · Day XII" (shown in caps): counts days, with no end. */
-  ludusEyebrow: (dayRoman: string): string => `Free training · Day ${dayRoman}`,
+  /** Free training has no day count and no end: the eyebrow names the plan only (shown in caps). */
+  ludusEyebrow: 'Free training',
   /** After a campaign's last day: the way on, from Today. */
   finished: {
     title: 'Campaign complete',
@@ -70,6 +70,8 @@ export const todayCopy = {
   /** The Dies card (the hero): today's orders as one big number over the day's path. */
   hero: {
     label: 'Today',
+    /** Free training: the run in place of "Today" while there is one. */
+    runLabel: (days: number): string => (days === 1 ? '1 day in a row' : `${days} days in a row`),
     states: {
       open: 'Open',
       held: 'Held',
@@ -88,7 +90,7 @@ export const todayCopy = {
     dawnLabel: (time: string): string => `Today, before dawn. Planned wake-up ${time}.`,
   },
 
-  /** The two tiles under the hero. */
+  /** The run tile under the hero (the second tile is Focus: focusCopy.tile). */
   tiles: {
     run: {
       campaign: 'Campaign',
@@ -96,15 +98,6 @@ export const todayCopy = {
       unit: (days: number): string => (days === 1 ? 'day in a row' : 'days in a row'),
       hint: 'Opens what the run pays',
       label: (days: number, next: string): string => `Run, ${days} in a row. Next: ${next}.`,
-    },
-    purse: {
-      title: 'Purse',
-      unit: 'denarii',
-      today: (amount: number): string => `+${amount} today`,
-      none: 'Spend in the Forum',
-      hint: 'Opens the Forum',
-      label: (amount: number, today: number): string =>
-        `Purse, ${amount} denarii${today > 0 ? `, ${today} earned today` : ''}.`,
     },
   },
 
@@ -129,8 +122,8 @@ export const todayCopy = {
     },
   },
 
-  /** A short toast when today's pay changes. */
-  denariiToast: {
+  /** A short notice when today's pay changes. */
+  denariiNotice: {
     paid: (amount: number): string => `+${amount} denarii`,
     takenBack: (amount: number): string => `${amount} denarii taken back until the day holds again`,
   },

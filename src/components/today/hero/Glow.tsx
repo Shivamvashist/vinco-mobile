@@ -28,14 +28,16 @@ export function Glow({ color, intensity, origin = 'bottom' }: GlowProps) {
   const theme = useTheme();
   const reduceMotion = useReduceMotion();
   const id = useId().replace(/:/g, '');
-  const opacity = useSharedValue(intensity);
+  // Softer on light palettes, where a full-strength glow reads as a stain (theme effects).
+  const target = intensity * theme.effects.glowStrength;
+  const opacity = useSharedValue(target);
   const centre = CENTRES[origin];
 
   useEffect(() => {
-    opacity.value = reduceMotion ? intensity : withTiming(intensity, themeTiming('slower'));
-  }, [intensity, reduceMotion, opacity]);
+    opacity.set(reduceMotion ? target : withTiming(target, themeTiming('slower')));
+  }, [target, reduceMotion, opacity]);
 
-  const fade = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  const fade = useAnimatedStyle(() => ({ opacity: opacity.get() }));
 
   return (
     <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, fade]}>

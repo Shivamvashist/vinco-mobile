@@ -41,7 +41,7 @@ describe('Free training', () => {
     expect(await screen.findByText(onboardingCopy.selfie.bodyLudus)).toBeTruthy();
     press(onboardingCopy.selfie.skip);
 
-    expect(await screen.findByText(todayCopy.ludusEyebrow('I'))).toBeTruthy();
+    expect(await screen.findByText(todayCopy.ludusEyebrow)).toBeTruthy();
     const arc = getActiveArc(db)!;
     expect(arc.kind).toBe('ludus');
     expect(toOrderTargets(selectArcOrders(db, arc.id).all(), arc.kind)).toEqual({});
@@ -99,6 +99,20 @@ describe('Free training', () => {
     renderRouter(APP_DIR, { initialUrl: '/veni' });
     expect(await screen.findByLabelText(/^Run, 2 in a row/)).toBeTruthy();
     expect(screen.getByText(todayCopy.run.nudge(2))).toBeTruthy();
+    // No day of an arc: the hero names the run, and the eyebrow only the plan.
+    expect(screen.getByText(todayCopy.hero.runLabel(2))).toBeTruthy();
+    expect(screen.getByText(todayCopy.ludusEyebrow)).toBeTruthy();
+    expect(screen.queryByText(/Day [IVXLC]+/)).toBeNull();
+  });
+
+  it('shows just today on the hero before a run, with no Truce banner or sick-day Truce', async () => {
+    startLudus(3);
+    renderRouter(APP_DIR, { initialUrl: '/veni' });
+    // The hero's label (the tab bar says Today too).
+    expect((await screen.findAllByText(todayCopy.hero.label)).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/^\d+ days? in a row$/)).toBeNull();
+    expect(screen.queryByLabelText(todayCopy.sickDay.dawnAction)).toBeNull();
+    expect(screen.queryByText(campaignCopy.truce.title)).toBeNull();
   });
 
   it('shows days trained on Vidi, with no days to go', async () => {

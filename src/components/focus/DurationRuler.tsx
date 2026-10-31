@@ -10,30 +10,33 @@ import {
 } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
-import { PressableScale } from '@/components/PressableScale';
 import { Txt } from '@/components/Txt';
 import { focusCopy } from '@/copy';
-import { clampFocusMinutes, FOCUS_RULES } from '@/features/focus';
+import { FOCUS_RULES, minutesAtOffset, rulerIndex, snapRulerMinutes } from '@/features/focus';
 import { createStyles, useFeedback, useTheme } from '@/theme';
 
 export type DurationRulerProps = {
-  /** Minutes, 5 to 180 in steps of 5. */
+  /** Minutes, 5 to 180 (a custom length may sit between the ruler's 5-minute ticks). */
   value: number;
   onChange: (minutes: number) => void;
 };
 
-const { minMinutes, maxMinutes, stepMinutes, presets } = FOCUS_RULES;
+const { minMinutes, maxMinutes, stepMinutes } = FOCUS_RULES;
 const STEPS = Array.from(
   { length: (maxMinutes - minMinutes) / stepMinutes + 1 },
   (_, i) => minMinutes + i * stepMinutes,
 );
 /** A taller tick and a label every this many minutes. */
 const LABEL_EVERY = 15;
+/** A drag that ends without a fling: wait this long for momentum before calling the scroll over. */
+const SETTLE_MS = 250;
 
 /**
- * The focus length: a big number over a horizontal ruler that snaps every 5 minutes with a
- * selection tick, and quick lengths above it. For screen readers it is one adjustable control
- * (swipe up or down to change it by 5 minutes).
+ * The ruler: 5 minutes to 3 hours in 5-minute ticks, scrolled under a fixed needle. The value is
+ * read from the scroll offset on every scroll event while the user moves it, and again when the
+ * drag ends, the fling ends and the snap lands, so the readout always shows the tick under the
+ * needle. A value set from outside (a preset, a custom length) glides the ruler there without
+ * being overwritten on the way. Screen readers get one adjustable control (5 minutes a swipe).
  */
 export function DurationRuler({ value, onChange }: DurationRulerProps) {
   const theme = useTheme();
@@ -41,129 +44,116 @@ export function DurationRuler({ value, onChange }: DurationRulerProps) {
   const play = useFeedback();
   const scrollRef = useRef<ScrollView>(null);
   const [width, setWidth] = useState(0);
-  // The last value the ruler reported or was moved to, and whether the finger is driving it.
-  const shown = useRef(value);
-  const isDragging = useRef(false);
+  // The finger (or its fling) moves the ruler: only then does the offset decide the value.
+  const isUserScrolling = useRef(false);
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const lastReported = useRef(value);
   const tick = theme.space.lg;
   const edge = Math.max(0, width / 2 - tick / 2);
 
-  // Moved from outside (a quick length, a screen reader): glide the ruler there.
+  useEffect(() => () => clearTimeout(settleTimer.current), []);
+
+  // Set from outside: glide the ruler to the nearest tick.
   useEffect(() => {
-    if (width === 0 || value === shown.current) return;
-    shown.current = value;
-    isDragging.current = false;
-    scrollRef.current?.scrollTo({ x: indexOf(value) * tick, animated: true });
+    if (width === 0 || isUserScrolling.current || value === lastReported.current) return;
+    lastReported.current = value;
+    scrollRef.current?.scrollTo({ x: rulerIndex(value) * tick, animated: true });
   }, [value, width, tick]);
 
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    if (!isDragging.current) return;
-    const index = Math.round(event.nativeEvent.contentOffset.x / tick);
-    const minutes = clampFocusMinutes(minMinutes + index * stepMinutes);
-    if (minutes === shown.current) return;
-    shown.current = minutes;
+  const report = (offsetX: number) => {
+    const minutes = minutesAtOffset(offsetX, tick);
+    if (minutes === lastReported.current) return;
+    lastReported.current = minutes;
     play('select');
     onChange(minutes);
   };
 
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (isUserScrolling.current) report(event.nativeEvent.contentOffset.x);
+  };
+
+  const handleEndDrag = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    report(event.nativeEvent.contentOffset.x);
+    clearTimeout(settleTimer.current);
+    settleTimer.current = setTimeout(() => {
+      isUserScrolling.current = false;
+    }, SETTLE_MS);
+  };
+
+  const handleMomentumEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (!isUserScrolling.current) return;
+    report(event.nativeEvent.contentOffset.x);
+    clearTimeout(settleTimer.current);
+    isUserScrolling.current = false;
+  };
+
   const change = (minutes: number) => {
-    const next = clampFocusMinutes(minutes);
+    const next = snapRulerMinutes(minutes);
     if (next === value) return;
     play('select');
     onChange(next);
   };
 
   const handleAccessibilityAction = (event: AccessibilityActionEvent) => {
-    if (event.nativeEvent.actionName === 'increment') change(value + stepMinutes);
-    if (event.nativeEvent.actionName === 'decrement') change(value - stepMinutes);
+    if (event.nativeEvent.actionName === 'increment') change(snapRulerMinutes(value) + stepMinutes);
+    if (event.nativeEvent.actionName === 'decrement') change(snapRulerMinutes(value) - stepMinutes);
   };
 
   return (
-    <View style={styles.wrap}>
-      <View style={styles.reading} importantForAccessibility="no-hide-descendants">
-        <Txt variant="numeral" style={styles.tabular}>
-          {value}
-        </Txt>
-        <Txt variant="headingSmall" color="textMuted">
-          {focusCopy.setup.minutesUnit}
-        </Txt>
-      </View>
-
-      <View
-        style={styles.presets}
-        accessibilityRole="radiogroup"
-        accessibilityLabel={focusCopy.setup.presetsLabel}
-      >
-        {presets.map((preset) => {
-          const isSelected = preset === value;
-          return (
-            <PressableScale
-              key={preset}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: isSelected }}
-              accessibilityLabel={focusCopy.setup.minutes(preset)}
-              hitSlop={theme.space.xs}
-              onPress={() => change(preset)}
-              style={[styles.preset, isSelected && styles.presetSelected]}
-            >
-              <Txt variant="labelSmall" color={isSelected ? 'text' : 'textMuted'} style={styles.tabular}>
-                {preset}
-              </Txt>
-            </PressableScale>
-          );
-        })}
-      </View>
-
-      <View
-        accessible
-        accessibilityRole="adjustable"
-        accessibilityLabel={focusCopy.setup.rulerLabel}
-        accessibilityHint={focusCopy.setup.rulerHint}
-        accessibilityValue={{
-          min: minMinutes,
-          max: maxMinutes,
-          now: value,
-          text: focusCopy.setup.minutes(value),
-        }}
-        accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
-        onAccessibilityAction={handleAccessibilityAction}
-        onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}
-        style={styles.ruler}
-      >
-        {width > 0 ? (
-          <ScrollView
-            ref={scrollRef}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={tick}
-            decelerationRate="fast"
-            contentOffset={{ x: indexOf(value) * tick, y: 0 }}
-            contentContainerStyle={{ paddingHorizontal: edge }}
-            scrollEventThrottle={16}
-            onScrollBeginDrag={() => {
-              isDragging.current = true;
-            }}
-            onScroll={handleScroll}
-            importantForAccessibility="no-hide-descendants"
-          >
-            {STEPS.map((minutes) => (
-              <View key={minutes} style={[styles.tickCell, { width: tick }]}>
-                <View style={minutes % LABEL_EVERY === 0 ? styles.tickMajor : styles.tickMinor} />
-                {minutes % LABEL_EVERY === 0 ? (
-                  <Txt
-                    variant="micro"
-                    style={[styles.tickLabel, { width: tick * 3, left: -tick }]}
-                    align="center"
-                  >
-                    {minutes}
-                  </Txt>
-                ) : null}
-              </View>
-            ))}
-          </ScrollView>
-        ) : null}
-        <EdgeFade width={width} />
-        <View style={[styles.needle, { left: width / 2 - theme.layout.borderWidthStrong }]} />
-      </View>
+    <View
+      accessible
+      accessibilityRole="adjustable"
+      accessibilityLabel={focusCopy.setup.rulerLabel}
+      accessibilityHint={focusCopy.setup.rulerHint}
+      accessibilityValue={{
+        min: minMinutes,
+        max: maxMinutes,
+        now: value,
+        text: focusCopy.spokenDuration(value),
+      }}
+      accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+      onAccessibilityAction={handleAccessibilityAction}
+      onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}
+      style={styles.ruler}
+    >
+      {width > 0 ? (
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={tick}
+          decelerationRate="fast"
+          contentOffset={{ x: rulerIndex(value) * tick, y: 0 }}
+          contentContainerStyle={{ paddingHorizontal: edge }}
+          scrollEventThrottle={16}
+          onScrollBeginDrag={() => {
+            clearTimeout(settleTimer.current);
+            isUserScrolling.current = true;
+          }}
+          onMomentumScrollBegin={() => clearTimeout(settleTimer.current)}
+          onScroll={handleScroll}
+          onScrollEndDrag={handleEndDrag}
+          onMomentumScrollEnd={handleMomentumEnd}
+          importantForAccessibility="no-hide-descendants"
+        >
+          {STEPS.map((minutes) => (
+            <View key={minutes} style={[styles.tickCell, { width: tick }]}>
+              <View style={minutes % LABEL_EVERY === 0 ? styles.tickMajor : styles.tickMinor} />
+              {minutes % LABEL_EVERY === 0 ? (
+                <Txt
+                  variant="micro"
+                  style={[styles.tickLabel, { width: tick * 3, left: -tick }]}
+                  align="center"
+                >
+                  {focusCopy.shortDuration(minutes)}
+                </Txt>
+              ) : null}
+            </View>
+          ))}
+        </ScrollView>
+      ) : null}
+      <EdgeFade width={width} />
+      <View style={[styles.needle, { left: width / 2 - theme.layout.borderWidthStrong }]} />
     </View>
   );
 }
@@ -192,26 +182,7 @@ function EdgeFade({ width }: { width: number }) {
   );
 }
 
-function indexOf(minutes: number): number {
-  return (clampFocusMinutes(minutes) - minMinutes) / stepMinutes;
-}
-
 const useStyles = createStyles((theme) => ({
-  wrap: { gap: theme.space.lg },
-  reading: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: theme.space.sm },
-  tabular: { fontVariant: ['tabular-nums'] },
-  presets: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: theme.space.sm },
-  preset: {
-    minWidth: theme.layout.minTouchTarget,
-    minHeight: theme.layout.choiceChipHeight,
-    paddingHorizontal: theme.space.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: theme.radius.pill,
-    borderWidth: theme.layout.borderWidth,
-    borderColor: theme.colors.border,
-  },
-  presetSelected: { borderColor: theme.colors.accent, backgroundColor: theme.colors.accentTint },
   ruler: { height: theme.space.giant, justifyContent: 'flex-start' },
   tickCell: { height: theme.space.giant, alignItems: 'center' },
   tickMinor: {

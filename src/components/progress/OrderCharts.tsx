@@ -1,8 +1,7 @@
 import { View } from 'react-native';
 
-import { commonCopy, progressCopy, todayCopy } from '@/copy';
+import { commonCopy, progressCopy } from '@/copy';
 import { chartMax, type WeekBar } from '@/features/logs';
-import type { OrderTargets } from '@/features/orders';
 import { type OrderChart, useOrderCharts } from '@/hooks/useOrderCharts';
 import type { DayKey } from '@/lib/dates';
 import { usePreferencesStore } from '@/stores';
@@ -18,20 +17,20 @@ const copy = progressCopy.logs;
 
 export type OrderChartsProps = {
   arc: { id: number; startDay: DayKey; lengthDays: number };
-  targets: OrderTargets;
   weekStart: DayKey;
   today: DayKey;
 };
 
 /**
- * The Orders log: a chip for every order to show or hide its chart (saved), then one week per shown
- * order. Counted orders are bars against their goal; done-or-not orders are a row of ticks.
+ * The Orders log: a chip for each of the user's own orders to show or hide its chart (saved), then
+ * one week per shown order. Counted orders are bars against their goal; done-or-not orders are a
+ * row of ticks. Vinco's orders have their own logs (sleep, water, workout), so they get no chart here.
  */
-export function OrderCharts({ arc, targets, weekStart, today }: OrderChartsProps) {
+export function OrderCharts({ arc, weekStart, today }: OrderChartsProps) {
   const styles = useStyles();
   const hidden = usePreferencesStore((state) => state.hiddenOrderCharts);
   const toggle = usePreferencesStore((state) => state.toggleOrderChart);
-  const { charts, isLoaded } = useOrderCharts(arc, targets, weekStart, today);
+  const { charts, isLoaded } = useOrderCharts(arc, weekStart, today);
   if (!isLoaded) return null;
   if (charts.length === 0) {
     return (
@@ -48,7 +47,7 @@ export function OrderCharts({ arc, targets, weekStart, today }: OrderChartsProps
         {charts.map((chart) => (
           <ChoiceChip
             key={chart.key}
-            label={titleOf(chart)}
+            label={chart.name}
             selected={!hidden.includes(chart.key)}
             onPress={() => toggle(chart.key)}
             isMulti
@@ -66,24 +65,10 @@ export function OrderCharts({ arc, targets, weekStart, today }: OrderChartsProps
   );
 }
 
-/** A Vinco order's name, or the user's own. */
-function titleOf(chart: OrderChart): string {
-  return chart.kind ? todayCopy.orders[chart.kind].name : chart.name;
-}
-
-/** An amount in the order's own words: "2.5 L", "2 meals", "40 min", "12 pages". */
+/** An amount in the order's own words: "12 pages", or the number alone without a unit. */
 function formatAmount(chart: OrderChart, value: number): string {
   const rounded = Number(value.toFixed(1));
-  switch (chart.kind) {
-    case 'water':
-      return `${rounded} L`;
-    case 'meal':
-      return copy.orders.meals(rounded);
-    case 'workout':
-      return `${Math.round(value)} min`;
-    default:
-      return chart.unit ? `${rounded} ${chart.unit}` : `${rounded}`;
-  }
+  return chart.unit ? `${rounded} ${chart.unit}` : `${rounded}`;
 }
 
 type OrderWeekProps = { chart: OrderChart; today: DayKey };
@@ -99,7 +84,7 @@ function OrderWeek({ chart, today }: OrderWeekProps) {
     <Card variant="sunk" bordered style={styles.card}>
       <View style={styles.header}>
         <Txt variant="label" numberOfLines={1} style={styles.title}>
-          {titleOf(chart)}
+          {chart.name}
         </Txt>
         <Txt variant="caption">
           {chart.isCheck ? copy.orders.everyDay : copy.orders.goal(formatAmount(chart, chart.target.full))}

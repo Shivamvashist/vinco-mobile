@@ -29,11 +29,12 @@ const useStyles = createStyles((theme) => ({
     paddingVertical: theme.layout.cardPadding,
     paddingHorizontal: theme.space.lg,
   },
-  surface: { backgroundColor: theme.colors.surface },
+  // On light palettes, cards lift off the ground with a soft shadow (none on dark: theme effects).
+  surface: { backgroundColor: theme.colors.surface, boxShadow: theme.effects.cardShadow },
   sunk: { backgroundColor: theme.colors.surfaceSunk },
-  raised: { backgroundColor: theme.colors.surfaceRaised },
+  raised: { backgroundColor: theme.colors.surfaceRaised, boxShadow: theme.effects.cardShadow },
   bordered: {
     borderWidth: theme.layout.borderWidth,
-    borderColor: theme.colors.border,
+    borderColor: theme.effects.cardBorder,
   },
 }));

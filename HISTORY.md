@@ -10,6 +10,15 @@ The memory of this project. Any AI model or developer joining should read this, 
 
 **Phase:** Early Access (tracker only, all on the phone, no backend wired). The backend (`../vinco-backend`, 0.2.0) is built and tested but not deployed.
 
+**Wave 5 (31 Oct, [docs/TASKS-2026-10-31-wave5.md](docs/TASKS-2026-10-31-wave5.md)):**
+
+- **Counters at the top** of each tab (denarii, Gloria, Truces), a **reward flight** that slingshots claims to them.
+- **Labours** (daily and weekly bounties, `/labours`), **claimable Decorations** in Vici, **Gloria** (XP, derived from records), and a redesigned day sheet ([docs/REWARDS.md](docs/REWARDS.md)).
+- **Focus rebuilt** (`/focus`, from the Focus tile): h:mm time, guard emblems, the Comites, slide to begin and retreat (Truce, 50 denarii or a 30 s stand-down), the active screen with screensaver, sounds, the log.
+- **Native focus guards** (`modules/vigil`, AccessibilityService and overlays): Custos, Imperium, Silentium.
+- **Tabs:** directional slide, swipe, return motion. **Notices** replace the toast. **Nox** is the default dark palette, **Alba** is new, light palettes refined (`theme.effects`).
+- **Fixes:** reset no longer opens the loss screen; free training has no day context; the calendar goes back to the first record; charts only for own orders; the focus ruler no longer sticks.
+
 **Wave 4 (31 Oct, [docs/TASKS-2026-10-31.md](docs/TASKS-2026-10-31.md)):**
 
 - **Development build:** `expo-dev-client`, EAS `development` profile.
@@ -33,7 +42,7 @@ The memory of this project. Any AI model or developer joining should read this, 
 
 **Next:**
 
-1. The developer installs the development build and tests Aurora and reminders on the phone (steps in GUARDIANS.md, "Testing Aurora").
+1. The developer builds a new preview or development build (the Vigil module and two new packages need it) and tests Aurora, reminders and the focus guards on the phone (GUARDIANS.md).
 2. The Vigil module (same dev build).
 3. Hardening (Step 14).
 4. FCM credentials for push.
@@ -99,6 +108,13 @@ The memory of this project. Any AI model or developer joining should read this, 
 | 31 Oct | Palettes chosen per scheme (dark and light picks), fonts and sounds stay the theme's                                            | Developer's request; one theme, many looks; contrast tests run on every palette             |
 | 31 Oct | Aurora asks for `SCHEDULE_EXACT_ALARM` (not `USE_EXACT_ALARM`), with an inexact fallback                                        | Play keeps `USE_EXACT_ALARM` for alarm-clock apps; Vinco is a tracker with an alarm         |
 | 31 Oct | Wave 4 joins 1.1.0 (nothing has shipped)                                                                                        | Release rule: one version in progress at a time                                             |
+| 31 Oct | Labours are claimed by hand; day pay and run pay stay automatic                                                                 | Developer's request for a claim loop; wages keep their live-pay and undo rules              |
+| 31 Oct | Gloria (XP) is derived from the records, only claims store it                                                                   | An undo takes it back with no bookkeeping                                                   |
+| 31 Oct | Claims: table `claims`, unique on kind, key and period; ledger reasons `labour_<id>` and `decoration_<id>`                      | A double tap or a replay can never pay twice                                                |
+| 31 Oct | A focus retreat always exists: a Truce, else 50 denarii, else a 30-second stand-down                                            | A phone must never become a trap for up to three hours; calls are always allowed            |
+| 31 Oct | Focus guards run in an AccessibilityService that stops natively at `endsAt`                                                     | Blocking must work with Vinco closed and can never outlive the session                      |
+| 31 Oct | Nox is the default dark palette; a saved choice is kept                                                                         | Developer's request                                                                         |
+| 31 Oct | Notices are one queued pill at the top (`notify()`), haptic only, never sound                                                   | Developer's request for a minimal, consistent message system                                |
 | 10 Oct | Native features go through bridge contracts (`guardBridge`, `auroraBridge`) with stubs                                          | Runs in Expo Go now; the Kotlin modules replace one line each later                         |
 
 ### Questions for the developer (parked while working)
@@ -152,10 +168,42 @@ Answer when convenient; work continues with the safe default shown.
 - A Forum purchase made with today's live denarii, followed by an undo, can leave the purse below zero until the next held day. Rare and self-inflicted; left as is.
 - `npm audit` reports 30 advisories in the dependency tree (mostly dev tooling). Review before the production build.
 - `README.md` is now a short project readme.
+- Wave 5 helpers noticed:
+  - The shared day card still says "FREE TRAINING · DAY XII" in free training (`dayCardCopy.ludusEyebrow`).
+  - The HUD works out the whole journey's Gloria on each tab (fine for months of data; cache later).
+  - A retreat doesn't store what it cost (Truce, denarii or stand-down) on the session.
+  - A notice raised while a sheet closes sits under it for about 200 ms.
+  - Callers that play their own cue and raise a notice give two quick haptics (Forum buy, failed Truce).
+  - `themes.test.ts` keeps an old cue list; notices and focus parts aren't in the theme lab.
+  - Silentium's shade detection is a heuristic (systemui windows); OEM differences need the phone test list in GUARDIANS.md.
+  - Play: the accessibility declaration and the foreground-service and full-screen-intent declarations are release tasks.
+  - `git rm -r --cached modules/aurora/android/.gradle` once (now gitignored).
 
 ---
 
 ## Milestone log
+
+### 31 Oct 2026: Wave 5 (still 1.1.0)
+
+- **Plan:** [docs/TASKS-2026-10-31-wave5.md](docs/TASKS-2026-10-31-wave5.md), built in three phases by helper agents with set file ownership, then integrated and reviewed.
+- **Step A (fixes, palettes):**
+  - `features/campaign/lossNotice.ts`, `useLossNotice` reads the active arc in its effect, and reset leaves the tabs.
+  - `features/arc/calendarRange.ts` and `ArcCalendar`.
+  - Charts for own orders only.
+  - Nox is the default; `palettes/alba.ts`; `theme/effects.ts` (glow strength, hairline, shadow per scheme).
+- **Step B (native guards):** `modules/vigil` (Kotlin: service, guard, policy, overlay, store, apps), `guardBridge` extended (listLaunchableApps, getDialerPackage, startFocus, endFocus, onFocusEvent, launchApp). `:vigil:compileDebugKotlin` succeeds.
+- **Step C (tab motion):** a `sceneStyleInterpolator` slide, `TabSwipe` (gesture handler, `lib/tabSwipe.ts`), `useTabReturn`.
+- **Step D (economy):**
+  - `features/labours`, `features/gloria`, `db/claims.ts` (migration 0012), `db/journey.ts`.
+  - `components/hud` (HudCounters, RewardFlightLayer, `launchRewardFlight`, ClaimButton), `/labours`.
+  - Decoration claims; the DaySummarySheet redesign.
+- **Step E (focus):**
+  - `/focus` with the setup, active and complete stages; avatars, Comites, SlideToConfirm, NoTruceSheet, RainField, DriftingClock.
+  - `useScreensaver` (expo-brightness, expo-keep-awake), `useFocusLock`, retreat in `db/focus.ts`, five new sound cues, `FocusTile`.
+- **Step G (notices):** `features/notices/queue.ts`, `components/notices` (`notify`, NoticeHost, NoticePill). Toast removed.
+- **Integration:** the focus claim flies to its own counters; one Gloria rule (`features/gloria`); coin cue throttled; Forum history labels.
+- 80 suites, 950 tests. Nothing tried on a phone yet.
+- Guard avatars are vector emblems in code. Illustrated versions can replace them (prompts in the developer handover of 31 Oct).
 
 ### 31 Oct 2026: Today hero, spring motion, Focus (still 1.1.0)
 

@@ -5,7 +5,6 @@ import {
   expectedFocusReward,
   FOCUS_NOTIFICATION_ID_PREFIX,
   FOCUS_RULES,
-  focusAllowanceMinutes,
   focusEndsAt,
   focusReward,
   formatFocusClock,
@@ -16,6 +15,7 @@ import {
   nextFocusReason,
   remainingMs,
   remainingShare,
+  snapRulerMinutes,
 } from '..';
 
 const START = new Date('2026-10-31T10:00:00.000Z');
@@ -26,25 +26,40 @@ const session = (minutes = 25) => ({
   status: 'running' as const,
 });
 
-describe('clampFocusMinutes', () => {
-  it('keeps minutes between 5 and 180 on a 5-minute step', () => {
+describe('focus lengths', () => {
+  it('keeps a custom length between 5 and 180 in whole minutes', () => {
     expect(clampFocusMinutes(25)).toBe(25);
+    expect(clampFocusMinutes(27)).toBe(27);
+    expect(clampFocusMinutes(67.4)).toBe(67);
     expect(clampFocusMinutes(0)).toBe(5);
+    expect(clampFocusMinutes(4)).toBe(5);
     expect(clampFocusMinutes(-20)).toBe(5);
     expect(clampFocusMinutes(181)).toBe(180);
     expect(clampFocusMinutes(1000)).toBe(180);
-    expect(clampFocusMinutes(27)).toBe(25);
-    expect(clampFocusMinutes(28)).toBe(30);
+  });
+
+  it('keeps the ruler on 5-minute steps', () => {
+    expect(snapRulerMinutes(27)).toBe(25);
+    expect(snapRulerMinutes(28)).toBe(30);
+    expect(snapRulerMinutes(2)).toBe(5);
+    expect(snapRulerMinutes(190)).toBe(180);
   });
 
   it('falls back to the default for bad values', () => {
-    expect(clampFocusMinutes(Number.NaN)).toBe(FOCUS_RULES.defaultMinutes);
-    expect(clampFocusMinutes('25')).toBe(FOCUS_RULES.defaultMinutes);
-    expect(clampFocusMinutes(null)).toBe(FOCUS_RULES.defaultMinutes);
+    for (const clamp of [clampFocusMinutes, snapRulerMinutes]) {
+      expect(clamp(Number.NaN)).toBe(FOCUS_RULES.defaultMinutes);
+      expect(clamp('25')).toBe(FOCUS_RULES.defaultMinutes);
+      expect(clamp(null)).toBe(FOCUS_RULES.defaultMinutes);
+    }
   });
 
-  it('has presets that are all valid durations', () => {
-    for (const preset of FOCUS_RULES.presets) expect(clampFocusMinutes(preset)).toBe(preset);
+  it('has presets on the ruler: 15m, 25m, 45m, 1h, 1h 30m, 2h', () => {
+    expect(FOCUS_RULES.presets).toEqual([15, 25, 45, 60, 90, 120]);
+    for (const preset of FOCUS_RULES.presets) expect(snapRulerMinutes(preset)).toBe(preset);
+  });
+
+  it('ends a custom-length focus after exactly its minutes', () => {
+    expect(focusEndsAt(START, 67)).toEqual(at(67));
   });
 });
 
@@ -153,10 +168,10 @@ describe('outcomes and guards', () => {
     expect(getFocusOutcome({ status: 'completed', reward: 0, minutes: 25 })).toBe('dailyLimit');
   });
 
-  it('allows marked apps only under Custos', () => {
-    expect(focusAllowanceMinutes('custos')).toBe(5);
-    expect(focusAllowanceMinutes('imperium')).toBe(0);
-    expect(focusAllowanceMinutes('silentium')).toBe(0);
+  it('times the native guards in 3-minute steps', () => {
+    expect(FOCUS_RULES.nudgeEveryMinutes).toBe(3);
+    expect(FOCUS_RULES.appSessionMinutes).toBe(3);
+    expect(FOCUS_RULES.appCooldownMinutes).toBe(3);
     expect(isFocusGuard('silentium')).toBe(true);
     expect(isFocusGuard('pax')).toBe(false);
   });

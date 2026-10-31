@@ -33,9 +33,10 @@ export type FocusOutcome = 'paid' | 'tooShort' | 'dailyLimit' | 'retreated';
 export const FOCUS_RULES = {
   minMinutes: 5,
   maxMinutes: 180,
+  /** The ruler moves in 5-minute steps; a custom length may be any whole minute. */
   stepMinutes: 5,
   defaultMinutes: 25,
-  presets: [15, 25, 45, 60, 90],
+  presets: [15, 25, 45, 60, 90, 120],
   /** Denarii per minute held. */
   rates: { custos: 0.2, imperium: 0.3, silentium: 0.4 },
   /** Shorter sessions pay nothing. */
@@ -44,10 +45,16 @@ export const FOCUS_RULES = {
   maxCountedMinutes: 120,
   /** Rewarded sessions a day: one ledger reason each (focus_1 to focus_3). */
   maxRewardedPerDay: 3,
-  /** Custos: marked apps are allowed this long in total during a focus. */
-  custosAllowanceMinutes: 5,
-  /** "Retreat" needs a hold this long. */
-  giveUpHoldMs: 1500,
+  /** Custos: a "back to the line" popup every this many minutes spent in an app outside the focus. */
+  nudgeEveryMinutes: 3,
+  /** Imperium: an app outside the focus is closed after this long. */
+  appSessionMinutes: 3,
+  /** Imperium: then it can't be opened again for this long. */
+  appCooldownMinutes: 3,
+  /** With no Truce and too few denarii, a retreat waits this long (a stand-down the user can cancel). */
+  standDownSeconds: 30,
+  /** Apps the user may keep during every guard ("Comites"), besides the Phone app. */
+  maxComites: 3,
   /**
    * How far the phone's clock may run ahead of the time measured on the phone (a monotonic clock)
    * before the measured time is trusted instead: small drift is fine, a jump is not.
@@ -67,8 +74,15 @@ export function isFocusGuard(value: unknown): value is FocusGuard {
   return typeof value === 'string' && (FOCUS_GUARDS as readonly string[]).includes(value);
 }
 
-/** Minutes kept between 5 and 180 and on a 5-minute step. Bad values give the default. */
+/** Minutes kept between 5 and 180, in whole minutes (a custom length). Bad values give the default. */
 export function clampFocusMinutes(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return FOCUS_RULES.defaultMinutes;
+  const { minMinutes, maxMinutes } = FOCUS_RULES;
+  return Math.min(maxMinutes, Math.max(minMinutes, Math.round(value)));
+}
+
+/** Minutes kept between 5 and 180 on a 5-minute step (the ruler). Bad values give the default. */
+export function snapRulerMinutes(value: unknown): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return FOCUS_RULES.defaultMinutes;
   const { minMinutes, maxMinutes, stepMinutes } = FOCUS_RULES;
   const stepped = Math.round(value / stepMinutes) * stepMinutes;
@@ -157,11 +171,6 @@ export function getFocusOutcome(
   if (session.status === 'abandoned') return 'retreated';
   if (session.reward > 0) return 'paid';
   return session.minutes < FOCUS_RULES.minRewardMinutes ? 'tooShort' : 'dailyLimit';
-}
-
-/** Minutes the phone allows marked apps during a focus with this guard. */
-export function focusAllowanceMinutes(guard: FocusGuard): number {
-  return guard === 'custos' ? FOCUS_RULES.custosAllowanceMinutes : 0;
 }
 
 /** "mm:ss" (or "h:mm:ss" from an hour), counting whole seconds up so 0:00 shows only at the end. */

@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 
 import type { BarTone, WeekBar } from '@/features/logs';
+import { useTabReturn } from '@/hooks/useTabReturn';
 import { createStyles, themeTiming, useReduceMotion } from '@/theme';
 
 import { Txt } from '../Txt';
@@ -27,7 +28,8 @@ const STAGGER_MS = 60;
 
 /**
  * A week of bars, Monday to Sunday, after the prototype's Vidi charts: the value over each bar,
- * a dashed target line, day initials underneath. Bars grow in, one after another.
+ * a dashed target line, day initials underneath. Bars grow in, one after another, and rise from
+ * the baseline again each time the user comes back to the tab (a little quicker, to stay short).
  */
 export function WeekBarChart({
   bars,
@@ -86,6 +88,12 @@ function Bar({ height, tone, delay }: BarProps) {
       ? height
       : withDelay(delay, withTiming(height, themeTiming('slow', 'entrance')));
   }, [grown, height, delay, reduceMotion]);
+
+  useTabReturn(() => {
+    if (reduceMotion) return;
+    grown.set(0);
+    grown.set(withDelay(delay, withTiming(height, themeTiming('base', 'entrance'))));
+  });
 
   const growStyle = useAnimatedStyle(() => ({ height: grown.value }));
 

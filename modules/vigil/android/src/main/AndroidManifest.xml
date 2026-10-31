@@ -1,0 +1,41 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!--
+    The Vigil guards the focus sessions the user starts ("Acies"). Display over other apps draws
+    the timer bubble, the alerts and the countdown; without it the accessibility overlay is used.
+  -->
+  <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+  <!--
+    Package visibility (Android 11+): only the launcher apps (for the Comites picker), the home
+    screen (Silentium blocks it) and keyboards (always allowed). Never QUERY_ALL_PACKAGES.
+  -->
+  <queries>
+    <intent>
+      <action android:name="android.intent.action.MAIN" />
+      <category android:name="android.intent.category.LAUNCHER" />
+    </intent>
+    <intent>
+      <action android:name="android.intent.action.MAIN" />
+      <category android:name="android.intent.category.HOME" />
+    </intent>
+    <intent>
+      <action android:name="android.view.InputMethod" />
+    </intent>
+  </queries>
+
+  <application>
+    <!-- Only the system can bind it (BIND_ACCESSIBILITY_SERVICE is held by the system alone). -->
+    <service
+      android:name="expo.modules.vigil.VigilService"
+      android:exported="true"
+      android:label="@string/vigil_service_label"
+      android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+      <intent-filter>
+        <action android:name="android.accessibilityservice.AccessibilityService" />
+      </intent-filter>
+      <meta-data
+        android:name="android.accessibilityservice"
+        android:resource="@xml/vigil_accessibility" />
+    </service>
+  </application>
+</manifest>

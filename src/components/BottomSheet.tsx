@@ -7,6 +7,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { commonCopy } from '@/copy';
 import { createStyles, themeTiming, useReduceMotion } from '@/theme';
 
+import { NoticeHost } from './notices/NoticeHost';
 import { Txt } from './Txt';
 
 export type BottomSheetProps = {
@@ -85,6 +86,9 @@ export function BottomSheet({ visible, onClose, title, children }: BottomSheetPr
           </Animated.View>
         </View>
       </KeyboardAvoidingView>
+      {/* A Modal is its own window: notices raised while the sheet is open draw here, on top.
+          A closing sheet hands them back to the screen's host at once. */}
+      {visible ? <NoticeHost /> : null}
     </Modal>
   );
 }

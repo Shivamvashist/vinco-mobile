@@ -94,7 +94,7 @@ export function Commentarii({ arc, targets, today, todayWeightKg, onLogWeight }:
             />
           </View>
           {kind === 'orders' ? (
-            <OrderCharts arc={arc} targets={targets} weekStart={shownWeek} today={today} />
+            <OrderCharts arc={arc} weekStart={shownWeek} today={today} />
           ) : logs.isLoaded ? (
             <WeekLog kind={kind} logs={logs} targets={targets} today={today} />
           ) : null}

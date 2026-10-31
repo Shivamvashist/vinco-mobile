@@ -63,6 +63,7 @@ export { clearJourney } from './reset';
 export type {
   ArcOrderRow,
   ArcRow,
+  ClaimRow,
   CustomOrderLogRow,
   CustomOrderRow,
   DayLogRow,
@@ -117,9 +118,12 @@ export {
 export {
   abandonFocus,
   FocusError,
+  type FocusRetreat,
   getRunningFocus,
   type NewFocus,
+  retreatFocus,
   selectFocusOn,
+  selectFocusSessions,
   selectLatestFocus,
   selectRunningFocus,
   settleFocus,
@@ -127,3 +131,15 @@ export {
 } from './focus';
 export { useDatabaseMigrations } from './useDatabaseMigrations';
 export { grantDevDenarii, replaceDayAwards, syncTodayAwards } from './awards';
+export { ClaimError, claimDecoration, claimLabour, getDecorationsNow, toClaimedKeys } from './claims';
+export {
+  loadJourneyInput,
+  selectAllArcOrders,
+  selectAllCustomOrders,
+  selectArcsForJourney,
+  selectClaims,
+  selectClaimsBetween,
+  selectFocusSessionsBetween,
+  selectLedgerBetween,
+  toJourneyInput,
+} from './journey';

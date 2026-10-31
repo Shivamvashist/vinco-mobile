@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
@@ -7,7 +6,6 @@ import type { Campaign } from '@/hooks/useCampaign';
 import type { TodayOrders } from '@/hooks/useTodayOrders';
 import { createStyles } from '@/theme';
 
-import { FocusLauncher } from '../../focus/FocusLauncher';
 import { DayTiles } from './DayTiles';
 import { type DiesState, DiesCard } from './DiesCard';
 
@@ -25,7 +23,7 @@ export type TodayHeroProps = {
 const MINUTES_IN_DAY = 24 * 60;
 const MINUTE_MS = 60_000;
 
-/** The hero block on Today: the Dies card, the run and purse tiles, then the Focus row. */
+/** The hero block on Today: the Dies card, then the run and Focus tiles. */
 export function TodayHero({
   orders,
   campaign,
@@ -58,6 +56,8 @@ export function TodayHero({
         plannedWake={plannedWakeMinutes != null ? formatClockMinutes(plannedWakeMinutes) : null}
         progress={toProgress(now)}
         marks={orders.heldAt.map(toProgress)}
+        // Free training has no day of an arc: the hero names the run instead, when there is one.
+        runDays={campaign.isLudus ? campaign.campaign : null}
         onPress={onOpenSummary}
       />
       <DayTiles
@@ -65,12 +65,8 @@ export function TodayHero({
         isTodayHeld={campaign.todayStatus !== 'open'}
         isLudus={campaign.isLudus}
         nextReward={campaign.nextReward}
-        denarii={campaign.denarii}
-        todayEarned={campaign.todayEarned}
         onOpenRun={onOpenRun}
-        onOpenPurse={() => router.push('/forum')}
       />
-      <FocusLauncher />
     </View>
   );
 }

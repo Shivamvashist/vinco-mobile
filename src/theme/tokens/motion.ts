@@ -22,10 +22,10 @@ export const motion = {
   /** Delay between items in a staggered list. */
   stagger: 60,
   /**
-   * Springs for things the hand moves (31 Oct): presses, toggles, numbers and the focus morph.
+   * Springs for things the hand moves (31 Oct): presses, toggles, numbers and the tab slide.
    * Physical, not timed, so an interrupted motion picks up from where it is.
-   * press: the quick give under a finger. settle: a value or card arriving. morph: a view that
-   * grows into another (the focus CTA into the focus view). pop: a small celebration overshoot.
+   * press: the quick give under a finger. settle: a value or card arriving. morph: a large move
+   * that should barely overshoot (the tab slide). pop: a small celebration overshoot.
    */
   spring: {
     press: { damping: 18, stiffness: 420, mass: 0.6 },

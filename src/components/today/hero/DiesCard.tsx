@@ -23,6 +23,8 @@ export type DiesCardProps = {
   progress: number;
   /** Where each order was done, on the same scale. */
   marks: readonly number[];
+  /** Free training: the run (days in a row) to name in place of "Today", or null for none. */
+  runDays?: number | null;
   onPress: () => void;
 };
 
@@ -51,6 +53,7 @@ export function DiesCard({
   plannedWake,
   progress,
   marks,
+  runDays = null,
   onPress,
 }: DiesCardProps) {
   const theme = useTheme();
@@ -71,7 +74,7 @@ export function DiesCard({
     >
       <Glow color="accent" intensity={GLOW[state]} />
       <View style={styles.top}>
-        <Txt variant="label">{copy.label}</Txt>
+        <Txt variant="label">{runDays != null && runDays > 0 ? copy.runLabel(runDays) : copy.label}</Txt>
         <View style={[styles.pill, isHeld && styles.pillHeld]}>
           <Txt variant="micro" color={isHeld ? 'onAccent' : 'textMuted'}>
             {stateLabel}
@@ -112,8 +115,9 @@ const useStyles = createStyles((theme) => ({
     borderRadius: theme.radius.xl,
     borderCurve: 'continuous',
     borderWidth: theme.layout.hairline,
-    borderColor: theme.colors.border,
+    borderColor: theme.effects.cardBorder,
     backgroundColor: theme.colors.surface,
+    boxShadow: theme.effects.cardShadow,
     overflow: 'hidden',
     justifyContent: 'space-between',
   },

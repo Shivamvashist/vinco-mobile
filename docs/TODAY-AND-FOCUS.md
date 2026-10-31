@@ -28,11 +28,10 @@ Vinco's version speaks Vinco: the hero number is **the day**, not a metric. The 
    - **The day path:** a dotted arc from the left edge (the planned wake time) to the right (midnight). It is solid up to now, with a glowing dot at now, so time running out is felt, not read. Each order done adds a small notch where it was logged.
    - **The glow:** a radial gradient in the accent rises from the bottom. It is dim while the day is open, warmer once held, and full once conquered. It is a scaled view of an SVG gradient, so it costs no JS frames.
    - **Tap:** opens the day summary for today (the same sheet as Vidi's calendar).
-3. **Two tiles** (new, side by side; stacked on phones narrower than 340 pt):
+3. **Two tiles** (side by side; stacked on phones narrower than 340 pt):
    - **Run (Stipendium):** the run as a big number, "days in a row", and a 7-pip track for this week with coin marks on 3, 5 and 7. A cool glow (the `info` role). Tap: the run pay sheet (what each step pays, the next reward). It replaces the StreakCard and the campaign chip.
-   - **Purse:** denarii as a big number, "+15 today" in silver, with a warm glow (the `currency` role). Tap: the Forum. It replaces the denarii chip.
-4. **Focus CTA** (new): one row. A round button in the accent with a play mark, then "Focus" and "Acies · guard your time". On the right, a status dot: green "Ready", or the time left when a focus is running ("18:42 left", pulsing). Tap: springs open into the focus view (section 4).
-5. **Quick logs, then the orders, the seal card and the to-dos**, as now.
+   - **Focus** (wave 5): "Ready", or the time left (`h:mm`, live) while a focus runs, with an accent glow. Tap: the focus screen (section 4). The purse tile it replaced moved to the header counter (wave 5 step D).
+4. **Quick logs, then the orders, the seal card and the to-dos**, as now.
 
 Before dawn the hero, the tiles and Focus show, but the orders wait (as now). On a finished arc the hero shows "Arc complete" and the tiles stay.
 
@@ -48,53 +47,47 @@ Before dawn the hero, the tiles and Focus show, but the orders wait (as now). On
   - Shadows stay off on dark palettes and are soft on light ones.
   - No new colours: everything comes from the palette roles.
 
+### Tab motion (built, 31 Oct)
+
+- **Slide:** the tabs navigator's own scene animation (`sceneStyleInterpolator` and `transitionSpec` in the bottom tabs vendored in Expo Router 57). Its progress (-1 left of the active tab, 0 active, 1 right) maps to a full screen width, so the tabs move as one strip of pages on the `morph` spring. Reduce motion: the navigator's cross-fade. `components/navigation/tabTransition.ts`.
+- **Swipe:** `TabSwipe` wraps each tab through the navigator's `screenLayout`: a gesture-handler pan that starts past 24 sideways and fails past 14 vertical, so lists scroll. A native horizontal list cancels it once it scrolls; sheets and menus are Modals and never reach it. A clear drag (22% of the width) or a flick (600/s) moves one tab, with the tab whoosh; the content leans with the finger and springs back. Rules in `lib/tabSwipe.ts` (tested).
+- **Return motion:** `useTabReturn` counts focus returns (not the first open). Veni: the day path draws to now, the dot rides along and the notches pop in time order. Vidi: stat numbers roll in, week bars rise. Vici: the rank bar fills. All under about 700 ms; none with reduce motion.
+
 ## 4. Focus (Acies, "the battle line")
 
-**The flow:**
+Built in wave 5 (step E, 31 Oct); spec in [TASKS-2026-10-31-wave5.md](TASKS-2026-10-31-wave5.md) sections 5 to 7. Route `/focus` (`src/app/focus.tsx`), a stack screen that rises in (`fade_from_bottom`, then each stage springs in on `settle`). Components in `components/focus/`, rules in `features/focus/`, records in `db/focus.ts`.
 
-1. **Open.** Tapping the CTA measures it and springs a surface from the CTA's exact frame to full screen (left, top, width, height and corner radius, all on the `morph` spring). The setup content fades and rises in after the surface is mostly open. Closing reverses it back into the CTA. The system back gesture closes setup and minimises a running focus.
-2. **Setup:**
-   - **Time:** a big number (minutes) over a horizontal ruler from 5 to 180 minutes in 5-minute steps. Ticks snap with a selection haptic and labels sit every 15. Presets above it: 15, 25, 45, 60, 90.
-   - **Guard:** three cards, each with what it does and its reward rate:
-     - **Custos** ("Limit apps"): marked apps allowed for 5 minutes in total.
-     - **Imperium** ("Block apps"): marked apps blocked.
-     - **Silentium** ("Block everything"): everything but calls, messages and Vinco.
-   - **Reward line:** "Hold the line to the end: +12 denarii".
-   - **Start:** a primary button, "Begin".
-3. **Running:**
-   - A large ring counts down, with mm:ss in the display face, the guard's name, and "Ends at 2:30 pm".
-   - The ring and digits move on the second, smoothly.
-   - "Retreat" (give up) needs a 1.5-second hold, with the ring filling under the finger. Giving up pays nothing and says so plainly, neutral in every tone.
-   - The session is saved, so leaving the app, locking the phone or killing the app never loses it. A local notification fires at the end ("Focus held. +12 denarii waiting.").
-4. **Complete:** the laurel pops in on the `pop` spring with "+12 denarii", and the minutes go into the run tile's footnote for today. "Done" springs the view back into the CTA. If the app was closed at the end, the completion shows the next time Today opens.
+**Setup** (`FocusSetup`), top to bottom:
+
+1. **Time** (`DurationPicker`, `DurationRuler`, `CustomDurationSheet`): a big `h:mm` readout; presets 15m, 25m, 45m, 1h, 1h 30m, 2h; Custom (hours and minutes typed in, any whole minute from 5 to 180); the ruler, 5 to 180 in 5-minute steps. The ruler reads its value from the scroll offset (`minutesAtOffset`) on every scroll event while the finger or its fling moves it, and again on drag end and momentum end, so the readout is always the tick under the needle. A value set from outside glides the ruler and is never overwritten on the way.
+2. **Guard** (`GuardPicker`): three cards in a row with drawn emblems (`avatars/GuardAvatar`, SVG from palette roles: Custos an open helmet with an eye, Imperium a crested helmet, Silentium a closed helm), level pips and "Level I to III"; the chosen card glows and its rules show below with its pay rate.
+3. **Permission notice** (`GuardPermissionNotice`): with the Vinco build and the guard service off, a prominent disclosure (what is seen, what it does, nothing leaves the phone) and "Turn on the guard" (the accessibility settings). Custos without the overlay asks for "Display over other apps". In Expo Go: "Blocking arrives with the Vinco build." A focus runs either way (timer and reward), blocking off.
+4. **Comites** (`ComitesRow`, `ComitesPicker`): the Phone app (always allowed), then three slots; the picker lists `guardBridge.listLaunchableApps()` with icons and a search. Saved in the guard store (`comites`, version 2, sanitized on restore, at most 3). In Expo Go the picker says the apps arrive with the Vinco build.
+5. **Focus log** (`FocusLog`): minutes held today, this week (Monday to Sunday) and all time, then the finished sessions (day, time, guard, length, Held or Retreated).
+6. **Pinned footer:** the reward line ("+8 denarii · +25 glory points"; Gloria is 1 a minute held) and **Slide to begin** (`SlideToConfirm`: a gesture-handler knob, snaps back unless let go past 85%; screen readers get an "activate" action). With no Truce held, a "No Truce" sheet first: retreating early will cost 50 denarii, or a 30-second stand-down; "Get a Truce" (the Forum) or "Begin anyway".
+
+**Running** (`FocusActive`):
+
+- The time left as a large `h:mm` with the seconds beside it, an "Ends" tile, then "Truces held" and a small rain field (`RainField`, falling pixels on the UI thread; paused when hidden, asleep, backgrounded or with reduce motion).
+- **Slide to retreat** (`RetreatControl`): spends a Truce; with none, buys one on the spot for 50 denarii; with neither, a 30-second stand-down (a soft tick each second, "Stay in the line" cancels), then retreats. Retreating never pays. Neutral in every tone.
+- **The dock** (`FocusDock`): the Phone app and the Comites, opened through `guardBridge.launchApp` (the Phone app falls back to `tel:`). With no Comites, a "+" explains they are chosen before a focus begins.
+- **Guard events** (`useFocusNotice`): a nudge, an app blocked or an app closed shows a short notice.
+- **Back:** under Silentium the screen can't be left (`useFocusLock`: Back swallowed, `beforeRemove` prevented, swipe-back off) and there is no minimise; otherwise Back and the chevron minimise to Today, where the tile shows the time left.
+- **Screensaver** (`useScreensaver`, `DriftingClock`): kept awake (`expo-keep-awake`). After 10 s without a touch the controls fade, the clock drifts slowly around the screen (always fully on screen) and the app window dims (`expo-brightness`, the window only, no permission). Any touch wakes it at normal brightness; leaving the screen, the app going to the background and unmounting always restore. Reduce motion: no drift, still dims. A development build made before `expo-brightness` was added simply doesn't dim (`lib/screenBrightness.ts` loads it guarded).
+
+**Complete** (`FocusComplete`): held, the laurel pops in with the minutes, then **Claim** reveals the pay (denarii, already in the ledger since completion, and glory points) with the `coin` cue. The HUD counters fade in at the top of the result, and `onClaim(origin, rewards)` launches the reward flight from the button to them (`isAlreadyCounted`, see [REWARDS.md](REWARDS.md) section 2). Retreated: a neutral "Retreated. It pays nothing." and Done.
+
+**Opening by itself** (`FocusTile`): once per app start, a focus still running opens `/focus` (the app was killed mid-focus); a focus that finished (here or while the app was closed) opens its result once. Seen results are remembered for the session (`useFocusUiStore`).
+
+**Sounds:** `focusStart` (slide to begin), `focusHeld` (the result), `retreat`, `standDown` (the tick) and `coin` (the claim; for step D's coin flight too), all through `useFeedback`.
 
 **The rules** (`src/features/focus/`, pure and tested):
 
-- **Duration:** 5 to 180 minutes, in steps of 5.
-- **Reward:** minutes times the guard's rate, rounded: Custos 0.2, Imperium 0.3, Silentium 0.4 denarii a minute.
-  - Only 10 minutes or more earn.
-  - At most 120 minutes count per session.
-  - At most 3 rewarded sessions a day. They are ledger reasons `focus_1` to `focus_3`, so (day, reason) stays unique.
-  - Examples: 25 min Imperium = 8; 60 min Silentium = 24; 120 min Silentium = 48.
-- **Completion:** a session is complete when now reaches its end on the phone's clock. It is judged on next open if the app was closed. A clock set forward can't complete a session early, because the end is checked against both wall time and elapsed time.
-- **One at a time:** starting a new focus while one runs is impossible; the CTA shows the running one.
+- **Length:** 5 to 180 minutes; the ruler in steps of 5 (`snapRulerMinutes`), a custom length in whole minutes (`clampFocusMinutes`, `parseCustomMinutes`).
+- **Reward:** minutes times the guard's rate, rounded: Custos 0.2, Imperium 0.3, Silentium 0.4 denarii a minute; 10 minutes or more; at most 120 counted; at most 3 rewarded a day (ledger reasons `focus_1` to `focus_3`). Examples: 25 min Imperium = 8; 60 min Silentium = 24. Gloria: 1 a minute held (`focusGloria` in `features/gloria`, the one place the rate lives, from `heldMinutes` in `features/focus`).
+- **Retreat** (`planRetreatPayment`): a Truce, else 50 denarii (`TRUCES.priceDenarii`), else the stand-down (`FOCUS_RULES.standDownSeconds`). Paid in one transaction with fresh values (`retreatFocus`), keyed by the session (`focus_retreat_<id>` in `truces` or `ledger`), so several retreats a day never collide and one session is never charged twice. No migration: the reason column carries the key.
+- **Completion:** due when the phone's clock reaches the end; a clock set back before the start never completes; while Vinco stays open a clock set forward can't finish early (`getTrustedNow`). Across a restart the wall clock decides; the native guard keeps its own hard stop.
+- **One at a time:** a second focus can't begin while one runs.
+- **The guard:** `guardBridge.startFocus({ guard, startedAt, endsAt, allowedPackages, copy })` with the Comites and the dialer; `endFocus()` on completion, retreat and "Reset the journey". Native detail in [GUARDIANS.md](GUARDIANS.md).
 
-**Blocking** needs the native Vigil module (an AccessibilityService, [GUARDIANS.md](GUARDIANS.md)):
-
-- The focus calls `guardBridge.startFocus({ mode, endsAt, allowanceMinutes })` and `endFocus()`.
-- Until the module ships, the setup screen says plainly: "Blocking arrives with the Vigil. The timer and the reward work now."
-- The reward is earned on the timer alone until then.
-
-**Data:**
-
-- Migration `0011_focus_sessions`: `focus_sessions` (id, day, guard, minutes, started_at, ends_at, ended_at, status `running|completed|abandoned`, reward).
-- Rewards are ledger rows `focus_1` to `focus_3`.
-
-### Focus as built (31 Oct)
-
-Built as specified above, with these differences:
-
-- **Clock set forward:** completion needs the wall clock to reach the end and never counts a clock set back before the start. The elapsed-time check (a monotonic clock read when the focus began) only runs while Vinco stays open in the foreground, because that clock can pause while the phone sleeps and is lost when the app is closed. Across a restart the wall clock decides, until the Vigil module reports the phone's elapsed time (GUARDIANS.md). Why: a stricter check would refuse honest focuses that ran with the phone locked.
-- **Run tile footnote:** not wired yet. The minutes are stored per session (`selectFocusOn(day)`, completed rows), ready for the tile.
-- **Giving up** shows a short "Retreated" view (it pays nothing) with "Done", so the result is always seen before the view springs back.
-- **A focus with no pay** (under 10 minutes, or a fourth that day) still completes and shows the laurel, with the plain reason instead of the denarii.
+**Data:** `focus_sessions` (migration `0011`: id, day, guard, minutes, started_at, ends_at, ended_at, status `running|completed|abandoned`, reward). Pay is ledger rows `focus_1` to `focus_3`; retreat costs are `focus_retreat_<id>` rows. A "Focus held" local notification fires at the end.

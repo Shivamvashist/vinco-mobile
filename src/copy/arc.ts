@@ -39,7 +39,8 @@ export const arcCopy = {
 
   /** Free training: the open plan, no streak. */
   ludusName: 'Free training',
-  ludusCaption: (startLabel: string, dayRoman: string): string => `Since ${startLabel} · Day ${dayRoman}`,
+  /** Free training counts no days: only when it began. */
+  ludusCaption: (startLabel: string): string => `Since ${startLabel}`,
 
   stats: {
     section: 'Your record',

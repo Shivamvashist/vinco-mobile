@@ -5,6 +5,7 @@ import { renderRouter } from 'expo-router/testing-library';
 
 import {
   arcCopy,
+  campaignCopy,
   commonCopy,
   devCopy,
   menuCopy,
@@ -16,7 +17,7 @@ import {
 import { createArc, db, getActiveArc, getDayLog, getTruceReserve } from '@/db';
 import { DEFAULT_ORDER_TARGETS } from '@/features/orders';
 import { addDays, toDayKey } from '@/lib/dates';
-import { useDevStore, usePreferencesStore } from '@/stores';
+import { useDevStore, useNoticesStore, usePreferencesStore } from '@/stores';
 import { APP_DIR, resetAppState, startArc, startHeldArc } from '@/testing/routeKit';
 
 const rows = settingsCopy.rows;
@@ -65,14 +66,17 @@ describe('Settings', () => {
     const appearance = settingsCopy.appearance;
     fireEvent.press(
       await screen.findByLabelText(
-        `${rows.colorMode}, ${appearance.rowValue(settingsCopy.colorModes.dark, settingsCopy.palettes.basalt)}`,
+        `${rows.colorMode}, ${appearance.rowValue(settingsCopy.colorModes.dark, settingsCopy.palettes.nox)}`,
       ),
     );
-    // A dark palette while the mode is dark: applies at once.
+    // Nox is the default dark palette. Another dark palette while the mode is dark: applies at once.
+    expect(
+      await screen.findByLabelText(appearance.paletteLabel('Nox', settingsCopy.palettes.nox, true)),
+    ).toBeTruthy();
     fireEvent.press(
-      await screen.findByLabelText(appearance.paletteLabel('Nox', settingsCopy.palettes.nox, false)),
+      screen.getByLabelText(appearance.paletteLabel('Basalt', settingsCopy.palettes.basalt, false)),
     );
-    expect(usePreferencesStore.getState().darkPaletteId).toBe('nox');
+    expect(usePreferencesStore.getState().darkPaletteId).toBe('basalt');
     expect(usePreferencesStore.getState().colorMode).toBe('dark');
     // A light palette while the mode is fixed to dark switches the mode, so it is seen.
     fireEvent.press(
@@ -80,6 +84,11 @@ describe('Settings', () => {
     );
     expect(usePreferencesStore.getState().lightPaletteId).toBe('papyrus');
     expect(usePreferencesStore.getState().colorMode).toBe('light');
+    // Alba (first light) is offered with the other light palettes.
+    fireEvent.press(
+      screen.getByLabelText(appearance.paletteLabel('Alba', settingsCopy.palettes.alba, false)),
+    );
+    expect(usePreferencesStore.getState().lightPaletteId).toBe('alba');
     fireEvent.press(screen.getByLabelText(settingsCopy.colorModes.system));
     expect(usePreferencesStore.getState().colorMode).toBe('system');
   });
@@ -126,6 +135,25 @@ describe('Sound the retreat', () => {
     expect(app.getPathname()).toBe('/onboarding');
     expect(getActiveArc(db)).toBeUndefined();
     expect(getTruceReserve(db)).toBe(0);
+  });
+
+  it('never opens the campaign-lost screen for the old journey (a break already seen)', async () => {
+    startHeldArc(3, { missYesterday: true });
+    act(() => useNoticesStore.getState().acknowledgeLoss(addDays(toDayKey(new Date()), -1)));
+    const app = renderRouter(APP_DIR, { initialUrl: '/veni' });
+    await screen.findByLabelText(todayCopy.menuLabel);
+    act(() => router.push('/settings'));
+    fireEvent.press(await screen.findByLabelText(`${rows.retreat}, ${rows.retreatValue}`));
+    fireEvent.changeText(
+      await screen.findByLabelText(arcCopy.retreat.fieldLabel(arcCopy.retreat.word)),
+      arcCopy.retreat.word,
+    );
+    fireEvent.press(screen.getByRole('button', { name: arcCopy.retreat.confirm }));
+    expect(await screen.findByText(onboardingCopy.rubicon.cross)).toBeTruthy();
+    act(() => jest.advanceTimersByTime(1000));
+    expect(app.getPathname()).toBe('/onboarding');
+    expect(screen.queryByText(campaignCopy.lost.title)).toBeNull();
+    expect(useNoticesStore.getState().acknowledgedLossDay).toBeNull();
   });
 
   it('keeps preferences', async () => {

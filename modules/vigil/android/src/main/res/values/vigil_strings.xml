@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="vigil_service_label">Vinco focus guard</string>
+  <string name="vigil_service_summary">Guards the focus sessions you start in Vinco.</string>
+  <string name="vigil_service_description">Vinco uses this service only while a focus session you started is running. It sees which app is in front, so it can show your focus timer, remind you to return, or bring you back to Vinco, as the guard you chose says. It does not read what is on the screen, does not see what you type, and sends nothing off this phone. Calls and the Phone app are always allowed. You can turn it off here at any time.</string>
+</resources>

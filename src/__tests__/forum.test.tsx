@@ -1,8 +1,8 @@
-/** The Forum: the purse on Today, buying, refusals that say why, ways to earn, history, card styles. */
+/** The Forum: the purse counter on Today, buying, refusals that say why, ways to earn, history, card styles. */
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
 
-import { dayCardCopy, forumCopy, todayCopy } from '@/copy';
+import { dayCardCopy, forumCopy, rewardsCopy } from '@/copy';
 import { buyItem, db, getDenariiBalance, getTruceReserve, nowIso } from '@/db';
 import { ledger } from '@/db/schema';
 import { toDayKey } from '@/lib/dates';
@@ -18,11 +18,11 @@ function earn(amount: number) {
 const itemLabel = (name: string) => new RegExp(`^${name},`);
 
 describe('Forum', () => {
-  it('opens from the purse on Today', async () => {
+  it('opens from the purse counter on Today', async () => {
     startArc();
     earn(120);
     const app = renderRouter(APP_DIR, { initialUrl: '/veni' });
-    fireEvent.press(await screen.findByLabelText(todayCopy.tiles.purse.label(120, 0)));
+    fireEvent.press(await screen.findByLabelText(rewardsCopy.hud.denariiLabel(120)));
     expect(await screen.findByText(forumCopy.balance(120))).toBeTruthy();
     expect(app.getPathname()).toBe('/forum');
   });
@@ -59,8 +59,22 @@ describe('Forum', () => {
     fireEvent.press(await screen.findByLabelText(forumCopy.segments.earn));
     expect(await screen.findByText(forumCopy.earn.ways.dayConquered)).toBeTruthy();
     expect(screen.getAllByText(forumCopy.earn.soon.aurora).length).toBeGreaterThan(0);
+    // The bounties moved to their own board.
+    expect(screen.getByLabelText(rewardsCopy.labours.forumAction)).toBeTruthy();
     fireEvent.press(screen.getByLabelText(forumCopy.segments.history));
     expect(await screen.findByText(forumCopy.history.reasons.day_conquered!)).toBeTruthy();
+  });
+
+  it('names a focus retreat paid in denarii in the history', async () => {
+    startArc();
+    earn(60);
+    db.insert(ledger)
+      .values({ day: '2026-01-02', reason: 'focus_retreat_7', amount: -50, createdAt: nowIso() })
+      .run();
+    renderRouter(APP_DIR, { initialUrl: '/forum' });
+    fireEvent.press(await screen.findByLabelText(forumCopy.segments.history));
+    expect(await screen.findByText(forumCopy.history.focusRetreat)).toBeTruthy();
+    expect(screen.queryByText('focus_retreat_7')).toBeNull();
   });
 
   it('adds a bought card style to the day card', async () => {

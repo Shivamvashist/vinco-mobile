@@ -1,7 +1,17 @@
-import { abandonFocus, FocusError, getRunningFocus, selectFocusOn, settleFocus, startFocus } from '../focus';
+import { nowIso } from '../database';
+import {
+  abandonFocus,
+  FocusError,
+  getRunningFocus,
+  retreatFocus,
+  selectFocusOn,
+  settleFocus,
+  startFocus,
+} from '../focus';
 import { getDenariiBalance } from '../forum';
 import { clearJourney } from '../reset';
-import { ledger } from '../schema';
+import { ledger, truces } from '../schema';
+import { getTruceReserve } from '../truces';
 import { createTestDatabase } from '../testing/testDatabase';
 
 const TODAY = '2026-10-31';
@@ -95,5 +105,81 @@ describe('focus sessions in the database', () => {
     startFocus(db, { day: TODAY, guard: 'imperium', minutes: 25 }, START);
     clearJourney(db);
     expect(getRunningFocus(db)).toBeUndefined();
+  });
+});
+
+describe('retreating from a focus', () => {
+  type Db = ReturnType<typeof createTestDatabase>;
+  const holdTruces = (db: Db, count: number) => {
+    for (let index = 0; index < count; index += 1) {
+      db.insert(truces)
+        .values({ day: `2026-10-0${index + 1}`, reason: 'forum', amount: 1, createdAt: nowIso(START) })
+        .run();
+    }
+  };
+  const earn = (db: Db, amount: number) =>
+    db
+      .insert(ledger)
+      .values({ day: '2026-01-01', reason: 'day_held', amount, createdAt: nowIso(START) })
+      .run();
+
+  it('spends one Truce per retreat, several times in one day without colliding', () => {
+    const db = createTestDatabase();
+    holdTruces(db, 2);
+    const first = startFocus(db, { day: TODAY, guard: 'custos', minutes: 25 }, START);
+    expect(retreatFocus(db, first.id, at(5))).toMatchObject({ status: 'retreated', paidWith: 'truce' });
+    const second = startFocus(db, { day: TODAY, guard: 'imperium', minutes: 25 }, at(6));
+    expect(retreatFocus(db, second.id, at(10))).toMatchObject({ status: 'retreated', paidWith: 'truce' });
+    expect(getTruceReserve(db)).toBe(0);
+    expect(
+      selectFocusOn(db, TODAY)
+        .all()
+        .map((row) => [row.status, row.reward]),
+    ).toEqual([
+      ['abandoned', 0],
+      ['abandoned', 0],
+    ]);
+  });
+
+  it('buys a Truce on the spot for 50 denarii when none is held, once per session', () => {
+    const db = createTestDatabase();
+    earn(db, 120);
+    const first = startFocus(db, { day: TODAY, guard: 'custos', minutes: 25 }, START);
+    expect(retreatFocus(db, first.id, at(5))).toMatchObject({ paidWith: 'denarii' });
+    // A second call for the same session finds nothing running and charges nothing.
+    expect(retreatFocus(db, first.id, at(6))).toEqual({ status: 'none' });
+    const second = startFocus(db, { day: TODAY, guard: 'custos', minutes: 25 }, at(7));
+    expect(retreatFocus(db, second.id, at(8))).toMatchObject({ paidWith: 'denarii' });
+    expect(getDenariiBalance(db)).toBe(20);
+    expect(
+      db
+        .select()
+        .from(ledger)
+        .all()
+        .filter((row) => row.amount < 0),
+    ).toHaveLength(2);
+  });
+
+  it('asks for the stand-down when neither a Truce nor 50 denarii is held, and then retreats for free', () => {
+    const db = createTestDatabase();
+    earn(db, 49);
+    const session = startFocus(db, { day: TODAY, guard: 'silentium', minutes: 60 }, START);
+    expect(retreatFocus(db, session.id, at(5))).toEqual({ status: 'standDown' });
+    expect(getRunningFocus(db)?.id).toBe(session.id);
+    expect(retreatFocus(db, session.id, at(6), { afterStandDown: true })).toMatchObject({
+      status: 'retreated',
+      paidWith: 'standDown',
+    });
+    expect(getDenariiBalance(db)).toBe(49);
+    expect(getRunningFocus(db)).toBeUndefined();
+  });
+
+  it('never pays a retreat, and a retreated focus never settles', () => {
+    const db = createTestDatabase();
+    holdTruces(db, 1);
+    const session = startFocus(db, { day: TODAY, guard: 'imperium', minutes: 25 }, START);
+    retreatFocus(db, session.id, at(24));
+    expect(settleFocus(db, at(30))).toBeNull();
+    expect(db.select().from(ledger).all()).toEqual([]);
   });
 });

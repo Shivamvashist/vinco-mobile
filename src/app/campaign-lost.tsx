@@ -1,18 +1,18 @@
 import { router } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Column } from '@/components/campaign/Column';
+import { notify } from '@/components/notices';
 import { Screen } from '@/components/Screen';
-import { Toast } from '@/components/Toast';
 import { Txt } from '@/components/Txt';
 import { campaignCopy, pickTone } from '@/copy';
 import { callTruce, db } from '@/db';
 import { getArcPosition } from '@/features/arc';
-import { findLatestLoss, type TruceOffer } from '@/features/campaign';
+import { findLatestLoss, shouldLeaveLossScreen, type TruceOffer } from '@/features/campaign';
 import { useActiveArc } from '@/hooks/useActiveArc';
 import { useCampaign } from '@/hooks/useCampaign';
 import { useToday } from '@/hooks/useToday';
@@ -37,13 +37,27 @@ export default function CampaignLostScreen() {
   const today = useToday();
   const reduceMotion = useReduceMotion();
   const tone = usePreferencesStore((state) => state.tone);
-  const { arc, targets } = useActiveArc();
+  const { arc, targets, isLoaded: isArcLoaded } = useActiveArc();
   const campaign = useCampaign(arc, targets, today);
   const loss = findLatestLoss(campaign.records);
   const [outcome, setOutcome] = useState<Outcome>({ kind: 'lost' });
-  const [toast, setToast] = useState<string | null>(null);
-  const hideToast = useCallback(() => setToast(null), []);
   const offer = outcome.kind === 'lost' ? campaign.truceOffer : null;
+  // Nothing to show (no campaign, no break and no Truce to call, as right after a reset):
+  // go back to what is underneath, or through the entry route, which picks Today or onboarding.
+  const hasNothingToShow =
+    outcome.kind === 'lost' &&
+    shouldLeaveLossScreen({
+      isLoaded: isArcLoaded && campaign.isLoaded,
+      arc,
+      records: campaign.records,
+      hasOffer: campaign.truceOffer != null,
+    });
+
+  useEffect(() => {
+    if (!hasNothingToShow) return;
+    if (router.canGoBack()) router.back();
+    else router.replace('/');
+  }, [hasNothingToShow]);
 
   const leave = () => {
     if (router.canGoBack()) router.back();
@@ -57,7 +71,7 @@ export default function CampaignLostScreen() {
     } catch (error) {
       if (__DEV__) console.warn('[campaign] Truce failed.', error);
       play('denied');
-      setToast(campaignCopy.truce.failed);
+      notify({ kind: 'error', message: campaignCopy.truce.failed });
     }
   };
 
@@ -174,7 +188,6 @@ export default function CampaignLostScreen() {
           </>
         )}
       </View>
-      <Toast message={toast} onHide={hideToast} />
     </Screen>
   );
 }

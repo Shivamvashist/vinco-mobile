@@ -32,7 +32,17 @@ export type LedgerReason =
   | 'aurora_first_try'
   /** Dev builds only: the dev panel's "Add denarii". */
   | 'dev_grant'
-  | FocusReason;
+  | FocusReason
+  | ClaimReason
+  /** A Truce bought on the spot to retreat from one focus session (-50); one per session. */
+  | `focus_retreat_${number}`;
+
+/**
+ * A reward claimed by hand (docs/REWARDS.md): 'labour_<id>' or 'decoration_<id>', on the claim's
+ * day. The claims table allows one claim per period (a day at least), so (day, reason) stays unique.
+ * Never live: a claim is never taken back.
+ */
+export type ClaimReason = `labour_${string}` | `decoration_${string}`;
 
 /** A completed focus (Acies). One reason per rewarded session, at most three a day. */
 export type FocusReason = 'focus_1' | 'focus_2' | 'focus_3';

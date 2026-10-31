@@ -17,7 +17,8 @@ src/theme/
   resolveTheme.ts      preferences to a concrete theme (pure, tested)
   contrast.ts          WCAG contrast maths (used by tests)
   tokens/              theme-independent: spacing, radius, layout, motion, type scale builder, screen-width scale
-  palettes/            colour schemes: basalt (dark), marble (light)
+  palettes/            colour schemes: nox, basalt, purpura, aes (dark); marble, papyrus, calx, alba (light)
+  effects.ts           depth per scheme: glow strength, card hairline, soft shadow on light
   themes/              core themes (vinco) and the registry
   feedback/            sound bank (expo-audio) and haptics (expo-haptics)
   __tests__/           contrast, resolver, theme completeness
@@ -109,7 +110,7 @@ Components ask for a **role**, not a colour. Roles are named for what they do, s
 | `success`                    | `#3F6B32`            | same           | Mission complete                              |
 | `scrim`                      | black 60%            | basalt 45%     | Behind sheets                                 |
 | `overlay`                    | black 82%            | marble 92%     | Behind the VINCO stamp                        |
-| `inverse`, `onInverse`       | marble, basalt       | basalt, marble | Selected segment, toast                       |
+| `inverse`, `onInverse`       | marble, basalt       | basalt, marble | Selected segment                              |
 
 Tests (`src/theme/__tests__/themes.test.ts`) check that every scheme keeps readable contrast: text 7:1, muted text and accent 4.5:1, text on accent 4.5:1. A new scheme that fails them won't pass `npm run check`.
 
@@ -123,18 +124,20 @@ A **theme** is fonts and sounds (Vinco). A **palette** is one full set of colour
 
 | Palette | Scheme | Plain label     | Ground and accent                                   |
 | ------- | ------ | --------------- | --------------------------------------------------- |
-| Basalt  | dark   | Dark stone      | Warm basalt, laurel gold (default)                  |
-| Nox     | dark   | True black      | Pure black for OLED, laurel gold                    |
+| Nox     | dark   | True black      | Pure black for OLED, laurel gold (default)          |
+| Basalt  | dark   | Dark stone      | Warm basalt, laurel gold (the default until 31 Oct) |
 | Purpura | dark   | Imperial purple | Deep violet, gold; danger leans rose                |
 | Aes     | dark   | Bronze green    | Dark slate, verdigris accent (the one without gold) |
 | Marble  | light  | Light stone     | Marble, deep gold (default)                         |
 | Papyrus | light  | Parchment       | Warm paper, sepia ink, laurel-leaf green            |
 | Calx    | light  | Limestone       | Cool limestone, near-black text, imperial purple    |
+| Alba    | light  | First light     | Pearl with a breath of rose, sunrise vermilion      |
 
 - Every palette passes the same contrast pairs (`theme/__tests__/themes.test.ts`): text 7:1 on background, surface and sunk; muted text, accent, currency and danger 4.5:1; on-accent 4.5:1.
-- Saved as `darkPaletteId` and `lightPaletteId` in preferences; an unknown id, or one of the wrong scheme, falls back to the default on restore.
+- Saved as `darkPaletteId` and `lightPaletteId` in preferences; an unknown id, or one of the wrong scheme, falls back to the default on restore. Nox became the default dark palette on 31 Oct (the Vinco theme's own dark scheme is Nox too); a saved choice is kept, only the default changed.
+- **Depth per scheme** (`theme/effects.ts`, read as `theme.effects`): built from each palette, so a new palette gets it for free. Dark: glows at full strength, the plain `border`, no shadow. Light: glows at half strength (a full glow reads as a stain on pale stone), the card hairline a step stronger (`border` mixed 45% toward `borderStrong`), and a soft two-layer shadow in the palette's own ink. Use `theme.effects.cardBorder` and `theme.effects.cardShadow` (a `boxShadow`) on cards, tiles and the hero; `Glow` applies `glowStrength` itself. `Card` uses them for its surface and raised variants and its border.
 - The day card keeps its own fixed styles (`palettes/dayCards.ts`), so a shared card looks the same everywhere.
-- **Adding one:** create `palettes/<id>.ts` (a `ColorScheme` with every role), add it to `PALETTES` with its scheme, add its plain label to `settingsCopy.palettes`. The tests cover it at once.
+- **Adding one:** create `palettes/<id>.ts` (a `ColorScheme` with every role), add it to `PALETTES` with its scheme, add its plain label to `settingsCopy.palettes`. The tests cover it at once (contrast in `themes.test.ts`, depth in `effects.test.ts`); its preview on `/appearance` is drawn from its own colours.
 
 ## 4. Typography
 
@@ -213,12 +216,45 @@ Components never play a file directly. They call `play(cue)` from `useFeedback()
 | `truce`                      | Truce used                      | two calm notes          | medium           |
 | `denied`                     | Tap on something locked         | low tick                | warning          |
 | `whoosh`                     | Switching tabs                  | soft filtered air       | selection        |
+| `notice` / `noticeAlert`     | A notice arrives (section 6b)   | none (haptic only)      | light / warning  |
 
 **Levels.** Each recipe keeps the prototype's shape, then the file is scaled to its tier's peak: ticks (tap, select, toggle, steps, denied) -6 dBFS, moments (win, confirm, chime, record, shutter, rise, truce) -3 dBFS, signature (stamp, cross, seal) -1.5 dBFS, whisper (whoosh) -17 dBFS (noise sounds louder than a tone at the same peak, so the tab switch is felt more than heard). Nothing clips; the stamp stays the loudest moment. Playback rewinds, then plays once the rewind lands, so rapid taps never click.
 
 **Always on.** A theme lists `feedback.essential` cues that play even with Sounds off. Vinco's are `seal` (the DAY I stamp on the first selfie), `recordStop` (the oath locking in) and `stamp` (a conquered day): the moments the app is built around. The phone's own silent mode still mutes them.
 
 Sounds are generated from the prototype's own recipes by `scripts/generate-sounds.mjs` into `assets/sounds/vinco/`. To change a sound, edit its recipe and run `npm run sounds`.
+
+---
+
+## 6b. Notices (in-app, 31 Oct)
+
+One quiet notice system for short messages inside the app (it replaced the old `Toast`). Local reminders and the alarm are a different thing ([NOTIFICATIONS.md](NOTIFICATIONS.md)).
+
+```ts
+import { dismissNotice, notify } from '@/components/notices';
+
+notify({ kind: 'success', message: 'Truce bought.' }); // returns its key
+notify({ kind: 'reward', message: '+5 denarii', id: 'denarii-today' }); // same id replaces
+notify({ kind: 'error', message: 'Could not share.', action: { label: 'Retry', onPress } });
+dismissNotice('denarii-today');
+```
+
+| Kind      | Icon    | Colour role | Stays                       |
+| --------- | ------- | ----------- | --------------------------- |
+| `success` | check   | `accent`    | 3 s (5 s with an action)    |
+| `reward`  | coin    | `currency`  | 3 s (5 s with an action)    |
+| `info`    | info    | `info`      | 3 s (5 s with an action)    |
+| `warning` | warning | `accent`    | 3 s (5 s with an action)    |
+| `error`   | alert   | `danger`    | until dismissed or acted on |
+
+(`success` uses `accent`, not the `success` role: that green is too dark to read as a small icon on the dark palettes.)
+
+- **Look:** a capsule under the status bar (safe area), `surfaceRaised` with the card hairline and shadow from `theme.effects`, the kind's icon, one line of `label` text (two at most, then an ellipsis), an optional compact action, and "x2" when a repeat merges.
+- **Queue** (pure, tested: `features/notices`): one on screen at a time; the same message (or the same `id`) merges into the one showing or waiting (its timer restarts, the count goes up); an error jumps the queue and the notice it displaced waits first in line; at most 4 wait (the oldest that isn't an error is dropped).
+- **Motion:** springs in from above (`settle`), leaves upwards when its time is up, when tapped, swiped up (gesture handler) or acted on. A repeat bumps it gently. Reduce motion: it fades in and out.
+- **Feedback:** `notice` (light) or `noticeAlert` (warning, for warnings and errors), haptic only; notices never make a sound (the caller plays its own cue where a moment deserves one). Each new notice is announced to screen readers once, with its kind ("Problem: ..."); tapping it dismisses it.
+- **Where it draws:** `NoticeHost` is mounted once in the root layout, over every screen. An open `BottomSheet` mounts its own host inside its `Modal` (on Android a Modal is a separate window that nothing outside it can cover); only the newest host draws, so a notice never shows twice.
+- **Background:** when the app goes to the background, passing notices are dropped and errors are kept. "Reset the journey" clears them all.
 
 ---
 

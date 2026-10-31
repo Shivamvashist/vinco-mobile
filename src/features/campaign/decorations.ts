@@ -40,7 +40,10 @@ export type DecorationInput = {
   hasOath: boolean;
 };
 
-export type Decoration = { id: DecorationId; isEarned: boolean };
+/** How far a locked decoration has got, where it can be counted (null for a yes-or-no deed). */
+export type DecorationProgress = { current: number; goal: number } | null;
+
+export type Decoration = { id: DecorationId; isEarned: boolean; progress: DecorationProgress };
 
 /** Every decoration, earned or not, in display order. */
 export function getDecorations(input: DecorationInput): Decoration[] {
@@ -64,5 +67,35 @@ export function getDecorations(input: DecorationInput): Decoration[] {
     proofKeeper: input.selfieDays >= DECORATION_RULES.proofKeeperSelfies,
     oathKeeper: input.hasOath && input.dayNumber >= DECORATION_RULES.oathKeeperDay,
   };
-  return DECORATION_IDS.map((id) => ({ id, isEarned: earned[id] }));
+  const halfwayDay = input.lengthDays == null ? null : Math.floor(input.lengthDays / 2) + 1;
+  const progress: Record<DecorationId, DecorationProgress> = {
+    firstSeal: { current: Math.min(1, completed), goal: 1 },
+    conqueror: null,
+    ironWeek:
+      input.lengthDays == null
+        ? null
+        : {
+            current: Math.min(best, DECORATION_RULES.ironWeekCampaign),
+            goal: DECORATION_RULES.ironWeekCampaign,
+          },
+    resurgo: null,
+    halfway:
+      halfwayDay == null
+        ? {
+            current: Math.min(completed, DECORATION_RULES.ludusHalfwayDays),
+            goal: DECORATION_RULES.ludusHalfwayDays,
+          }
+        : { current: Math.min(Math.max(0, input.dayNumber), halfwayDay), goal: halfwayDay },
+    proofKeeper: {
+      current: Math.min(input.selfieDays, DECORATION_RULES.proofKeeperSelfies),
+      goal: DECORATION_RULES.proofKeeperSelfies,
+    },
+    oathKeeper: input.hasOath
+      ? {
+          current: Math.min(Math.max(0, input.dayNumber), DECORATION_RULES.oathKeeperDay),
+          goal: DECORATION_RULES.oathKeeperDay,
+        }
+      : null,
+  };
+  return DECORATION_IDS.map((id) => ({ id, isEarned: earned[id], progress: progress[id] }));
 }

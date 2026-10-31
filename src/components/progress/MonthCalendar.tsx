@@ -1,6 +1,7 @@
-import { Pressable, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { commonCopy, progressCopy } from '@/copy';
+import { commonCopy, progressCopy, rewardsCopy } from '@/copy';
+import type { GloriaLevel } from '@/features/gloria';
 import { type DayKey, monthGrid, parseDayKey } from '@/lib/dates';
 import { createStyles, useFeedback } from '@/theme';
 
@@ -14,7 +15,14 @@ import { Txt } from '../Txt';
 export type CalendarDayStatus =
   'conquered' | 'held' | 'truce' | 'missed' | 'rest' | 'open' | 'future' | 'outside';
 
-export type CalendarDay = { status: CalendarDayStatus; isToday: boolean };
+export type CalendarDay = {
+  status: CalendarDayStatus;
+  isToday: boolean;
+  /** False for a day that shows a result but has no summary here (an earlier arc's day). */
+  canOpen?: boolean;
+  /** How much Gloria the day earned, as a tint step (0 for none). */
+  gloriaLevel?: GloriaLevel;
+};
 
 export type MonthCalendarProps = {
   year: number;
@@ -28,6 +36,8 @@ export type MonthCalendarProps = {
   onDayPress?: (day: DayKey) => void;
   /** Free training: the legend leaves out Truces and misses. */
   isLudus?: boolean;
+  /** Days carry a Gloria tint: the legend explains it. */
+  showsGloria?: boolean;
 };
 
 const copy = progressCopy.calendar;
@@ -52,6 +62,7 @@ export function MonthCalendar({
   onNext,
   onDayPress,
   isLudus = false,
+  showsGloria = false,
 }: MonthCalendarProps) {
   const styles = useStyles();
 
@@ -61,11 +72,24 @@ export function MonthCalendar({
         <Txt variant="label" accessibilityRole="header" style={styles.title}>
           {`${commonCopy.months[month - 1] ?? ''} ${year}`}
         </Txt>
-        <View style={[styles.nav, !canGoBack && styles.hidden]}>
-          <IconButton icon="back" accessibilityLabel={copy.previousMonth} onPress={onPrevious} />
+        {/* At the first or last month the arrow stays in place, dimmed and disabled. */}
+        <View style={styles.nav}>
+          <IconButton
+            icon="back"
+            accessibilityLabel={copy.previousMonth}
+            onPress={onPrevious}
+            disabled={!canGoBack}
+            cue="tap"
+          />
         </View>
-        <View style={[styles.nav, !canGoForward && styles.hidden]}>
-          <IconButton icon="forward" accessibilityLabel={copy.nextMonth} onPress={onNext} />
+        <View style={styles.nav}>
+          <IconButton
+            icon="forward"
+            accessibilityLabel={copy.nextMonth}
+            onPress={onNext}
+            disabled={!canGoForward}
+            cue="tap"
+          />
         </View>
       </View>
 
@@ -98,10 +122,24 @@ export function MonthCalendar({
             </View>
           ),
         )}
+        {showsGloria ? (
+          <View style={styles.legendItem}>
+            <View style={styles.legendTints}>
+              {GLORIA_TINTS.map((level) => (
+                <View key={level} style={[styles.legendSwatch, styles.surfaceSwatch]}>
+                  <View style={[styles.tint, styles[`tint${level}`]]} />
+                </View>
+              ))}
+            </View>
+            <Txt variant="micro">{rewardsCopy.gloria.calendarLegend}</Txt>
+          </View>
+        ) : null}
       </View>
     </View>
   );
 }
+
+const GLORIA_TINTS = [1, 2, 3] as const;
 
 type DayCellProps = { day: DayKey; details: CalendarDay; onPress?: (day: DayKey) => void };
 
@@ -114,12 +152,19 @@ function DayCell({ day, details, onPress }: DayCellProps) {
     status === 'conquered' ? 'onAccent' : status === 'future' || status === 'outside' ? 'textFaint' : 'text';
   const statusWord = status === 'open' ? copy.statusWords.today : copy.statusWords[status];
 
-  const canOpen = onPress != null && status !== 'future' && status !== 'outside';
+  const canOpen = onPress != null && details.canOpen !== false && status !== 'future' && status !== 'outside';
   const label = copy.dayLabel(commonCopy.fullDateLabel(day), statusWord);
+  // Conquered days are already solid gold; every other day shows its Gloria as a gold wash.
+  const level = status === 'conquered' ? 0 : (details.gloriaLevel ?? 0);
   const number = (
-    <Txt variant="micro" color={textColor}>
-      {dateNumber}
-    </Txt>
+    <>
+      {level > 0 ? (
+        <View pointerEvents="none" style={[styles.tint, styles[`tint${level as 1 | 2 | 3}`]]} />
+      ) : null}
+      <Txt variant="micro" color={textColor}>
+        {dateNumber}
+      </Txt>
+    </>
   );
 
   if (!canOpen) {
@@ -167,10 +212,16 @@ const useStyles = createStyles((theme) => ({
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: theme.space.xs },
   title: { flex: 1 },
   nav: { marginRight: -theme.space.sm },
-  hidden: { opacity: 0, pointerEvents: 'none' },
   row: { flexDirection: 'row', gap: theme.space.xs + theme.space.xxs },
   cell: { flex: 1, aspectRatio: 1, alignItems: 'center', justifyContent: 'center' },
-  day: { borderRadius: theme.radius.sm },
+  day: { borderRadius: theme.radius.sm, overflow: 'hidden' },
+  /** The Gloria wash: the accent at three strengths, under the date and the result marks. */
+  tint: { ...StyleSheet.absoluteFill, backgroundColor: theme.colors.accent },
+  tint1: { opacity: 0.1 },
+  tint2: { opacity: 0.2 },
+  tint3: { opacity: 0.32 },
+  legendTints: { flexDirection: 'row', gap: theme.space.xxs },
+  surfaceSwatch: { backgroundColor: theme.colors.surface, overflow: 'hidden' },
   conquered: { backgroundColor: theme.colors.accent },
   held: { borderWidth: theme.layout.borderWidthStrong, borderColor: theme.colors.accent },
   truce: { backgroundColor: theme.colors.rest },

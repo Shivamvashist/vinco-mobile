@@ -62,11 +62,12 @@ export const progressCopy = {
       chipsHint: 'Pick the charts to show',
       goal: (amount: string): string => `Goal ${amount}`,
       everyDay: 'Done or not',
-      meals: (count: number): string => `${count} ${count === 1 ? 'meal' : 'meals'}`,
       doneDays: (done: number, logged: number): string => `Done ${done} of ${logged} days.`,
       atGoal: (done: number, logged: number): string => `At goal ${done} of ${logged} days.`,
       allHidden: 'Every chart is hidden. Tap an order above to show it.',
-      empty: 'No orders to chart yet.',
+      /** Vinco's orders have their own logs; only the user's own get a chart here. */
+      empty:
+        'Add an order of your own and its week shows here. Water, sleep and workout have their own logs.',
       tickLabel: (day: string, isDone: boolean | null): string =>
         `${day}: ${isDone == null ? 'not counted' : isDone ? 'done' : 'not done'}`,
     },

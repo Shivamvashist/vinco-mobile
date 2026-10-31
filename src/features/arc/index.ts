@@ -14,3 +14,12 @@ export {
   TIMELAPSE_SELFIES,
 } from './arc';
 export { type ArcSummaryInput, type PastArc, summarizePastArcs } from './history';
+export {
+  type CalendarRange,
+  clampMonth,
+  compareMonths,
+  findFirstDay,
+  getCalendarRange,
+  toYearMonth,
+  type YearMonth,
+} from './calendarRange';

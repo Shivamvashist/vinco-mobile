@@ -4,20 +4,21 @@ import { Figtree_600SemiBold } from '@expo-google-fonts/figtree/600SemiBold';
 import { Figtree_700Bold } from '@expo-google-fonts/figtree/700Bold';
 import { Marcellus_400Regular } from '@expo-google-fonts/marcellus/400Regular';
 
-import { basalt } from '../palettes/basalt';
 import { marble } from '../palettes/marble';
+import { nox } from '../palettes/nox';
 import type { ThemeDefinition } from '../types';
 
 /**
  * The default Vinco theme: Roman in spirit, modern in use.
- * Dark (Basalt) is the default scheme; Marble is the light scheme.
+ * Dark is the default scheme, in Nox (true black) unless the user picks another dark palette;
+ * Marble is the light scheme.
  * Sounds are rendered by scripts/generate-sounds.mjs from the prototype's recipes.
  */
 export const vincoTheme: ThemeDefinition = {
   id: 'vinco',
   name: 'Vinco',
   schemes: {
-    dark: basalt,
+    dark: nox,
     light: marble,
   },
   fonts: {
@@ -58,6 +59,14 @@ export const vincoTheme: ThemeDefinition = {
       truce: require('@/assets/sounds/vinco/truce.wav'),
       denied: require('@/assets/sounds/vinco/denied.wav'),
       whoosh: require('@/assets/sounds/vinco/whoosh.wav'),
+      focusStart: require('@/assets/sounds/vinco/focusStart.wav'),
+      focusHeld: require('@/assets/sounds/vinco/focusHeld.wav'),
+      retreat: require('@/assets/sounds/vinco/retreat.wav'),
+      standDown: require('@/assets/sounds/vinco/standDown.wav'),
+      coin: require('@/assets/sounds/vinco/coin.wav'),
+      // Notices only buzz: a sound on every notice would be noise.
+      notice: null,
+      noticeAlert: null,
     },
     haptics: {
       tap: 'light',
@@ -78,6 +87,13 @@ export const vincoTheme: ThemeDefinition = {
       truce: 'medium',
       denied: 'warning',
       whoosh: 'selection',
+      focusStart: 'medium',
+      focusHeld: 'success',
+      retreat: 'warning',
+      standDown: 'selection',
+      coin: 'light',
+      notice: 'light',
+      noticeAlert: 'warning',
     },
     // The first selfie's DAY I seal, the oath locking in and a conquered day's stamp always sound.
     essential: ['seal', 'recordStop', 'stamp'],

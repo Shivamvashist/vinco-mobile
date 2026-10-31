@@ -3,12 +3,14 @@
  * the app folder, a clean slate for the stores, and arcs seeded straight into the test database.
  * Never imported by the app.
  */
+import { clearNotices } from '@/components/notices';
 import { createArc, db, nowIso, saveOrderAmount, updateDayLog } from '@/db';
 import { DEFAULT_ORDER_TARGETS } from '@/features/orders';
 import { addDays, toDayKey } from '@/lib/dates';
 import {
   useDayCardStore,
   useDevStore,
+  useFocusUiStore,
   useNoticesStore,
   useOnboardingStore,
   usePreferencesStore,
@@ -33,6 +35,8 @@ export function resetAppState(): void {
   useOnboardingStore.getState().reset();
   useNoticesStore.setState({ acknowledgedLossDay: null });
   useDevStore.setState({ isDevModeOn: false, dayOffset: 0 });
+  useFocusUiStore.getState().reset();
+  clearNotices();
 }
 
 /** An arc that started today, as if onboarding had just finished. */
