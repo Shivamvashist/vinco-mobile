@@ -15,6 +15,13 @@ export {
   unsupportedGuardBridge,
 } from './bridge';
 export {
+  FOCUS_OVERLAY_ROLES,
+  type FocusOverlayColors,
+  type FocusOverlayRole,
+  type FocusOverlayTheme,
+  focusOverlayTheme,
+} from './overlayTheme';
+export {
   clampReelBudget,
   DEFAULT_GUARD_LEVEL,
   getImperiumGate,
@@ -29,6 +36,26 @@ export {
   isGuardLevel,
   levelIncludes,
 } from './guard';
+export {
+  type ReelOverlayColors,
+  type ReelOverlayCopy,
+  type ReelWatchConfig,
+  toNativeReelConfig,
+  toReelEventCount,
+} from './reelBridge';
+export {
+  getMarkedPackages,
+  getReelAppLabels,
+  getReelBadgeStage,
+  getReelStepIn,
+  REEL_APPS,
+  type ReelApp,
+  type ReelBadgeStage,
+  type ReelDay,
+  type ReelStepIn,
+  sanitizeReelDays,
+  toReelCount,
+} from './reels';
 export {
   isInWakeWindow,
   planWakeWatch,

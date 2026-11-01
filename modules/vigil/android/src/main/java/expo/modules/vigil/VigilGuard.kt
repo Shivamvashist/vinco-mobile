@@ -2,7 +2,9 @@ package expo.modules.vigil
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Context
+import android.content.Intent
 import android.media.AudioManager
+import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -42,6 +44,8 @@ class VigilGuard(private val service: AccessibilityService) {
   private var verdict = VigilVerdict.VINCO
   private var lastAlerted: String? = null
   private var outsideSince = 0L
+  /** The panel's companion apps, read once per focus. */
+  private var companions: List<VigilCompanion>? = null
 
   private val stopAtEnd = Runnable { reload() }
   private val tick = object : Runnable {
@@ -63,8 +67,11 @@ class VigilGuard(private val service: AccessibilityService) {
     }
     val changed = active.startedAt != session?.startedAt || active.guard != session?.guard
     session = active
+    overlay.palette = active.palette
     if (changed || system == null) {
       system = VigilSystemApps.of(service)
+      companions = null
+      overlay.resetPlace()
       lastAlerted = null
       outsideSince = 0L
     }
@@ -92,7 +99,10 @@ class VigilGuard(private val service: AccessibilityService) {
     }
     val sys = system ?: return
     // A call ringing or under way: the guard steps aside completely until it ends.
-    if (inCall()) return
+    if (inCall()) {
+      overlay.hideAll()
+      return
+    }
     val next = VigilPolicy.classify(packageName, className, active.guard, active.allowedPackages, sys)
     when (next) {
       VigilVerdict.IGNORED -> return
@@ -102,6 +112,8 @@ class VigilGuard(private val service: AccessibilityService) {
         return
       }
       else -> {
+        // Another app in front (Home pressed with the panel open, say): the panel belonged to the last one.
+        if (packageName != current) overlay.hidePanel(animate = false)
         current = packageName
         onForeground(packageName, next)
       }
@@ -140,7 +152,7 @@ class VigilGuard(private val service: AccessibilityService) {
       if (outsideSince == 0L) outsideSince = System.currentTimeMillis()
       if (lastAlerted != packageName) {
         lastAlerted = packageName
-        overlay.showCard(active.copy.alertTitle, active.copy.alertBody, null, ALERT_MS, null)
+        overlay.showCard(alert(active), ALERT_MS, ::openFocusScreen)
         VigilEvents.emit("nudge", packageName)
       }
     }
@@ -160,9 +172,12 @@ class VigilGuard(private val service: AccessibilityService) {
         returner.backToVinco(goHome = true, packageName = packageName)
         overlay.hideBubble()
         overlay.showCard(
-          active.copy.alertTitle,
-          "${active.copy.cooldown} ${VigilPolicy.formatLeft(window.until - now)}",
-          null,
+          VigilNotice(
+            title = active.copy.restingTitle,
+            body = active.copy.cooldown,
+            time = VigilPolicy.formatLeft(window.until - now),
+            urgent = true
+          ),
           NOTICE_MS,
           null
         )
@@ -172,7 +187,7 @@ class VigilGuard(private val service: AccessibilityService) {
       VigilAppWindow.Fresh -> {
         windows[packageName] = now + VigilPolicy.APP_SESSION_MS
         store.saveAppWindows(windows)
-        overlay.showCard(active.copy.alertTitle, active.copy.alertBody, null, ALERT_MS, null)
+        overlay.showCard(alert(active), ALERT_MS, ::openFocusScreen)
         showCountdown(VigilPolicy.APP_SESSION_MS, active)
       }
     }
@@ -181,7 +196,10 @@ class VigilGuard(private val service: AccessibilityService) {
   private fun onTick() {
     val active = activeOrStop() ?: return
     val packageName = current ?: return
-    if (inCall()) return
+    if (inCall()) {
+      overlay.hideAll()
+      return
+    }
     val now = System.currentTimeMillis()
     when (active.guard) {
       VigilGuardLevel.CUSTOS -> {
@@ -189,9 +207,13 @@ class VigilGuard(private val service: AccessibilityService) {
         showTimerBubble(active)
         if (verdict == VigilVerdict.OUTSIDE && outsideSince > 0L && now - outsideSince >= VigilPolicy.NUDGE_EVERY_MS) {
           outsideSince = now
-          overlay.showCard(active.copy.nudgeTitle, active.copy.nudgeBody, active.copy.openVinco, NUDGE_MS) {
-            returner.backToVinco(goHome = false, packageName = null)
-          }
+          val nudge = VigilNotice(
+            title = active.copy.nudgeTitle,
+            body = active.copy.nudgeBody,
+            primary = active.copy.backToFocus,
+            secondary = active.copy.dismiss
+          )
+          overlay.showCard(nudge, NUDGE_MS, ::openFocusScreen)
           VigilEvents.emit("nudge", packageName)
         }
       }
@@ -214,12 +236,72 @@ class VigilGuard(private val service: AccessibilityService) {
 
   private fun showTimerBubble(active: VigilSession) {
     val left = VigilPolicy.formatLeft(active.endsAt - System.currentTimeMillis())
-    overlay.showBubble(left, urgent = false) { returner.backToVinco(goHome = false, packageName = null) }
+    val state = VigilBubbleState(left, null, urgent = false, "$left ${active.copy.left}. ${active.copy.bubbleHint}")
+    overlay.showBubble(state) { openPanel() }
   }
 
   private fun showCountdown(leftMs: Long, active: VigilSession) {
-    val text = "${active.copy.closingIn} ${VigilPolicy.formatLeft(leftMs)}"
-    overlay.showBubble(text, urgent = true) { returner.backToVinco(goHome = false, packageName = null) }
+    val left = VigilPolicy.formatLeft(leftMs)
+    val state = VigilBubbleState(
+      left,
+      active.copy.closingIn,
+      urgent = leftMs <= CLOSING_SOON_MS,
+      "${active.copy.closingIn} $left. ${active.copy.bubbleHint}"
+    )
+    overlay.showBubble(state) { openPanel() }
+  }
+
+  /** The alert as Custos and Imperium show it: back to the focus, or not now. */
+  private fun alert(active: VigilSession) = VigilNotice(
+    title = active.copy.alertTitle,
+    body = active.copy.alertBody,
+    primary = active.copy.backToFocus,
+    secondary = active.copy.dismiss
+  )
+
+  /** The bubble's tap: the focus panel over the app in front (never over Vinco, never in a call). */
+  private fun openPanel() {
+    val active = activeOrStop() ?: return
+    if (verdict == VigilVerdict.VINCO || inCall() || overlay.isPanelShown) return
+    val apps = companions ?: VigilCompanions.load(service, active.allowedPackages).also { companions = it }
+    val spec = VigilPanelSpec(
+      guard = active.guard,
+      startedAt = active.startedAt,
+      endsAt = active.endsAt,
+      copy = active.copy,
+      palette = active.palette,
+      companions = apps,
+      appLeftMs = ::appLeftMs
+    )
+    overlay.showPanel(
+      spec,
+      VigilPanelActions(
+        onClose = {},
+        onOpenVinco = ::openFocusScreen,
+        onLaunch = { packageName -> VigilCompanions.launch(service, packageName) }
+      )
+    )
+  }
+
+  /** Imperium: what is left of the turn of the app in front, or null. */
+  private fun appLeftMs(): Long? {
+    val active = session ?: return null
+    if (active.guard != VigilGuardLevel.IMPERIUM || verdict != VigilVerdict.OUTSIDE) return null
+    val packageName = current ?: return null
+    val endsAt = store.readAppWindows()[packageName] ?: return null
+    return endsAt - System.currentTimeMillis()
+  }
+
+  /** Vinco's focus screen (vinco://focus); Vinco's front screen if the link can't be opened. */
+  private fun openFocusScreen() {
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(FOCUS_LINK))
+      .setPackage(service.packageName)
+      .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+    try {
+      service.startActivity(intent)
+    } catch (_: Exception) {
+      returner.backToVinco(goHome = false, packageName = null)
+    }
   }
 
   private fun closeShade() {
@@ -255,7 +337,9 @@ class VigilGuard(private val service: AccessibilityService) {
 
   companion object {
     private const val TICK_MS = 1000L
-    private const val ALERT_MS = 3500L
+    private const val ALERT_MS = 6000L
+    private const val CLOSING_SOON_MS = 30_000L
+    private const val FOCUS_LINK = "vinco://focus"
     private const val NOTICE_MS = 3000L
     private const val NUDGE_MS = 15_000L
   }

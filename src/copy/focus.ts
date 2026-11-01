@@ -136,9 +136,11 @@ export const focusCopy = {
   permission: {
     title: 'Let the guard watch',
     body: "To guard a focus you start, Vinco uses Android's accessibility service.",
-    watches: 'It sees only which app is in front. It never reads what is on the screen.',
+    watches:
+      'It sees which app is in front and, in reel apps like Instagram and YouTube, when a new reel scrolls into view. It never reads text, messages or the videos.',
     acts: "During a focus it shows the guard's alerts, closes apps outside the focus, and brings you back here.",
-    stays: 'Nothing is recorded or sent off this phone. It does nothing when no focus is running.',
+    stays:
+      'Only the number of reels a day is kept, on this phone. Nothing is sent off it. Outside a focus it only counts reels.',
     open: 'Turn on the guard',
     openHint: 'Opens the accessibility settings. Find "Vinco focus guard" and turn it on.',
     overlayTitle: 'Show the guard over other apps',
@@ -146,6 +148,9 @@ export const focusCopy = {
       '"Custos" shows its alert and the floating timer over other apps. Allow "Display over other apps".',
     overlayOpen: 'Allow the overlay',
     blockingOff: 'Blocking is off until the permission is on. The timer and the reward still work.',
+    /** Android 11+ may offer its own accessibility shortcut bubble for the service; it isn't Vinco's. */
+    shortcutTip:
+      'If Android shows an accessibility shortcut bubble, you can turn it off in Settings > Accessibility > Vinco focus guard > Shortcut.',
   },
 
   noTruce: {
@@ -170,6 +175,40 @@ export const focusCopy = {
     retreated: 'Retreated',
     row: (day: string, time: string, guard: string, minutes: string, result: string): string =>
       `${day}, ${time}, ${guard}, ${minutes}, ${result}.`,
+    seeAll: 'See all',
+    seeAllLabel: 'See the full focus log, by week, month and year',
+  },
+
+  /** The full focus log screen (/focus-log): a week, month or year as bars, totals and sessions. */
+  history: {
+    eyebrow: '"Acies" · Focus',
+    title: 'Focus log',
+    back: 'Back',
+    legendHeld: 'Held',
+    legendRetreated: 'Retreated (time before the retreat)',
+    minutesHeld: 'Held',
+    sessionsHeld: 'Focuses held',
+    sessionsRetreated: 'Retreats',
+    bestDay: 'Best day',
+    longestRun: 'Days in a row',
+    runDays: (days: number): string => (days === 1 ? '1 day' : `${days} days`),
+    none: 'None yet',
+    guardSplit: 'By guard',
+    sessions: 'Sessions',
+    describeBar: (name: string, held: number, retreated: number): string =>
+      retreated > 0
+        ? `${name}: ${spokenDuration(held)} held, ${spokenDuration(retreated)} before a retreat`
+        : `${name}: ${spokenDuration(held)} held`,
+    barValue: (name: string, held: number, retreated: number): string =>
+      retreated > 0
+        ? `${name} · ${shortDuration(held)} held · ${shortDuration(retreated)} retreated`
+        : `${name} · ${shortDuration(held)} held`,
+    guardShare: (guard: string, minutes: number): string => `${guard}, ${spokenDuration(minutes)}`,
+    empty: {
+      philosopher: 'Nothing kept in this stretch of time. Every stretch can begin with one focus.',
+      centurion: 'No focus on the record here. Pick a time and hold it.',
+      roast: 'Not one minute of focus here. The scroll had a great time. Start one.',
+    } satisfies ToneLines,
   },
 
   active: {
@@ -228,17 +267,35 @@ export const focusCopy = {
     done: 'Done',
   },
 
-  /** The native guard's overlays over other apps (modules/vigil). Plain and short, the same in every tone. */
+  /**
+   * The native guard's overlays over other apps and the bubble's focus panel (modules/vigil).
+   * Plain and short, the same in every tone: one title, one line, one action.
+   */
   overlay: {
     alertTitle: 'Focus is on',
     alertBody: 'This app is outside your focus.',
     nudgeTitle: 'Back to the line',
     nudgeBody: 'Three minutes away from your focus.',
     openVinco: 'Open Vinco',
+    backToFocus: 'Back to focus',
+    dismiss: 'Not now',
+    close: 'Close',
     /** Followed by the countdown: "Closes in 2:41". */
     closingIn: 'Closes in',
-    /** Followed by the time left: "Resting. Opens again in 1:20". */
-    cooldown: 'Resting. Opens again in',
+    restingTitle: 'This app is resting',
+    /** Followed by the time left: "Opens again in 1:20". */
+    cooldown: 'Opens again in',
+    panelTitle: 'Focus',
+    /** Under the big time in the panel: "1:24:07 left". */
+    left: 'left',
+    /** Followed by the end time: "Ends 7:40 pm". */
+    endsAt: 'Ends',
+    companions: 'Companions',
+    guardCustos: '"Custos" · Level I',
+    guardImperium: '"Imperium" · Level II',
+    guardSilentium: '"Silentium" · Level III',
+    /** The bubble's hint for screen readers. */
+    bubbleHint: 'Double tap to see your focus.',
   },
 
   notification: {

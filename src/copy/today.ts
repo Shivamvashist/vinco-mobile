@@ -91,10 +91,16 @@ export const todayCopy = {
     caption: (earned: number): string => (earned > 0 ? `orders held · +${earned} denarii` : 'orders held'),
     dawnCaption: 'planned wake-up',
     noOrders: 'no orders yet',
-    /** For screen readers: the whole card in one sentence. */
-    accessibleLabel: (held: number, total: number, state: string): string =>
-      `Today, ${state}. ${held} of ${total} orders held. Opens today's summary.`,
-    dawnLabel: (time: string): string => `Today, before dawn. Planned wake-up ${time}.`,
+    /** For screen readers: the whole card in one sentence (activity: from `activity`, or empty). */
+    accessibleLabel: (held: number, total: number, state: string, activity = ''): string =>
+      `Today, ${state}. ${held} of ${total} orders held. ${activity ? `${activity} ` : ''}Opens today's summary.`,
+    dawnLabel: (time: string, activity = ''): string =>
+      `Today, before dawn. Planned wake-up ${time}.${activity ? ` ${activity}` : ''}`,
+    /** The day path's marks in words: how many things were done today, and when the last was. */
+    activity: (count: number, lastAt: string | null): string =>
+      count <= 0
+        ? ''
+        : `${count} ${count === 1 ? 'activity' : 'activities'} today${lastAt ? `, last at ${lastAt}` : ''}.`,
   },
 
   /** The run tile under the hero (the second tile is Focus: focusCopy.tile). */

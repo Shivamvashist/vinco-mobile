@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import { PressableScale } from '@/components/PressableScale';
+import { RollingNumber } from '@/components/RollingNumber';
 import { Txt } from '@/components/Txt';
 import { focusCopy } from '@/copy';
 import { FOCUS_RULES, formatHoursMinutes } from '@/features/focus';
@@ -39,15 +40,7 @@ export function DurationPicker({ value, onChange }: DurationPickerProps) {
         accessibilityLabel={focusCopy.spokenDuration(value)}
         accessibilityLiveRegion="polite"
       >
-        <Txt
-          variant="numeral"
-          style={styles.tabular}
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.75}
-        >
-          {formatHoursMinutes(value)}
-        </Txt>
+        <RollingNumber value={formatHoursMinutes(value)} variant="numeral" fit />
       </View>
 
       <View
@@ -113,7 +106,7 @@ function Chip({ label, accessibilityLabel, isSelected, onPress }: ChipProps) {
 
 const useStyles = createStyles((theme) => ({
   wrap: { gap: theme.space.lg },
-  reading: { alignItems: 'center' },
+  reading: { alignItems: 'center', alignSelf: 'stretch' },
   tabular: { fontVariant: ['tabular-nums'] },
   presets: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: theme.space.sm },
   chip: {

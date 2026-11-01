@@ -10,6 +10,7 @@ export {
   sumGloria,
   weekGloria,
 } from './gloria';
+export { GLORIA_SOURCES, gloriaParts, gloriaPeriod, type GloriaSource } from './history';
 export {
   buildJourneyDays,
   findArcOn,

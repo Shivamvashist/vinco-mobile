@@ -11,6 +11,7 @@ import { FEATURES } from '@/config/features';
 import { addDays, type DayKey } from '@/lib/dates';
 
 import { type AppDatabase, nowIso } from './database';
+import { deleteOrderSteps, ownOrderStepKey, recordOrderStep } from './orderSteps';
 import { type CustomOrderLogRow, customOrderLogs, type CustomOrderRow, customOrders } from './schema';
 import { removeTask } from './tasks';
 
@@ -213,13 +214,14 @@ function findSuccessor(db: AppDatabase, orderId: number, today: DayKey): CustomO
     .get();
 }
 
-/** Deletes an own order and its logs. */
+/** Deletes an own order, its logs and its steps. */
 function deleteOrder(db: AppDatabase, orderId: number): void {
+  deleteOrderSteps(db, ownOrderStepKey(orderId));
   db.delete(customOrderLogs).where(eq(customOrderLogs.orderId, orderId)).run();
   db.delete(customOrders).where(eq(customOrders.id, orderId)).run();
 }
 
-/** Saves an own order's amount on a day. Creates the row if needed. */
+/** Saves an own order's amount on a day. Creates the row if needed. Records the step, as saveOrderAmount. */
 export function saveCustomOrderAmount(
   db: AppDatabase,
   orderId: number,
@@ -228,6 +230,7 @@ export function saveCustomOrderAmount(
   now: Date = new Date(),
 ): void {
   const updatedAt = nowIso(now);
+  recordOrderStep(db, day, ownOrderStepKey(orderId), getCustomOrderAmount(db, orderId, day), amount, now);
   db.insert(customOrderLogs)
     .values({ orderId, day, amount, updatedAt })
     .onConflictDoUpdate({

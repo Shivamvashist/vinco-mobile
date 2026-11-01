@@ -1,9 +1,9 @@
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { commonCopy, progressCopy, rewardsCopy } from '@/copy';
 import { chartMax, type WeekBar } from '@/features/logs';
 import { type DayKey, weekdayIndex } from '@/lib/dates';
-import { createStyles } from '@/theme';
+import { createStyles, useFeedback, useTheme } from '@/theme';
 
 import { Card } from '../Card';
 import { Icon } from '../Icon';
@@ -19,16 +19,21 @@ export type GloriaCardProps = {
   /** What a conquered day is worth with today's orders: the dashed line. */
   conqueredDay: number;
   today: DayKey;
+  /** Opens the Gloria history (/gloria): any day, week, month or year. */
+  onOpenHistory?: () => void;
 };
 
 const copy = rewardsCopy.gloria;
 
 /**
  * Gloria ("glory points") on Vidi: the journey's total, then this week by day. A bar in full gold
- * reached a conquered day's worth; days still to come stay empty.
+ * reached a conquered day's worth; days still to come stay empty. Older days, months and years
+ * live on their own screen, so the card stays a summary on Vidi.
  */
-export function GloriaCard({ total, thisWeek, conqueredDay, today }: GloriaCardProps) {
+export function GloriaCard({ total, thisWeek, conqueredDay, today, onOpenHistory }: GloriaCardProps) {
   const styles = useStyles();
+  const theme = useTheme();
+  const play = useFeedback();
   const bars: WeekBar[] = thisWeek.map(({ day, gloria }) => ({
     day,
     value: day > today ? null : gloria,
@@ -77,6 +82,23 @@ export function GloriaCard({ total, thisWeek, conqueredDay, today }: GloriaCardP
       <Txt variant="micro" style={styles.rules}>
         {copy.rules}
       </Txt>
+      {onOpenHistory ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={copy.historyLabel}
+          onPress={() => {
+            play('tap');
+            onOpenHistory();
+          }}
+          style={({ pressed }) => [styles.history, pressed && styles.pressed]}
+        >
+          <Icon name="history" color="accent" size={theme.layout.iconSizeSmall} />
+          <Txt variant="label" color="accent" style={styles.historyText}>
+            {copy.history}
+          </Txt>
+          <Icon name="forward" color="accent" size={theme.layout.iconSizeSmall} />
+        </Pressable>
+      ) : null}
     </Card>
   );
 }
@@ -92,4 +114,15 @@ const useStyles = createStyles((theme) => ({
   total: { alignItems: 'flex-end' },
   chart: { marginTop: theme.space.lg, marginBottom: theme.space.sm },
   rules: { marginTop: theme.space.xs },
+  history: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.space.sm,
+    minHeight: theme.layout.minTouchTarget,
+    marginTop: theme.space.sm,
+    borderTopWidth: theme.layout.hairline,
+    borderTopColor: theme.colors.border,
+  },
+  historyText: { flex: 1 },
+  pressed: { opacity: 0.6 },
 }));

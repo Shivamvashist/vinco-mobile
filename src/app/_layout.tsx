@@ -9,6 +9,7 @@ import { RewardFlightLayer } from '@/components/hud/RewardFlightLayer';
 import { NoticeHost } from '@/components/notices/NoticeHost';
 import { StartupError } from '@/components/StartupError';
 import { useDatabaseMigrations } from '@/db';
+import { useReelWatch } from '@/hooks/useReelWatch';
 import { selectThemePreferences, usePreferencesStore } from '@/stores';
 import { getAllFontAssets, ThemeProvider, useTheme } from '@/theme';
 
@@ -61,6 +62,8 @@ function ThemedApp({ hasStartupError }: ThemedAppProps) {
 
 function RootNavigator() {
   const theme = useTheme();
+  // The reel counter's settings and counts, kept in step from every screen (the database is ready here).
+  useReelWatch();
 
   return (
     <>

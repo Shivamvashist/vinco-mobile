@@ -1,12 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  The Vigil only needs to know which app is in front: window state changes, no window content.
+  The Vigil hears two things:
+  - window state changes: which app is in front (the focus guard, the reel badge);
+  - view scrolls: the reel counter. Only scrolls in the apps the user marked are looked at.
+
+  canRetrieveWindowContent and flagReportViewIds: for a scroll in a marked app, the reel counter
+  reads the scrolling view itself (its resource id, its size on screen and its scroll positions)
+  to tell the reels pager from a normal feed. It never reads text, descriptions, usernames,
+  captions or what the video shows, and stores only the day's count (docs/GUARDIANS.md
+  "The reel counter"). This is what the Play accessibility declaration must describe.
 -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-  android:accessibilityEventTypes="typeWindowStateChanged"
+  android:accessibilityEventTypes="typeWindowStateChanged|typeViewScrolled"
   android:accessibilityFeedbackType="feedbackGeneric"
-  android:accessibilityFlags="flagDefault"
-  android:canRetrieveWindowContent="false"
+  android:accessibilityFlags="flagDefault|flagReportViewIds"
+  android:canRetrieveWindowContent="true"
   android:description="@string/vigil_service_description"
   android:notificationTimeout="100"
   android:summary="@string/vigil_service_summary" />

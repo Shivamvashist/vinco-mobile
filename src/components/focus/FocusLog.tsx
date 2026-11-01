@@ -1,27 +1,36 @@
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
+import { Icon } from '@/components/Icon';
 import { Txt } from '@/components/Txt';
-import { commonCopy, focusCopy, pickTone } from '@/copy';
-import type { FocusSessionRow } from '@/db';
-import { type FocusTotals, isFocusGuard } from '@/features/focus';
+import { focusCopy, pickTone } from '@/copy';
+import type { FocusSessionRow as FocusSessionRecord } from '@/db';
+import type { FocusTotals } from '@/features/focus';
 import type { Tone } from '@/features/tone';
 import type { DayKey } from '@/lib/dates';
-import { formatClockTime } from '@/lib/dates';
-import { cardSurface, createStyles } from '@/theme';
+import { cardSurface, createStyles, useFeedback, useTheme } from '@/theme';
+
+import { FocusSessionRow } from './FocusSessionRow';
 
 export type FocusLogProps = {
   totals: FocusTotals;
-  /** Finished sessions, newest first. */
-  sessions: readonly FocusSessionRow[];
+  /** The newest finished sessions (three), newest first. */
+  sessions: readonly FocusSessionRecord[];
   today: DayKey;
   tone: Tone;
+  /** Opens the full log (/focus-log): weeks, months and years as charts. */
+  onSeeAll?: () => void;
 };
 
 const copy = focusCopy.log;
 
-/** Minutes held today, this week and all time, then every finished session (day, time, guard, length, result). */
-export function FocusLog({ totals, sessions, today, tone }: FocusLogProps) {
+/**
+ * Minutes held today, this week and all time, then the newest finished sessions (day, time, guard,
+ * length, result) and "See all", which opens the full log.
+ */
+export function FocusLog({ totals, sessions, today, tone, onSeeAll }: FocusLogProps) {
   const styles = useStyles();
+  const play = useFeedback();
+  const theme = useTheme();
   return (
     <View style={styles.wrap}>
       <Txt variant="overline" accessibilityRole="header">
@@ -38,40 +47,25 @@ export function FocusLog({ totals, sessions, today, tone }: FocusLogProps) {
         </Txt>
       ) : (
         <View style={styles.list}>
-          {sessions.map((session, index) => {
-            const day = commonCopy.dayLabel(session.day, today);
-            const started = new Date(session.startedAt);
-            const time = Number.isFinite(started.getTime()) ? formatClockTime(started) : '';
-            const guard = isFocusGuard(session.guard) ? focusCopy.setup.guards[session.guard].plain : '';
-            const minutes = focusCopy.shortDuration(session.minutes);
-            const isHeld = session.status === 'completed';
-            const result = isHeld ? copy.held : copy.retreated;
-            return (
-              <View
-                key={session.id}
-                style={[styles.row, index > 0 && styles.divider]}
-                accessible
-                accessibilityLabel={copy.row(day, time, guard, minutes, result)}
-              >
-                <View style={styles.when}>
-                  <Txt variant="label" numberOfLines={1}>
-                    {day}
-                  </Txt>
-                  <Txt variant="caption" numberOfLines={1}>
-                    {`${time} · ${guard}`}
-                  </Txt>
-                </View>
-                <View style={styles.what}>
-                  <Txt variant="label" style={styles.tabular}>
-                    {minutes}
-                  </Txt>
-                  <Txt variant="caption" color={isHeld ? 'accent' : 'textMuted'}>
-                    {result}
-                  </Txt>
-                </View>
-              </View>
-            );
-          })}
+          {sessions.map((session, index) => (
+            <FocusSessionRow key={session.id} session={session} today={today} hasDivider={index > 0} />
+          ))}
+          {onSeeAll ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={copy.seeAllLabel}
+              onPress={() => {
+                play('tap');
+                onSeeAll();
+              }}
+              style={({ pressed }) => [styles.row, styles.divider, pressed && styles.pressed]}
+            >
+              <Txt variant="label" color="accent" style={styles.seeAll}>
+                {copy.seeAll}
+              </Txt>
+              <Icon name="forward" color="accent" size={theme.layout.iconSizeSmall} />
+            </Pressable>
+          ) : null}
         </View>
       )}
     </View>
@@ -126,6 +120,6 @@ const useStyles = createStyles((theme) => ({
     paddingVertical: theme.space.sm,
   },
   divider: { borderTopWidth: theme.layout.hairline, borderTopColor: theme.colors.border },
-  when: { flex: 1, gap: theme.space.xxs },
-  what: { alignItems: 'flex-end', gap: theme.space.xxs },
+  seeAll: { flex: 1 },
+  pressed: { opacity: 0.6 },
 }));

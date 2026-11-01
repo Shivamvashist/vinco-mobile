@@ -44,6 +44,8 @@ export type FocusSetupProps = {
   log: { totals: FocusTotals; sessions: readonly FocusSessionRow[] };
   onBegin: (minutes: number, guard: FocusGuard) => 'started' | 'busy' | 'failed';
   onGetTruce: () => void;
+  /** Opens the full focus log. */
+  onSeeLog?: () => void;
   onClose: () => void;
 };
 
@@ -63,6 +65,7 @@ export function FocusSetup({
   log,
   onBegin,
   onGetTruce,
+  onSeeLog,
   onClose,
 }: FocusSetupProps) {
   const theme = useTheme();
@@ -135,7 +138,7 @@ export function FocusSetup({
           <ComitesRow comites={comites} onOpenPicker={() => setSheet('comites')} />
         </Section>
 
-        <FocusLog totals={log.totals} sessions={log.sessions} today={today} tone={tone} />
+        <FocusLog totals={log.totals} sessions={log.sessions} today={today} tone={tone} onSeeAll={onSeeLog} />
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + theme.space.lg }]}>

@@ -17,6 +17,7 @@ export { guardCopy } from './guard';
 export { menuCopy } from './menu';
 export { noticesCopy } from './notices';
 export { notificationsCopy } from './notifications';
+export { periodsCopy } from './periods';
 export { permissionsCopy } from './permissions';
 export { progressCopy } from './progress';
 export { rewardsCopy } from './rewards';

@@ -10,6 +10,7 @@ import {
   itemUses,
   ledger,
   orderLogs,
+  orderSteps,
   purchases,
   taskCompletions,
   tasks,
@@ -33,6 +34,7 @@ export function clearJourney(db: AppDatabase): void {
     tx.delete(customOrders).run();
     tx.delete(truces).run();
     tx.delete(ledger).run();
+    tx.delete(orderSteps).run();
     tx.delete(orderLogs).run();
     tx.delete(dayLogs).run();
     tx.delete(arcOrders).run();

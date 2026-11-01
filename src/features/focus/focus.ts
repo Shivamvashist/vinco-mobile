@@ -36,7 +36,8 @@ export const FOCUS_RULES = {
   /** The ruler moves in 5-minute steps; a custom length may be any whole minute. */
   stepMinutes: 5,
   defaultMinutes: 25,
-  presets: [15, 25, 45, 60, 90, 120],
+  /** Four quick lengths; anything else is Custom (or the ruler). */
+  presets: [25, 45, 60, 90],
   /** Denarii per minute held. */
   rates: { custos: 0.2, imperium: 0.3, silentium: 0.4 },
   /** Shorter sessions pay nothing. */

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="vigil_service_label">Vinco focus guard</string>
-  <string name="vigil_service_summary">Guards the focus sessions you start in Vinco.</string>
-  <string name="vigil_service_description">Vinco uses this service only while a focus session you started is running. It sees which app is in front, so it can show your focus timer, remind you to return, or bring you back to Vinco, as the guard you chose says. It does not read what is on the screen, does not see what you type, and sends nothing off this phone. Calls and the Phone app are always allowed. You can turn it off here at any time.</string>
+  <string name="vigil_service_summary">Guards the focus sessions you start in Vinco and counts the reels and shorts you watch.</string>
+  <string name="vigil_service_description">Vinco uses this service for two things. During a focus session you started, it sees which app is in front, so it can show your focus timer, remind you to return, or bring you back to Vinco, as the guard you chose says. And in the reel apps you mark (such as Instagram, YouTube and TikTok), it notices when a new reel or short scrolls into view, so it can count them and show your count. To tell a reels screen from a normal feed it looks only at the scrolling list\'s name and size, never at text, captions, usernames, messages or the videos. Only the number of reels a day is kept, on this phone. Nothing is sent off this phone. Calls and the Phone app are always allowed. You can turn it off here at any time.</string>
 </resources>

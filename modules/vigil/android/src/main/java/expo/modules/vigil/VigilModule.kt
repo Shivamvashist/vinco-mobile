@@ -21,6 +21,12 @@ class FocusConfig : Record {
 
   /** Overlay words (VigilCopy keys). Missing keys keep the defaults. */
   @Field val copy: Map<String, String> = emptyMap()
+
+  /** The active palette's colour roles for the overlays (VigilPalette keys). Missing ones keep Basalt. */
+  @Field val colors: Map<String, String> = emptyMap()
+
+  /** "dark" or "light": the scheme those colours belong to. */
+  @Field val scheme: String = "dark"
 }
 
 /** What `setWakeWatch` receives: the "Are you up?" prompt (VigilWake). Minutes from local midnight. */
@@ -38,8 +44,8 @@ class InvalidFocusGuardException(guard: String) :
   CodedException("ERR_VIGIL_GUARD", "Unknown focus guard: $guard", null)
 
 /**
- * The Vigil, for JavaScript (src/features/guard/bridge.ts). Android only. Focus guards now; reel
- * counting later. The guarding itself runs in VigilService, so it carries on without JavaScript.
+ * The Vigil, for JavaScript (src/features/guard/bridge.ts). Android only. Focus guards and the reel
+ * counter. Both run in VigilService, so they carry on without JavaScript.
  */
 class VigilModule : Module() {
   private val context: Context
@@ -48,16 +54,18 @@ class VigilModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("VincoVigil")
 
-    Events("onFocusEvent")
+    Events("onFocusEvent", "onReel")
 
     OnCreate {
       VigilEvents.listener = { type, packageName ->
         sendEvent("onFocusEvent", mapOf("type" to type, "packageName" to packageName))
       }
+      VigilReelEvents.listener = { count, day -> sendEvent("onReel", mapOf("count" to count, "day" to day)) }
     }
 
     OnDestroy {
       VigilEvents.listener = null
+      VigilReelEvents.listener = null
     }
 
     AsyncFunction("getPermissions") {
@@ -114,6 +122,7 @@ class VigilModule : Module() {
             endsAt = endsAt,
             allowedPackages = config.allowedPackages.filter { it.isNotBlank() }.toSet(),
             copy = VigilCopy.from(config.copy),
+            palette = VigilPalette.from(config.colors, config.scheme),
             elapsedEndsAt = SystemClock.elapsedRealtime() + (endsAt - now),
             bootCount = VigilStore.bootCount(context)
           )
@@ -141,6 +150,16 @@ class VigilModule : Module() {
         )
       )
     }
+
+    // The reel counter (VigilReels): its settings, today's count and the kept days.
+    AsyncFunction("configure") { config: ReelWatchConfig ->
+      VigilReelStore.saveConfig(context, config.toConfig())
+      VigilService.refreshReels()
+    }
+
+    AsyncFunction("getTodayCount") { VigilReelStore.todayCount(context) }
+
+    AsyncFunction("getReelDays") { reelDaysForJs(VigilReelStore.days(context)) }
   }
 
   private fun openSettings(intent: Intent) {

@@ -1,4 +1,5 @@
 import type { VigilNativeModule } from '../../../../modules/vigil';
+import { PALETTES } from '@/theme';
 import {
   guardBridge,
   selectGuardBridge,
@@ -7,7 +8,9 @@ import {
   toNativeWakeWatch,
   unsupportedGuardBridge,
 } from '../bridge';
+import { FOCUS_OVERLAY_ROLES, focusOverlayTheme } from '../overlayTheme';
 
+const marble = PALETTES.find((palette) => palette.id === 'marble') ?? PALETTES[0]!;
 const START = new Date(2026, 9, 31, 9, 0);
 const END = new Date(2026, 9, 31, 9, 25);
 const WAKE_COPY = { title: 'Are you up?', body: 'Log your wake-up.', channelName: 'Wake-up check' };
@@ -80,6 +83,8 @@ describe('guard bridge selection', () => {
       endsAt: END.getTime(),
       allowedPackages: ['org.example.notes'],
       copy: {},
+      colors: {},
+      scheme: 'dark',
     });
 
     const heard = jest.fn();
@@ -94,7 +99,8 @@ describe('guard bridge selection', () => {
     expect(native.setWakeWatch).toHaveBeenCalledWith(
       toNativeWakeWatch({ enabled: true, awakeDay: '2026-11-01', copy: WAKE_COPY }),
     );
-    // Reel counting isn't native yet: the stub's answer.
+    // A build from before the reel counter (no configure): the stub's answer.
+    expect(bridge.canCountReels).toBe(false);
     await expect(bridge.getTodayCount()).resolves.toBe(0);
   });
 });
@@ -115,7 +121,32 @@ describe('toNativeFocusConfig', () => {
       endsAt: END.getTime(),
       allowedPackages: ['org.example.notes', 'org.example.maps'],
       copy: { alertTitle: 'Focus is on' },
+      colors: {},
+      scheme: 'dark',
     });
+  });
+
+  it("sends the active palette's overlay roles and its scheme", () => {
+    const theme = focusOverlayTheme({ scheme: 'light', colors: marble.colors });
+    const native = toNativeFocusConfig({
+      guard: 'imperium',
+      startedAt: START,
+      endsAt: END,
+      allowedPackages: [],
+      theme,
+    });
+    expect(native.scheme).toBe('light');
+    expect(Object.keys(native.colors).sort()).toEqual([...FOCUS_OVERLAY_ROLES].sort());
+    expect(native.colors.accent).toBe(marble.colors.accent);
+    expect(native.colors.scrim).toBe(marble.colors.scrim);
+  });
+
+  it('drops blank colours, so the native side keeps its own', () => {
+    const theme = focusOverlayTheme({ scheme: 'dark', colors: { ...marble.colors, accent: '  ' } });
+    expect(
+      toNativeFocusConfig({ guard: 'custos', startedAt: START, endsAt: END, allowedPackages: [], theme })
+        .colors,
+    ).not.toHaveProperty('accent');
   });
 });
 

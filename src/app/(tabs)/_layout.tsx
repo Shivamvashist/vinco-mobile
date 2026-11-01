@@ -43,8 +43,8 @@ export default function TabsLayout() {
   if (segment && segment !== tab) setTab(segment);
 
   // One header above the tabs, outside the slide (TabsHeader). The tabs slide as one strip of
-  // pages and follow a sideways swipe (TabSwipe, tabTransition); a tab out of sight is frozen, so
-  // it doesn't re-render on every record change while the user is elsewhere.
+  // pages and follow a sideways swipe (TabSwipe, tabTransition). Tabs out of sight are NOT frozen
+  // (freezeOnBlur): unfreezing under the slide left a tab blank on Android now and then.
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <TabsHeader tab={tab} />
@@ -53,7 +53,6 @@ export default function TabsLayout() {
         screenLayout={({ children }) => <TabSwipe>{children}</TabSwipe>}
         screenOptions={{
           headerShown: false,
-          freezeOnBlur: true,
           sceneStyle: { backgroundColor: theme.colors.background },
           ...tabTransitionOptions(width, reduceMotion),
         }}

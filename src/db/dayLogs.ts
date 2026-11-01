@@ -2,7 +2,7 @@ import { and, asc, desc, eq, gte, isNotNull, lt, lte } from 'drizzle-orm';
 
 import type { DayKey } from '@/lib/dates';
 
-import type { AppDatabase } from './database';
+import { type AppDatabase, nowIso } from './database';
 import { type DayLogRow, dayLogs } from './schema';
 
 type DayLogPatch = Partial<Omit<DayLogRow, 'day'>>;
@@ -74,11 +74,25 @@ export function selectLatestBedtime(db: AppDatabase, before: DayKey) {
     .limit(1);
 }
 
-/** Updates fields on a day's log, creating the row if needed. */
-export function updateDayLog(db: AppDatabase, day: DayKey, patch: DayLogPatch): void {
+/**
+ * Updates fields on a day's log, creating the row if needed. Setting the selfie, the weight or the
+ * calories also stamps when (selfieAt, weightAt, caloriesAt, for the day path), unless the patch
+ * gives that time itself; clearing one clears its time.
+ */
+export function updateDayLog(db: AppDatabase, day: DayKey, patch: DayLogPatch, now: Date = new Date()): void {
   if (Object.keys(patch).length === 0) return;
+  const stamped = { ...withLoggedTimes(patch, nowIso(now)), ...patch };
   db.insert(dayLogs)
-    .values({ day, ...patch })
-    .onConflictDoUpdate({ target: dayLogs.day, set: patch })
+    .values({ day, ...stamped })
+    .onConflictDoUpdate({ target: dayLogs.day, set: stamped })
     .run();
+}
+
+/** The logged-at times for the proof values a patch sets: now when set, null when cleared. */
+function withLoggedTimes(patch: DayLogPatch, at: string): DayLogPatch {
+  const times: DayLogPatch = {};
+  if (patch.selfiePath !== undefined) times.selfieAt = patch.selfiePath == null ? null : at;
+  if (patch.weightKg !== undefined) times.weightAt = patch.weightKg == null ? null : at;
+  if (patch.calories !== undefined) times.caloriesAt = patch.calories == null ? null : at;
+  return times;
 }

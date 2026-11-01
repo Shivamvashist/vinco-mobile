@@ -7,7 +7,9 @@ import {
   vigilNativeModule,
 } from '../../../modules/vigil';
 
-import type { GuardLevel } from './guard';
+import type { FocusOverlayTheme } from './overlayTheme';
+import { type ReelWatchConfig, toNativeReelConfig, toReelEventCount } from './reelBridge';
+import { type ReelDay, sanitizeReelDays, toReelCount } from './reels';
 import { WAKE_PROMPT, type WakeWatchConfig } from './wakeWatch';
 
 export type GuardPermission = 'accessibility' | 'overlay';
@@ -20,8 +22,9 @@ export type FocusEventType = 'nudge' | 'appBlocked' | 'appClosed';
 export type FocusEvent = { type: FocusEventType; packageName: string | null };
 
 /**
- * The words on the native overlays (src/copy/focus.ts `overlay`). `closingIn` and `cooldown` are
- * followed by a time ("Closes in 2:41"). Missing ones keep the native defaults.
+ * The words on the native overlays and the bubble's focus panel (src/copy/focus.ts `overlay`).
+ * `closingIn` and `cooldown` are followed by a time ("Closes in 2:41"), `endsAt` by the end time
+ * ("Ends 7:40 pm"). Missing ones keep the native defaults (modules/vigil VigilCopy.kt).
  */
 export type FocusOverlayCopy = {
   alertTitle: string;
@@ -29,8 +32,20 @@ export type FocusOverlayCopy = {
   nudgeTitle: string;
   nudgeBody: string;
   openVinco: string;
+  backToFocus: string;
+  dismiss: string;
+  close: string;
   closingIn: string;
+  restingTitle: string;
   cooldown: string;
+  panelTitle: string;
+  left: string;
+  endsAt: string;
+  companions: string;
+  guardCustos: string;
+  guardImperium: string;
+  guardSilentium: string;
+  bubbleHint: string;
 };
 
 export type FocusGuardConfig = {
@@ -40,6 +55,8 @@ export type FocusGuardConfig = {
   /** The Comites. The native side always adds Vinco, the dialer, calls and emergency. */
   allowedPackages: readonly string[];
   copy?: Partial<FocusOverlayCopy>;
+  /** The active palette for the overlays (`focusOverlayTheme`). Without it the native side uses Basalt. */
+  theme?: FocusOverlayTheme;
 };
 
 /**
@@ -54,15 +71,21 @@ export type GuardBridge = {
   getPermissions: () => Promise<Record<GuardPermission, boolean>>;
   /** Opens the phone's settings page for a permission. */
   openPermissionSettings: (permission: GuardPermission) => Promise<void>;
-  /** Starts or changes the reel watch. Pax counts only; higher levels add the badge and checks. */
-  configure: (config: {
-    level: GuardLevel;
-    reelBudget: number;
-    markedPackages: readonly string[];
-  }) => Promise<void>;
+  /**
+   * False where reels can't be counted: Expo Go, and development builds from before the reel
+   * counter. The counting itself also needs the guard service (accessibility) turned on.
+   */
+  canCountReels: boolean;
+  /**
+   * Starts or changes the reel watch (src/hooks/useReelWatch.ts). Pax counts only; Vigil and up
+   * add the badge and milestone cards. Kept on the phone, so counting goes on with Vinco closed.
+   */
+  configure: (config: ReelWatchConfig) => Promise<void>;
   /** Reels counted today (local day). */
   getTodayCount: () => Promise<number>;
-  /** Live count updates. Returns the unsubscribe. */
+  /** Every day the phone still keeps (about 60), today included, oldest first. */
+  getReelDays: () => Promise<ReelDay[]>;
+  /** Live count updates (today's new count). Returns the unsubscribe. */
   onReel: (listener: (count: number) => void) => () => void;
   /** The phone's launchable apps, sorted by label, without Vinco. Empty where unsupported. */
   listLaunchableApps: () => Promise<FocusApp[]>;
@@ -91,8 +114,10 @@ export const unsupportedGuardBridge: GuardBridge = {
   isSupported: false,
   getPermissions: async () => ({ accessibility: false, overlay: false }),
   openPermissionSettings: async () => undefined,
+  canCountReels: false,
   configure: async () => undefined,
   getTodayCount: async () => 0,
+  getReelDays: async () => [],
   onReel: () => () => undefined,
   listLaunchableApps: async () => [],
   getDialerPackage: async () => null,
@@ -112,12 +137,18 @@ export function toNativeFocusConfig(config: FocusGuardConfig): VigilNativeFocusC
   for (const [key, value] of Object.entries(config.copy ?? {})) {
     if (typeof value === 'string' && value.trim().length > 0) copy[key] = value;
   }
+  const colors: Record<string, string> = {};
+  for (const [role, value] of Object.entries(config.theme?.colors ?? {})) {
+    if (typeof value === 'string' && value.trim().length > 0) colors[role] = value.trim();
+  }
   return {
     guard: config.guard,
     startedAt: config.startedAt.getTime(),
     endsAt: config.endsAt.getTime(),
     allowedPackages: [...new Set(packages)],
     copy,
+    colors,
+    scheme: config.theme?.scheme ?? 'dark',
   };
 }
 
@@ -146,12 +177,13 @@ export function toFocusEvent(raw: unknown): FocusEvent | null {
 }
 
 /**
- * Wraps the Kotlin module in the bridge's shape. Reel counting is not native yet, so those
- * members keep the stub's behaviour.
+ * Wraps the Kotlin module in the bridge's shape. A build from before the reel counter keeps the
+ * stub's reel members (see `createNativeReelMembers`).
  */
 export function createNativeGuardBridge(native: VigilNativeModule): GuardBridge {
   return {
     ...unsupportedGuardBridge,
+    ...createNativeReelMembers(native),
     isSupported: true,
     getPermissions: () => native.getPermissions(),
     openPermissionSettings: (permission) => native.openPermissionSettings(permission),
@@ -168,6 +200,30 @@ export function createNativeGuardBridge(native: VigilNativeModule): GuardBridge 
       return () => subscription.remove();
     },
     setWakeWatch: (config) => native.setWakeWatch(toNativeWakeWatch(config)),
+  };
+}
+
+type ReelMembers = Pick<
+  GuardBridge,
+  'canCountReels' | 'configure' | 'getTodayCount' | 'getReelDays' | 'onReel'
+>;
+
+/** The reel counter's members, when the module has them (development builds from 1 Nov on). */
+function createNativeReelMembers(native: VigilNativeModule): Partial<ReelMembers> {
+  const { configure, getTodayCount, getReelDays } = native;
+  if (!configure || !getTodayCount || !getReelDays) return {};
+  return {
+    canCountReels: true,
+    configure: (config) => configure.call(native, toNativeReelConfig(config)),
+    getTodayCount: async () => toReelCount(await getTodayCount.call(native)) ?? 0,
+    getReelDays: async () => sanitizeReelDays(await getReelDays.call(native)),
+    onReel: (listener) => {
+      const subscription = native.addListener('onReel', (raw) => {
+        const count = toReelEventCount(raw);
+        if (count != null) listener(count);
+      });
+      return () => subscription.remove();
+    },
   };
 }
 

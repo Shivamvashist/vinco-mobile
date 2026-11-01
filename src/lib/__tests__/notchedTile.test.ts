@@ -1,46 +1,53 @@
-import { notchedTilePath, notchRadiusFor } from '../notchedTile';
+import { cornerCut, notchedTilePath } from '../notchedTile';
 
-const shape = { width: 160, height: 140, cornerRadius: 20, notchRadius: 54, filletRadius: 8 };
+const shape = { width: 160, height: 140, cornerRadius: 20, buttonSize: 44, gap: 6, filletRadius: 8 };
 
-describe('notchedTilePath', () => {
-  it('draws a closed outline with the bite at the bottom-right corner', () => {
-    const path = notchedTilePath(shape);
-    expect(path.startsWith('M 20 0')).toBe(true);
-    expect(path.endsWith('Z')).toBe(true);
-    // Two fillets (sweep 1) around one concave bite (sweep 0).
-    expect(path).toContain('A 54 54 0 0 0');
-    expect(path.match(/A 8 8 0 0 1/g)).toHaveLength(2);
-  });
+/** The numbers after the first occurrence of a path command prefix. */
+function pointAfter(path: string, prefix: string): [number, number] {
+  const rest = path
+    .slice(path.indexOf(prefix) + prefix.length)
+    .trim()
+    .split(' ');
+  return [Number(rest[0]), Number(rest[1])];
+}
 
-  it('meets the edges where the fillets touch them', () => {
-    const reach = Math.sqrt((54 + 8) ** 2 - 8 ** 2);
-    const path = notchedTilePath(shape);
-    expect(path).toContain(`V ${140 - reach}`);
-    expect(path).toContain(`${160 - reach} 140`);
-  });
-
-  it('keeps the bite touch points on the bite circle', () => {
-    // The concave arc's end point follows "A 54 54 0 0 0".
-    const path = notchedTilePath(shape);
-    const after = path.slice(path.indexOf('A 54 54 0 0 0') + 'A 54 54 0 0 0 '.length).split(' ');
-    const x = Number(after[0]);
-    const y = Number(after[1]);
-    expect(Math.hypot(160 - x, 140 - y)).toBeCloseTo(54, 6);
-  });
-
-  it('is empty before layout or when the tile is too small for the bite', () => {
-    expect(notchedTilePath({ ...shape, width: 0 })).toBe('');
-    expect(notchedTilePath({ ...shape, width: 60, height: 60 })).toBe('');
+describe('cornerCut', () => {
+  it('wraps the button with the gap: the inner arc shares the button centre', () => {
+    const { size, innerRadius } = cornerCut(44, 6);
+    expect(size).toBe(50);
+    expect(innerRadius).toBe(28);
+    // Button centre, flush with the corner, is buttonSize / 2 in from both edges.
+    const centreFromCut = size - 44 / 2;
+    expect(innerRadius - centreFromCut).toBe(0);
   });
 });
 
-describe('notchRadiusFor', () => {
-  it('leaves an even gap round a button flush with the corner edges', () => {
-    const buttonRadius = 20;
-    const gap = 6;
-    const notch = notchRadiusFor(buttonRadius, gap);
-    // The button's centre sits buttonRadius in from both edges.
-    const centreFromCorner = Math.hypot(buttonRadius, buttonRadius);
-    expect(notch - (centreFromCorner + buttonRadius)).toBeCloseTo(gap, 6);
+describe('notchedTilePath', () => {
+  it('draws a closed outline with one concave arc and two fillets', () => {
+    const path = notchedTilePath(shape);
+    expect(path.startsWith('M 20 0')).toBe(true);
+    expect(path.endsWith('Z')).toBe(true);
+    expect(path.match(/A 28 28 0 0 0/g)).toHaveLength(1);
+    expect(path.match(/A 8 8 0 0 1/g)).toHaveLength(2);
+  });
+
+  it('keeps an even gap: both ends of the inner arc are buttonRadius + gap from the button centre', () => {
+    const path = notchedTilePath(shape);
+    const centre = { x: 160 - 22, y: 140 - 22 };
+    const arcEnd = pointAfter(path, 'A 28 28 0 0 0');
+    expect(Math.hypot(arcEnd[0] - centre.x, arcEnd[1] - centre.y)).toBeCloseTo(28, 6);
+    // The arc starts on the cut's top edge, inner radius right of the cut's left side.
+    expect(path).toContain(`H ${160 - 50 + 28}`);
+  });
+
+  it('caps the fillets to the straight run of the cut', () => {
+    const path = notchedTilePath({ ...shape, filletRadius: 40 });
+    // size 50 minus inner 28 leaves 22.
+    expect(path.match(/A 22 22 0 0 1/g)).toHaveLength(2);
+  });
+
+  it('is empty before layout or when the tile is too small for the cut', () => {
+    expect(notchedTilePath({ ...shape, width: 0 })).toBe('');
+    expect(notchedTilePath({ ...shape, width: 70, height: 70 })).toBe('');
   });
 });

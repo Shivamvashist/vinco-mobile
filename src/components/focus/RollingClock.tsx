@@ -12,9 +12,14 @@ export type RollingClockProps = {
   fontSize: number;
 };
 
-/** Digit cells are this share of the font size wide, so the clock never jitters as digits change. */
-const DIGIT_WIDTH = 0.62;
+/**
+ * Digit cells are this share of the font size wide, so the clock never jitters as digits change.
+ * The glyph itself is drawn in a wider box centred on its cell, so a digit wider than its cell
+ * (display faces vary) spills into the spacing instead of being clipped.
+ */
+const DIGIT_WIDTH = 0.64;
 const SEPARATOR_WIDTH = 0.3;
+const GLYPH_BOX = 1.2;
 /** How far a new digit rises from as it arrives. */
 const ROLL_FROM = 0.35;
 
@@ -57,9 +62,22 @@ function RollingCharacter({ character, fontSize }: { character: string; fontSize
   }));
 
   const isDigit = character >= '0' && character <= '9';
+  const cell = fontSize * (isDigit ? DIGIT_WIDTH : SEPARATOR_WIDTH);
+  const box = fontSize * GLYPH_BOX;
   return (
-    <Animated.View style={[{ width: fontSize * (isDigit ? DIGIT_WIDTH : SEPARATOR_WIDTH) }, style]}>
-      <Txt variant="numeral" align="center" style={{ fontSize, lineHeight: fontSize * 1.1 }}>
+    <Animated.View style={[{ width: cell, height: fontSize * 1.2 }, style]}>
+      <Txt
+        variant="numeral"
+        align="center"
+        numberOfLines={1}
+        style={{
+          position: 'absolute',
+          left: (cell - box) / 2,
+          width: box,
+          fontSize,
+          lineHeight: fontSize * 1.2,
+        }}
+      >
         {character}
       </Txt>
     </Animated.View>
@@ -67,5 +85,6 @@ function RollingCharacter({ character, fontSize }: { character: string; fontSize
 }
 
 const useStyles = createStyles(() => ({
-  row: { flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
+  // Not clipped: glyphs may run past their cells (see GLYPH_BOX); the roll fades instead.
+  row: { flexDirection: 'row', alignItems: 'center' },
 }));

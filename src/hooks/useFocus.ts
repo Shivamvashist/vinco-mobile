@@ -22,10 +22,11 @@ import {
   getTrustedNow,
   remainingMs,
 } from '@/features/focus';
-import { guardBridge } from '@/features/guard';
+import { focusOverlayTheme, guardBridge } from '@/features/guard';
 import type { DayKey } from '@/lib/dates';
 import { cancelFocusHeld, scheduleFocusHeld } from '@/notifications';
 import { useFocusUiStore, usePreferencesStore } from '@/stores';
+import { useTheme } from '@/theme';
 
 import { useToday } from './useToday';
 
@@ -71,6 +72,8 @@ export type FocusController = {
 export function useFocus(): FocusController {
   const today = useToday();
   const tone = usePreferencesStore((state) => state.tone);
+  // The overlays over other apps take the palette active when the focus begins.
+  const theme = useTheme();
   const seenSessionId = useFocusUiStore((state) => state.seenSessionId);
   const markSeen = useFocusUiStore((state) => state.markSeen);
   const latestRows = useLiveQuery(selectLatestFocus(db));
@@ -164,7 +167,14 @@ export function useFocus(): FocusController {
       });
       // The native side always adds Vinco, calls and emergency to the allowed list.
       void guardBridge
-        .startFocus({ guard, startedAt, endsAt, allowedPackages, copy: focusCopy.overlay })
+        .startFocus({
+          guard,
+          startedAt,
+          endsAt,
+          allowedPackages,
+          copy: focusCopy.overlay,
+          theme: focusOverlayTheme(theme),
+        })
         .catch(warnBridge);
       return 'started';
     } catch (error) {

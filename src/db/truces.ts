@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, lte, sql } from 'drizzle-orm';
 
 import { getDayLog, updateDayLog } from './dayLogs';
 import { getDenariiBalance } from './forum';
@@ -12,6 +12,14 @@ import { dayLogs, ledger, truces } from './schema';
 /** The query for every Truce change. Pass to useLiveQuery; the reserve is the sum. */
 export function selectTruces(db: AppDatabase) {
   return db.select().from(truces);
+}
+
+/** The query for Truces spent on days between two days (a call covers one row per day). */
+export function selectTruceSpendsBetween(db: AppDatabase, from: DayKey, to: DayKey) {
+  return db
+    .select()
+    .from(truces)
+    .where(and(eq(truces.reason, 'spent'), gte(truces.day, from), lte(truces.day, to)));
 }
 
 /** Truces in reserve now. */

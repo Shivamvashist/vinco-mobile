@@ -77,13 +77,11 @@ export function FocusTile() {
       <View style={styles.figure}>
         {isRunning ? (
           <>
-            <RollingNumber value={hoursMinutes} variant="display" />
+            <RollingNumber value={hoursMinutes} variant="display" fit />
             <Txt variant="caption">{copy.left}</Txt>
           </>
         ) : (
-          <Txt variant="display" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-            {copy.ready}
-          </Txt>
+          <RollingNumber value={copy.ready} variant="display" fit />
         )}
       </View>
       <Txt variant="caption" color={isRunning ? 'accent' : 'textMuted'} numberOfLines={1}>

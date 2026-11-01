@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from 'react';
 import { View } from 'react-native';
 
-import { notchRadiusFor } from '@/lib/notchedTile';
+import { cornerCut } from '@/lib/notchedTile';
 import { cardSurface, type ColorRole, createStyles, useTheme } from '@/theme';
 
 import { Icon, type IconName } from '../../Icon';
@@ -22,15 +22,15 @@ export type HeroTileProps = {
   accessibilityLabel: string;
   accessibilityHint: string;
   /**
-   * A round button seated in a curved bite out of the tile's bottom-right corner (Focus's play).
-   * It should be `theme.layout.minTouchTarget` across; the tile's text keeps clear of the bite.
+   * A round button seated in a socket cut into the tile's bottom-right corner (Focus's play).
+   * It should be `theme.layout.minTouchTarget` across; the tile's text keeps clear of the cut.
    */
   cornerAction?: ReactNode;
   children: ReactNode;
 };
 
-/** The even gap between a corner action and the bite around it. */
-const NOTCH_GAP = 6;
+/** The even gap between a corner action and the cut around it. */
+const CUT_GAP = 6;
 
 /** One fact under the hero: a titled tile with a corner glow and a spring press. */
 export function HeroTile({
@@ -49,7 +49,8 @@ export function HeroTile({
   const styles = useStyles();
   const [size, setSize] = useState({ width: 0, height: 0 });
   const hasNotch = cornerAction != null;
-  const notchRadius = notchRadiusFor(theme.layout.minTouchTarget / 2, NOTCH_GAP);
+  const buttonSize = theme.layout.minTouchTarget;
+  const cut = cornerCut(buttonSize, CUT_GAP);
   return (
     <PressableScale
       scaleTo="card"
@@ -70,7 +71,8 @@ export function HeroTile({
         <NotchedSurface
           width={size.width}
           height={size.height}
-          notchRadius={notchRadius}
+          buttonSize={buttonSize}
+          gap={CUT_GAP}
           glow={glow}
           glowIntensity={isLit ? 0.9 : 0.5}
         />
@@ -83,7 +85,7 @@ export function HeroTile({
       </View>
       <View
         importantForAccessibility="no-hide-descendants"
-        style={hasNotch ? { paddingRight: notchRadius - theme.layout.cardPadding } : undefined}
+        style={hasNotch ? { paddingRight: cut.size - theme.layout.cardPadding } : undefined}
       >
         {children}
       </View>

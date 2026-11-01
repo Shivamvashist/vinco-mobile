@@ -50,6 +50,7 @@ export function clearTestDatabase(db: AppDatabase): void {
   db.delete(schema.customOrders).run();
   db.delete(schema.truces).run();
   db.delete(schema.ledger).run();
+  db.delete(schema.orderSteps).run();
   db.delete(schema.orderLogs).run();
   db.delete(schema.dayLogs).run();
   db.delete(schema.arcOrders).run();

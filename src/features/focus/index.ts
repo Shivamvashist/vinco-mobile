@@ -32,6 +32,16 @@ export {
   remainingShare,
   snapRulerMinutes,
 } from './focus';
+export {
+  firstFocusDay,
+  type FocusHistoryFacts,
+  type FocusPeriodBars,
+  focusPeriodBars,
+  type FocusPeriodSummary,
+  retreatedMinutes,
+  sessionsInPeriod,
+  summarizeFocusPeriod,
+} from './history';
 export { type FocusLogFacts, type FocusTotals, heldMinutes, summarizeFocusLog, weekStartOf } from './log';
 export {
   focusRetreatReason,

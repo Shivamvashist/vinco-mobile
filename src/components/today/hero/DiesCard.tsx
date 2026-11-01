@@ -1,6 +1,7 @@
 import { View } from 'react-native';
 
 import { todayCopy } from '@/copy';
+import type { PathPoint, PathSpan } from '@/features/dayPath';
 import { cardSurface, createStyles, useTheme } from '@/theme';
 
 import { PressableScale } from '../../PressableScale';
@@ -21,8 +22,15 @@ export type DiesCardProps = {
   plannedWake: string | null;
   /** Now on the day, 0 (wake-up) to 1 (midnight). */
   progress: number;
-  /** Where each order was done, on the same scale. */
-  marks: readonly number[];
+  /** Each activity of the day, on the same scale. */
+  marks: readonly PathPoint[];
+  /** Each focus of the day, as a stretch on the same scale. */
+  spans: readonly PathSpan[];
+  /** The day shown (its key), and whether its activity has been read. */
+  day: string;
+  isActivityLoaded: boolean;
+  /** The marks in words for screen readers ("5 activities today, last at 4:12 pm."), or empty. */
+  activityLabel: string;
   /** Free training: the run (days in a row) to name in place of "Today", or null for none. */
   runDays?: number | null;
   onPress: () => void;
@@ -42,7 +50,7 @@ const copy = todayCopy.hero;
 
 /**
  * Dies (the day): Today's hero. One big number (orders held) over the sun's path from wake-up to
- * midnight, lit from below in the palette's accent; the light grows as the day holds. Tap for
+ * midnight, marked where each thing was done today, lit from below in the palette's accent; the light grows as the day holds. Tap for
  * today's summary.
  */
 export function DiesCard({
@@ -53,6 +61,10 @@ export function DiesCard({
   plannedWake,
   progress,
   marks,
+  spans,
+  day,
+  isActivityLoaded,
+  activityLabel,
   runDays = null,
   onPress,
 }: DiesCardProps) {
@@ -68,7 +80,9 @@ export function DiesCard({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={
-        isDawn ? copy.dawnLabel(plannedWake) : copy.accessibleLabel(held, total, stateLabel)
+        isDawn
+          ? copy.dawnLabel(plannedWake, activityLabel)
+          : copy.accessibleLabel(held, total, stateLabel, activityLabel)
       }
       style={styles.card}
     >
@@ -101,7 +115,14 @@ export function DiesCard({
       </View>
 
       <View style={{ marginHorizontal: -theme.space.xs }}>
-        <DayPath progress={progress} marks={marks} isHeld={isHeld} />
+        <DayPath
+          progress={progress}
+          marks={marks}
+          spans={spans}
+          day={day}
+          isLoaded={isActivityLoaded}
+          isHeld={isHeld}
+        />
       </View>
     </PressableScale>
   );

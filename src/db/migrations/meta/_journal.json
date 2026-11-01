@@ -92,6 +92,20 @@
       "when": 1793445527549,
       "tag": "0012_claims",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1793536126762,
+      "tag": "0013_day_activity",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1793536622869,
+      "tag": "0014_reel_days",
+      "breakpoints": true
     }
   ]
 }

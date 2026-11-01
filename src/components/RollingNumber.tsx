@@ -1,7 +1,8 @@
 import { type StyleProp, type TextStyle, View } from 'react-native';
 import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated';
 
-import { type ColorRole, motion, type TextVariant, useReduceMotion } from '@/theme';
+import { useFitFontSize } from '@/hooks/useFitFontSize';
+import { type ColorRole, createStyles, motion, type TextVariant, useReduceMotion, useTheme } from '@/theme';
 
 import { Txt } from './Txt';
 
@@ -13,6 +14,11 @@ export type RollingNumberProps = {
   style?: StyleProp<TextStyle>;
   /** What a screen reader says, when the bare value isn't enough. */
   accessibilityLabel?: string;
+  /**
+   * Shrink to fit the width it is given, measured with the real font, so a long value ("1:30" in a
+   * narrow tile, large text) never clips. The number then fills its parent's width.
+   */
+  fit?: boolean;
 };
 
 /** The new value rises in on the settle spring; the old one lifts away quickly. */
@@ -33,24 +39,59 @@ export function RollingNumber({
   color,
   style,
   accessibilityLabel,
+  fit = false,
 }: RollingNumberProps) {
+  const theme = useTheme();
+  const styles = useStyles();
   const reduceMotion = useReduceMotion();
+  const type = theme.type[variant];
+  const baseSize = type.fontSize ?? 16;
+  const lineRatio = (type.lineHeight ?? baseSize * 1.2) / baseSize;
+  const fitted = useFitFontSize(baseSize);
+  const fitStyle = fit ? { fontSize: fitted.fontSize, lineHeight: fitted.fontSize * lineRatio } : null;
+
   return (
     <View
-      style={{ overflow: 'hidden' }}
+      style={[styles.clip, fit && styles.stretch]}
+      onLayout={fit ? fitted.onBoxLayout : undefined}
       accessible
       accessibilityLabel={accessibilityLabel ?? value}
       accessibilityLiveRegion="polite"
     >
+      {fit ? (
+        // Measured at the full size on one unbounded line, never seen.
+        <View style={styles.measure} pointerEvents="none" importantForAccessibility="no-hide-descendants">
+          <Txt
+            variant={variant}
+            numberOfLines={1}
+            onTextLayout={fitted.onMeasureLayout}
+            style={[{ fontVariant: ['tabular-nums'] }, style]}
+          >
+            {value}
+          </Txt>
+        </View>
+      ) : null}
       <Animated.View
         key={value}
         entering={reduceMotion ? undefined : ENTER}
         exiting={reduceMotion ? undefined : EXIT}
       >
-        <Txt variant={variant} color={color} style={[{ fontVariant: ['tabular-nums'] }, style]}>
+        <Txt
+          variant={variant}
+          color={color}
+          numberOfLines={fit ? 1 : undefined}
+          style={[{ fontVariant: ['tabular-nums'] }, style, fitStyle]}
+        >
           {value}
         </Txt>
       </Animated.View>
     </View>
   );
 }
+
+const useStyles = createStyles(() => ({
+  clip: { overflow: 'hidden' },
+  stretch: { alignSelf: 'stretch' },
+  // Wide enough that the measuring line never wraps; invisible and out of the layout.
+  measure: { position: 'absolute', left: 0, top: 0, width: 4000, opacity: 0 },
+}));

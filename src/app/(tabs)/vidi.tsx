@@ -107,6 +107,7 @@ export default function VidiScreen() {
             thisWeek={gloria.thisWeek}
             conqueredDay={conqueredDayGloria(gloria.dayOf(today)?.orderStatuses.length ?? 0)}
             today={today}
+            onOpenHistory={() => router.push('/gloria')}
           />
         </View>
         <View style={styles.segments}>

@@ -53,8 +53,8 @@ describe('focus lengths', () => {
     }
   });
 
-  it('has presets on the ruler: 15m, 25m, 45m, 1h, 1h 30m, 2h', () => {
-    expect(FOCUS_RULES.presets).toEqual([15, 25, 45, 60, 90, 120]);
+  it('has four presets on the ruler: 25m, 45m, 1h, 1h 30m', () => {
+    expect(FOCUS_RULES.presets).toEqual([25, 45, 60, 90]);
     for (const preset of FOCUS_RULES.presets) expect(snapRulerMinutes(preset)).toBe(preset);
   });
 

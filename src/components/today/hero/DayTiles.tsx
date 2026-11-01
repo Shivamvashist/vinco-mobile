@@ -47,7 +47,7 @@ export function DayTiles({ run, isTodayHeld, isLudus, nextReward, onOpenRun }: D
         accessibilityHint={copy.run.hint}
       >
         <View style={styles.figure}>
-          <RollingNumber value={String(run)} variant="display" />
+          <RollingNumber value={String(run)} variant="display" fit />
           <Txt variant="caption">{copy.run.unit(run)}</Txt>
         </View>
         <View style={styles.pips}>

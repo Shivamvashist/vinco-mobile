@@ -1,7 +1,7 @@
 import { router, Stack, useNavigation } from 'expo-router';
 import { useEffect, type ReactNode } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useShallow } from 'zustand/react/shallow';
 
 import { FocusActive } from '@/components/focus/FocusActive';
@@ -11,6 +11,7 @@ import { launchRewardFlight } from '@/components/hud';
 import { Screen } from '@/components/Screen';
 import { allowedPackagesFor, type FocusGuard, planRetreatPayment } from '@/features/focus';
 import { useDialerPackage } from '@/hooks/useDialerPackage';
+import { useEntrance } from '@/hooks/useEntrance';
 import { useFocus } from '@/hooks/useFocus';
 import { useFocusLock } from '@/hooks/useFocusLock';
 import { useFocusLog } from '@/hooks/useFocusLog';
@@ -18,7 +19,7 @@ import { useFocusNotice } from '@/hooks/useFocusNotice';
 import { useFocusPurse } from '@/hooks/useFocusPurse';
 import { useGuardPermissions } from '@/hooks/useGuardPermissions';
 import { useFocusUiStore, useGuardStore, usePreferencesStore } from '@/stores';
-import { createStyles, themeSpring, useFeedback, useReduceMotion } from '@/theme';
+import { createStyles, useFeedback } from '@/theme';
 
 /** How far a new stage (setup, active, complete) rises as it springs in. */
 const STAGE_RISE = 24;
@@ -107,6 +108,7 @@ export default function FocusScreen() {
               log={log}
               onBegin={handleBegin}
               onGetTruce={() => router.push('/forum')}
+              onSeeLog={() => router.push('/focus-log')}
               onClose={close}
             />
           )}
@@ -116,15 +118,13 @@ export default function FocusScreen() {
   );
 }
 
-/** Each stage rises and fades in on the settle spring when it takes over the screen. */
+/**
+ * Each stage rises and fades in on the settle spring when it takes over the screen. useEntrance
+ * guarantees it ends fully shown, also when the app was opened from the focus bubble.
+ */
 function Stage({ children }: { children: ReactNode }) {
   const styles = useStyles();
-  const reduceMotion = useReduceMotion();
-  const enter = useSharedValue(reduceMotion ? 1 : 0);
-
-  useEffect(() => {
-    if (!reduceMotion) enter.set(withSpring(1, themeSpring('settle')));
-  }, [enter, reduceMotion]);
+  const enter = useEntrance();
 
   const style = useAnimatedStyle(() => ({
     opacity: enter.get(),

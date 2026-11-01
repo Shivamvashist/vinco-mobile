@@ -43,7 +43,7 @@ export const permissionsCopy = {
     },
     overlay: {
       label: 'Display over other apps',
-      why: "Shows the guard's alert and the floating timer over other apps during a focus.",
+      why: "Shows the guard's alert and the floating timer during a focus, and the reel badge, over other apps.",
     },
   },
 } as const;

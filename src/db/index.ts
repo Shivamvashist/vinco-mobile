@@ -59,6 +59,8 @@ export {
   type OrderEditStart,
 } from './customOrders';
 export { getDayStanding } from './dayStanding';
+export { ownOrderStepKey, selectOrderStepsForDay } from './orderSteps';
+export { saveReelDays, selectReelDaysBetween } from './reels';
 export { clearJourney } from './reset';
 export type {
   ArcOrderRow,
@@ -71,7 +73,9 @@ export type {
   LedgerRow,
   ItemUseRow,
   OrderLogRow,
+  OrderStepRow,
   PurchaseRow,
+  ReelDayRow,
   TaskCompletionRow,
   TaskRow,
   TruceRow,
@@ -103,6 +107,7 @@ export {
   getTruceReserve,
   grantTruce,
   selectTruces,
+  selectTruceSpendsBetween,
   TruceError,
 } from './truces';
 export {

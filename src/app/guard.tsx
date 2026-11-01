@@ -3,6 +3,7 @@ import { View } from 'react-native';
 
 import { Card } from '@/components/Card';
 import { PreviewNotice } from '@/components/guard/PreviewNotice';
+import { ReelCountCard } from '@/components/guard/ReelCountCard';
 import { Icon, type IconName } from '@/components/Icon';
 import { IconButton } from '@/components/IconButton';
 import { OptionCard } from '@/components/OptionCard';
@@ -12,11 +13,20 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { Stepper } from '@/components/Stepper';
 import { Txt } from '@/components/Txt';
 import { commonCopy, guardCopy } from '@/copy';
-import { GUARD_LEVEL_SHIPS, GUARD_LEVELS, GUARD_RULES, type GuardLevel } from '@/features/guard';
+import {
+  getReelAppLabels,
+  GUARD_LEVEL_SHIPS,
+  GUARD_LEVELS,
+  GUARD_RULES,
+  type GuardLevel,
+} from '@/features/guard';
+import { useGuardPermissions } from '@/hooks/useGuardPermissions';
+import { useReelCount } from '@/hooks/useReelCount';
 import { useGuardStore } from '@/stores';
 import { createStyles } from '@/theme';
 
 const copy = guardCopy.levels;
+const REEL_APP_NAMES = getReelAppLabels();
 const LEVEL_ICONS: Record<GuardLevel, IconName> = {
   pax: 'dove',
   vigil: 'eye',
@@ -25,8 +35,9 @@ const LEVEL_ICONS: Record<GuardLevel, IconName> = {
 };
 
 /**
- * The four guard levels (Pax, Vigil, Guard, Imperium) and the reel budget. In preview: the
- * choice is saved now and works with the native Vigil module. See docs/GUARDIANS.md.
+ * The four guard levels (Pax, Vigil, Guard, Imperium), today's reel count and the reel budget.
+ * With the native Vigil module the count is live (docs/GUARDIANS.md "The reel counter"); in Expo
+ * Go the choice is saved and the preview notice says the counter arrives with the build.
  */
 export default function GuardScreen() {
   const styles = useStyles();
@@ -34,6 +45,8 @@ export default function GuardScreen() {
   const setLevel = useGuardStore((state) => state.setLevel);
   const reelBudget = useGuardStore((state) => state.reelBudget);
   const setReelBudget = useGuardStore((state) => state.setReelBudget);
+  const reels = useReelCount();
+  const permissions = useGuardPermissions();
 
   const back = () => {
     if (router.canGoBack()) router.back();
@@ -46,9 +59,23 @@ export default function GuardScreen() {
         <IconButton icon="back" accessibilityLabel={commonCopy.back} onPress={back} />
       </View>
       <ScreenHeader eyebrow={copy.eyebrow} title={copy.title} caption={copy.intro} />
-      <View style={styles.block}>
-        <PreviewNotice />
-      </View>
+      {reels.canCount ? (
+        <>
+          <SectionHeader title={guardCopy.reels.section} />
+          <ReelCountCard
+            count={reels.today}
+            budget={reelBudget}
+            yesterday={reels.yesterday}
+            appNames={REEL_APP_NAMES}
+            isServiceOn={permissions.granted?.accessibility ?? null}
+            onTurnOn={() => permissions.open('accessibility')}
+          />
+        </>
+      ) : (
+        <View style={styles.block}>
+          <PreviewNotice />
+        </View>
+      )}
 
       <View style={[styles.block, styles.options]} accessibilityRole="radiogroup">
         {GUARD_LEVELS.map((option) => {

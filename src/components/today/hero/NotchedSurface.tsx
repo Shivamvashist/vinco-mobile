@@ -8,22 +8,26 @@ import { type ColorRole, useTheme } from '@/theme';
 export type NotchedSurfaceProps = {
   width: number;
   height: number;
-  notchRadius: number;
-  /** The corner light's colour role, rising from the bottom left (away from the bite). */
+  /** The round button seated in the cut, flush with the tile's right and bottom edges. */
+  buttonSize: number;
+  /** The even gap between the button and the cut. */
+  gap: number;
+  /** The corner light's colour role, rising from the bottom left (away from the cut). */
   glow: ColorRole;
   /** 0 (off) to 1 (full); softened on light palettes by the theme's glow strength. */
   glowIntensity: number;
 };
 
-/** The fillets that join the bite to the tile's edges. */
+/** The fillets that join the cut to the tile's edges. */
 const FILLET = 10;
 
 /**
- * A tile's surface with a round bite out of its bottom-right corner, where a button sits. Drawn
- * as one SVG path in the palette's surface and hairline colours, with the tile's glow clipped to
- * the same outline, so the bite stays clean on every palette. Sits behind the tile's content.
+ * A tile's surface with a socket cut out of its bottom-right corner, wrapping a round button with
+ * an even gap (lib/notchedTile). Drawn as one SVG path in the palette's surface and hairline
+ * colours, with the tile's glow clipped to the same outline, so the cut stays clean on every
+ * palette. Sits behind the tile's content.
  */
-export function NotchedSurface({ width, height, notchRadius, glow, glowIntensity }: NotchedSurfaceProps) {
+export function NotchedSurface({ width, height, buttonSize, gap, glow, glowIntensity }: NotchedSurfaceProps) {
   const theme = useTheme();
   const id = useId().replace(/:/g, '');
   const stroke = theme.layout.hairline;
@@ -32,7 +36,8 @@ export function NotchedSurface({ width, height, notchRadius, glow, glowIntensity
     width: width - stroke,
     height: height - stroke,
     cornerRadius: theme.radius.lg,
-    notchRadius,
+    buttonSize,
+    gap,
     filletRadius: FILLET,
   });
   if (!path) return null;

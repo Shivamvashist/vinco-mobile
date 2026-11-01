@@ -74,6 +74,24 @@ export const orderLogs = sqliteTable(
   (table) => [primaryKey({ columns: [table.day, table.kind] })],
 );
 
+/**
+ * Each step up an order took on a day (migration 0013), for the activity marks on Today's day path:
+ * one row each time an order's amount rose, with the amount it reached. Lowering the amount (an
+ * undo) deletes the steps above the new amount, so the steps always match the order's log.
+ * The order is 'water', 'meal', 'workout', 'wake' or 'own:<id>' for an own order.
+ */
+export const orderSteps = sqliteTable(
+  'order_steps',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    day: text('day').notNull(),
+    orderKey: text('order_key').notNull(),
+    amount: real('amount').notNull(),
+    at: text('at').notNull(),
+  },
+  (table) => [index('order_steps_day_idx').on(table.day, table.orderKey)],
+);
+
 /** One row per day: the facts about the day itself. */
 export const dayLogs = sqliteTable('day_logs', {
   day: text('day').primaryKey(),
@@ -89,6 +107,13 @@ export const dayLogs = sqliteTable('day_logs', {
   weightKg: real('weight_kg'),
   /** Optional calories eaten that day (whole kcal), logged from Today. Shown with the weight. */
   calories: integer('calories'),
+  /**
+   * When the selfie, the weight and the calories were last logged (migration 0013), for the day
+   * path on Today. Written by updateDayLog with the value; null for rows logged before.
+   */
+  selfieAt: text('selfie_at'),
+  weightAt: text('weight_at'),
+  caloriesAt: text('calories_at'),
   /** When the day was sealed (Step 9). */
   sealedAt: text('sealed_at'),
   /**
@@ -286,10 +311,23 @@ export const claims = sqliteTable(
   ],
 );
 
+/**
+ * Reels counted per local day by the Vigil (migration 0014). The native module is the live source
+ * for today and keeps about 60 days; this table copies them when the app opens and on every
+ * counted reel (src/hooks/useReelWatch.ts), so history outlives the native store. Only a number a
+ * day: nothing about what was watched.
+ */
+export const reelDays = sqliteTable('reel_days', {
+  day: text('day').primaryKey(),
+  count: integer('count').notNull().default(0),
+  updatedAt: text('updated_at').notNull(),
+});
+
 export type ArcRow = typeof arcs.$inferSelect;
 export type ArcOrderRow = typeof arcOrders.$inferSelect;
 export type OrderLogRow = typeof orderLogs.$inferSelect;
 export type DayLogRow = typeof dayLogs.$inferSelect;
+export type OrderStepRow = typeof orderSteps.$inferSelect;
 export type LedgerRow = typeof ledger.$inferSelect;
 export type TruceRow = typeof truces.$inferSelect;
 export type CustomOrderRow = typeof customOrders.$inferSelect;
@@ -300,3 +338,4 @@ export type PurchaseRow = typeof purchases.$inferSelect;
 export type ItemUseRow = typeof itemUses.$inferSelect;
 export type FocusSessionRow = typeof focusSessions.$inferSelect;
 export type ClaimRow = typeof claims.$inferSelect;
+export type ReelDayRow = typeof reelDays.$inferSelect;

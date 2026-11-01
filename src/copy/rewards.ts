@@ -139,6 +139,34 @@ export const rewardsCopy = {
     describeBar: (dayLabel: string, amount: number): string => `${dayLabel}: ${amount} Gloria`,
     rules: 'Order held +10, full goal +5 more, conquered day +20, to-do +3, focus +1 a minute, plus claims.',
     calendarLegend: 'Deeper tint, more Gloria',
+    history: 'Older days, months and years',
+    historyLabel: 'Open your Gloria history, by day, week, month and year',
+  },
+
+  /** The Gloria history screen (/gloria): any day, week, month or year of the journey. */
+  gloriaHistory: {
+    eyebrow: '"Gloria" · glory points',
+    title: 'Your Gloria',
+    back: 'Back',
+    periodTotal: (amount: number): string => compact(amount),
+    periodTotalLabel: (amount: number, period: string): string => `${amount} Gloria, ${period}`,
+    bestBar: (name: string, amount: number): string => `Best: ${name}, ${compact(amount)}`,
+    describeBar: (name: string, amount: number): string => `${name}: ${amount} Gloria`,
+    barValue: (name: string, amount: number): string => `${name} · ${compact(amount)} Gloria`,
+    sources: {
+      orders: 'Orders',
+      conquered: 'Day conquered',
+      todos: 'To-dos',
+      focus: 'Focus',
+      claims: 'Claims',
+    },
+    describeSource: (source: string, amount: number): string => `${source}, ${amount} Gloria`,
+    outside: 'Before your journey began.',
+    empty: {
+      philosopher: 'No glory gathered here. Glory follows the work, quietly.',
+      centurion: 'Zero Gloria in this stretch. Hold an order and it starts counting.',
+      roast: 'A perfect zero. Even the feed earned more attention. Hold one order and fix it.',
+    } satisfies ToneLines,
   },
 
   daySheet: {

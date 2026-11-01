@@ -16,6 +16,8 @@ export type Gloria = {
   breakdownOf: (day: DayKey) => DayGloria | null;
   /** A day's facts (orders, focus, claims...), or null outside the journey. */
   dayOf: (day: DayKey) => JourneyDay | null;
+  /** The journey's first day (the earliest arc's start), or null before onboarding. */
+  firstDay: DayKey | null;
   isLoaded: boolean;
 };
 
@@ -34,6 +36,7 @@ export function useGloria(): Gloria {
       return facts ? getDayGloria(facts) : null;
     },
     dayOf: (day) => journey.days.get(day) ?? null,
+    firstDay: journey.firstDay,
     isLoaded: journey.isLoaded,
   };
 }

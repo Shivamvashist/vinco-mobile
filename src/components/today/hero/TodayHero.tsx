@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
-import { formatClockMinutes } from '@/lib/dates';
+import { todayCopy } from '@/copy';
+import { dayStartMinutes, placeOnPath, summariseDayActivity, toPathMarks } from '@/features/dayPath';
+import { formatClockMinutes, formatClockTime } from '@/lib/dates';
 import type { Campaign } from '@/hooks/useCampaign';
+import { useDayActivity } from '@/hooks/useDayActivity';
 import type { TodayOrders } from '@/hooks/useTodayOrders';
 import { createStyles } from '@/theme';
 
@@ -20,7 +23,6 @@ export type TodayHeroProps = {
   onOpenRun: () => void;
 };
 
-const MINUTES_IN_DAY = 24 * 60;
 const MINUTE_MS = 60_000;
 
 /** The hero block on Today: the Dies card, then the run and Focus tiles. */
@@ -35,8 +37,14 @@ export function TodayHero({
 }: TodayHeroProps) {
   const styles = useStyles();
   const now = useMinuteClock();
-  const dayStart = orders.wokeAt ? minutesOf(orders.wokeAt) : (plannedWakeMinutes ?? 0);
-  const toProgress = (date: Date) => (minutesOf(date) - dayStart) / Math.max(1, MINUTES_IN_DAY - dayStart);
+  const activity = useDayActivity(orders.today, now);
+  const dayStart = dayStartMinutes(orders.wokeAt, plannedWakeMinutes);
+  const { points, spans } = toPathMarks(activity.items, dayStart);
+  const summary = summariseDayActivity(activity.items);
+  const activityLabel = todayCopy.hero.activity(
+    summary.count,
+    summary.lastAt ? formatClockTime(summary.lastAt) : null,
+  );
 
   const state: DiesState = isFinished
     ? 'finished'
@@ -54,8 +62,12 @@ export function TodayHero({
         total={orders.totalCount}
         earned={campaign.todayEarned}
         plannedWake={plannedWakeMinutes != null ? formatClockMinutes(plannedWakeMinutes) : null}
-        progress={toProgress(now)}
-        marks={orders.heldAt.map(toProgress)}
+        progress={placeOnPath(now, dayStart)}
+        marks={points}
+        spans={spans}
+        day={orders.today}
+        isActivityLoaded={activity.isLoaded}
+        activityLabel={activityLabel}
         // Free training has no day of an arc: the hero names the run instead, when there is one.
         runDays={campaign.isLudus ? campaign.campaign : null}
         onPress={onOpenSummary}
@@ -69,10 +81,6 @@ export function TodayHero({
       />
     </View>
   );
-}
-
-function minutesOf(date: Date): number {
-  return date.getHours() * 60 + date.getMinutes();
 }
 
 /** Now, updated on each new minute, so the dot on the day path moves without a busy timer. */

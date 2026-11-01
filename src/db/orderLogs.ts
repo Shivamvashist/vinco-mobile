@@ -5,6 +5,7 @@ import { EMPTY_ORDER_AMOUNTS, ORDER_KINDS } from '@/features/orders';
 import type { DayKey } from '@/lib/dates';
 
 import { type AppDatabase, nowIso } from './database';
+import { recordOrderStep } from './orderSteps';
 import { type OrderLogRow, orderLogs } from './schema';
 
 /** The query for a day's order logs. Pass to useLiveQuery to re-render on change. */
@@ -43,7 +44,10 @@ export function getOrderAmount(db: AppDatabase, day: DayKey, kind: OrderKind): n
   return row?.amount ?? 0;
 }
 
-/** Saves an order's amount (and optionally its note) for a day. Creates the row if needed. */
+/**
+ * Saves an order's amount (and optionally its note) for a day. Creates the row if needed.
+ * Also records the step (or takes back the steps undone) for the day path's activity marks.
+ */
 export function saveOrderAmount(
   db: AppDatabase,
   day: DayKey,
@@ -52,6 +56,7 @@ export function saveOrderAmount(
   options: { note?: string; now?: Date } = {},
 ): void {
   const updatedAt = nowIso(options.now);
+  recordOrderStep(db, day, kind, getOrderAmount(db, day, kind), amount, options.now);
   const noteUpdate = options.note === undefined ? {} : { note: options.note };
   db.insert(orderLogs)
     .values({ day, kind, amount, note: options.note ?? '', updatedAt })

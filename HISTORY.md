@@ -143,6 +143,12 @@ Answer when convenient; work continues with the safe default shown.
 
 ### Noticed, not done
 
+- (1 Nov, later) Reel rule ids for Instagram and YouTube are unconfirmed on a phone; TikTok relies on the size fallback. Not built: the marked-app picker, the badge tap panel, the Tributum, the under-budget reward.
+- (1 Nov, later) Silentium shows no overlay notice (Vinco comes straight back); overlays don't recolour on a palette change mid-focus.
+- (1 Nov, later) Each order save now also writes an `order_steps` row (core tick path, same transaction): watch it if ticking ever feels slow.
+- (1 Nov, later) `TodayOrders.heldAt` in useTodayOrders is unused. `WeekBarChart` could move onto the period toolkit.
+- (1 Nov, later) The bundled Marcellus and Figtree fonts are OFL: list the licence wherever the app credits its fonts.
+
 - (1 Nov) The wake prompt doesn't count toward the 3-a-day reminder cap; on a morning it fires before "Today's orders" both can arrive. Decide: count it, or skip the morning reminder on a prompted day.
 - (1 Nov) The wake prompt needs the guard (accessibility) service on; without it Android gives no way to hear the unlock short of a foreground service.
 - (1 Nov) `jest.setup.ts` has a `react/display-name` lint error at the camera fake's `forwardRef` (pre-existing; lint skips it).
@@ -194,6 +200,17 @@ Answer when convenient; work continues with the safe default shown.
 ---
 
 ## Milestone log
+
+### 1 Nov 2026 (later): focus finished, reel counter, activity timeline, history screens (still 1.1.0)
+
+- **Blank screens:** `useEntrance` (hooks) for anything that fades in on mount: starts shown when the app isn't active, forced to 1 after 700 ms and on return. Used by the focus `Stage`. `freezeOnBlur` removed from the tabs. If a tab still goes blank, suspect the tab slide interpolator next.
+- **Clock clipping:** `useFitFontSize` (measures the real text width with a hidden line) behind `RollingNumber fit`; `RollingClock` draws each glyph in a box wider than its cell.
+- **Focus tile:** `lib/notchedTile` cuts a socket concentric with the button (`cornerCut`); presets are four (25, 45, 60, 90).
+- **Day activity timeline:** `features/dayPath`, `useDayActivity`, `hero/ActivityMarks`; `order_steps` (written in the same transaction as each order save) and proof times, migration 0013. See TODAY-AND-FOCUS section 2.
+- **Period toolkit:** `features/periods`, `usePeriodBrowser`, `components/charts/PeriodBarChart` and `PeriodNavigator`, used by `/focus-log` and `/gloria`.
+- **Native overlays:** `VigilPanel` (bubble tap panel, layout plan at the top), `VigilTheme` (palette from `startFocus({ theme })`), `VigilGlyphs`, `VigilCopy`; fonts bundled in the module. The accessibility shortcut bubble is Android's own; the permission notice says how to turn it off.
+- **Reel counter:** `VigilReels`, `VigilReelDetector`, `VigilReelRules` (per-app ids), `VigilReelStore`, `VigilReelPolicy`, `VigilBadge`; `canRetrieveWindowContent` true for id and size only (Play declaration draft in GUARDIANS.md); counts mirrored to `reel_days` (0014) by `useReelWatch` in the root layout; the guard screen shows the live count.
+- Check: 93 suites, 1051 tests green; `:vigil:compileDebugKotlin` exit 0. Not yet tried on a phone.
 
 ### 1 Nov 2026: crash fix, shared header, setup permissions, wake prompt, daily log, one card language (still 1.1.0)
 

@@ -92,9 +92,9 @@ describe('Denarii when the day holds', () => {
     startArc();
     markAwake();
     renderRouter(APP_DIR, { initialUrl: '/veni' });
-    // Wake-up is logged, so one of the four already holds.
+    // Wake-up is logged, so one of the four already holds, and it is the day's one activity.
     const hero = await screen.findByLabelText(
-      todayCopy.hero.accessibleLabel(1, 4, todayCopy.hero.states.open),
+      /^Today, Open\. 1 of 4 orders held\. 1 activity today, last at .+\. Opens today's summary\.$/,
     );
     fireEvent.press(hero);
     expect(await screen.findByText(progressCopy.daySheet.ordersTitle)).toBeTruthy();

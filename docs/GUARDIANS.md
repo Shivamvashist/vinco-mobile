@@ -89,7 +89,7 @@ A focus is a timed stretch with a guard on the phone (spec: [TODAY-AND-FOCUS.md]
 | "Silentium" (Lockdown, Level III) | Only Vinco, the Comites and the Phone app                                   | 0.4                     |
 
 - **Bridge calls** (`GuardBridge`, `src/features/guard/bridge.ts`):
-  - `startFocus({ guard, startedAt, endsAt, allowedPackages, copy? })`: called when a focus begins. The module guards until `endsAt` on its own, even if Vinco is killed.
+  - `startFocus({ guard, startedAt, endsAt, allowedPackages, copy?, theme? })`: called when a focus begins (`theme` is the active palette for the overlays). The module guards until `endsAt` on its own, even if Vinco is killed.
   - `endFocus()`: called when the focus completes or is given up. Safe to call when no focus is on.
   - `onFocusEvent(listener)`: `nudge`, `appBlocked`, `appClosed`, each with the package (or null).
   - The stub does nothing; errors from the module are logged in dev and never stop the timer or the reward.
@@ -98,7 +98,7 @@ A focus is a timed stretch with a guard on the phone (spec: [TODAY-AND-FOCUS.md]
 
 ### Focus guards (built, 31 Oct)
 
-The local module `modules/vigil` (Kotlin, module name `VincoVigil`) sits behind `guardBridge`. Expo Go, iOS and Jest get `unsupportedGuardBridge` (nothing throws, nothing is granted); `selectGuardBridge` picks the module when it is built in. Reel counting (`configure`, `getTodayCount`, `onReel`) is not native yet and keeps the stub's answers.
+The local module `modules/vigil` (Kotlin, module name `VincoVigil`) sits behind `guardBridge`. Expo Go, iOS and Jest get `unsupportedGuardBridge` (nothing throws, nothing is granted); `selectGuardBridge` picks the module when it is built in. Reel counting is native too since 1 Nov: see "The reel counter (built, 1 Nov)" below.
 
 **Pieces (`modules/vigil/android/src/main/java/expo/modules/vigil/`):**
 
@@ -109,7 +109,10 @@ The local module `modules/vigil` (Kotlin, module name `VincoVigil`) sits behind 
 | `VigilGuard.kt`                    | The guard at work: what each level does, the 1-second tick, the hard stop                        |
 | `VigilPolicy.kt`                   | The rules, free of Android calls: classify the app in front, Imperium's turns, time format       |
 | `VigilReturner.kt`                 | Brings Vinco back (debounced 400 ms, a few follow-up tries, never a loop)                        |
-| `VigilOverlay.kt`, `VigilViews.kt` | The windows over other apps: the card and the draggable bubble                                   |
+| `VigilOverlay.kt`, `VigilViews.kt` | The windows over other apps: the notice card, the draggable bubble, the panel's window, motion   |
+| `VigilPanel.kt`                    | The focus panel a tap on the bubble opens (layout plan at the top of the file), its companions   |
+| `VigilTheme.kt`, `VigilGlyphs.kt`  | The overlays' palette (from the app) and type (bundled fonts, capped font scale); laurel, ring   |
+| `VigilCopy.kt`                     | The overlay words: fallbacks for the keys the app sends (`src/copy/focus.ts` `overlay`)          |
 | `VigilStore.kt`                    | SharedPreferences `vinco.vigil`: the session, the overlay words, Imperium's per-app turns        |
 | `VigilApps.kt`                     | Launchable apps (96 px PNG icons), the dialer, launchers, keyboards, always-allowed packages     |
 
@@ -117,7 +120,7 @@ The local module `modules/vigil` (Kotlin, module name `VincoVigil`) sits behind 
 
 - **Custos (Level I, Watch):**
   - An app outside the focus comes to the front: a short alert card ("Focus is on") and a `nudge` event.
-  - A small floating bubble shows the time left (`m:ss`, or `h:mm` from an hour) whenever Vinco isn't in front. It can be dragged; a tap opens Vinco.
+  - A small floating bubble shows the time left (`m:ss`, or `h:mm` from an hour) whenever Vinco isn't in front. It can be dragged and snaps to the nearer side; the place is kept for the session. A tap opens the focus panel (below), never Vinco straight away.
   - Every 3 minutes in apps outside the focus: a "Back to the line" card with an "Open Vinco" button, and a `nudge` event.
 - **Imperium (Level II, Limit):**
   - An app outside the focus opens: the alert card and a red countdown bubble ("Closes in 2:41").
@@ -136,28 +139,122 @@ The local module `modules/vigil` (Kotlin, module name `VincoVigil`) sits behind 
 - **The power menu and the lock screen** are never touched (emergency calls live there on many phones).
 - **Hard stop:** the session is cleared once the wall clock reaches `endsAt`, or (on the same boot) once the measured time does. Checked on every event, every second, and by a timer set for `endsAt`. `startFocus` never accepts more than 3 hours and a minute from the moment it is called. `endFocus` clears it at once.
 - **Reboots and a closed app:** the session lives in SharedPreferences. The system restarts the accessibility service after a reboot or when Vinco's process dies; the service reads the session on connecting and carries on, or clears it if it is over.
-- **No overlay permission:** the windows fall back to the accessibility overlay the service may draw; if that fails too, there are no windows, but Imperium and Silentium still send the user back to Vinco.
+- **No overlay permission:** the windows fall back to the accessibility overlay the service may draw; if that fails too, there are no windows, but Imperium and Silentium still send the user back to Vinco. Taken away mid-focus: the next second the bubble is drawn again with the other window type, and an open panel closes.
+- **Calls hide the windows:** a call ringing or under way removes the card, the bubble and the panel at once (on the window event or the next second); they come back after the call.
+- **Never over Vinco:** the bubble and the panel hide as soon as Vinco is in front; the panel also closes when another app comes to the front (Home pressed with it open).
 
 **Permissions and the Play Store:**
 
-- **Accessibility** (the guard service, `BIND_ACCESSIBILITY_SERVICE`): turned on by the user in the phone's accessibility settings (`openPermissionSettings('accessibility')`). The service reads window state changes only (`canRetrieveWindowContent` false). Its description (`vigil_service_description`) says it is used only to guard the focus sessions the user starts.
+- **Accessibility** (the guard service, `BIND_ACCESSIBILITY_SERVICE`): turned on by the user in the phone's accessibility settings (`openPermissionSettings('accessibility')`). Since 1 Nov the service also hears scrolls and has `canRetrieveWindowContent` true, for the reel counter only (see "The reel counter", privacy). Its description (`vigil_service_description`) names both jobs: guarding the focus sessions the user starts, and counting reels in the marked apps.
 - **Display over other apps** (`SYSTEM_ALERT_WINDOW`): `openPermissionSettings('overlay')`.
 - **Package visibility:** a `<queries>` element for launcher apps, the home screen and keyboards. Never `QUERY_ALL_PACKAGES`.
 - **Play declaration (release task):** the Accessibility API declaration in Play Console for focus blocking, with a short video of the disclosure, the permission being turned on, and a focus at work.
 - **Prominent disclosure (step E):** before sending the user to the accessibility settings, an in-app screen must say in plain words what the service sees (which app is in front), what it does (the guard's actions during a focus the user starts), that nothing is read from the screen or sent off the phone, and ask for consent with a clear button. It can't be buried in the terms.
+
+**The overlays' design (1 Nov):** Vinco's design language, not Android's. The look comes from the app: `startFocus` sends the active palette's roles and scheme (`theme`, from `focusOverlayTheme(useTheme())` in `useFocus`; `colors` and `scheme` in the native config), so Nox, Basalt, Marble and the rest all match; anything missing keeps Basalt. Every window is the palette's surface with a hairline border and rounded corners, Marcellus for the one title, Figtree for the rest, the time in tabular figures. Marcellus and Figtree ship inside the module (`res/font`, about 125 KB), because the app's fonts load at runtime from the JavaScript bundle, which the guard service can't reach; the system sans is the fallback. Text follows the phone's font size, capped at 1.3 times; the panel's time shrinks to fit (down to half) so "2:59:59" never clips. Motion: cards and the panel fade in with a small scale and slide (220 to 240 ms) and leave in 180 ms, the bubble pops in and glides to a side when let go; the system's animator scale applies. A light haptic tick on a card, the panel and every button, where the phone allows it.
+
+- **Alert** (Custos and Imperium, an app outside the focus): the laurel mark, "Focus is on", one line, then "Back to focus" (gold) and "Not now" (quiet). Leaves after 6 s.
+- **Nudge** (Custos, every 3 minutes outside): "Back to the line", one line, the same two actions. Leaves after 15 s.
+- **Countdown bubble** (Imperium): "Closes in 2:41" in a pill; it turns porphyry in the last 30 seconds (closing).
+- **Rest notice** (Imperium, an app still resting): "This app is resting", "Opens again in" and the time in porphyry. No actions (Vinco is coming back); touches pass through.
+- **Timer bubble** (Custos): the laurel and the time left in a pill with a gold hairline.
+- **Silentium** shows no window over other apps: Vinco comes straight back, and its own focus screen says why.
+- "Back to focus" and "Open Vinco" open `vinco://focus` (the focus screen); if the link can't be opened, Vinco's front screen.
+
+**The focus panel** (`VigilPanel.kt`): a tap on the bubble (Custos, or Imperium's countdown) opens one card on a scrim: the laurel and "Focus" with the guard's chip ("Custos" · Level I), a thin ring of the session still to run with the time left large (`h:mm`, the seconds smaller), "Ends 7:40 pm" (the phone's 12 or 24 hour format), under Imperium "Closes in 2:41" for the app in front, then the companions as icons (the Phone app first; a tap opens the app) and "Close" (quiet) and "Open Vinco" (gold). It updates every second; a tap outside, Back or Close dismiss it to the bubble. Short screens (landscape) get a smaller ring and the card scrolls. Repeated taps on the bubble or the buttons do nothing more than the first.
+
+**Android's accessibility shortcut bubble:** turning on an accessibility service, Android 11 and later may offer a "shortcut" for it, and on some phones it is switched on by default: a small floating accessibility button over every app that only turns the service on and off. It is the system's, not Vinco's: the service never asks for it (`accessibilityFlags` is `flagDefault`, no `flagRequestAccessibilityButton`, and no `AccessibilityButtonController` anywhere). The permission notice says how to remove it: Settings, Accessibility, Vinco focus guard, Shortcut.
 
 **Testing on the phone:**
 
 1. New native code needs a new development build: `npx eas-cli@latest build -p android --profile development`, install it, then `npx expo start`.
 2. Phone settings, Accessibility, "Vinco focus guard": turn it on. Settings, Apps, Vinco, "Display over other apps": allow (also try once without it).
 3. Start a short focus (5 minutes) with each guard. Until step E passes the Comites, only the always-allowed apps are allowed.
-4. Custos: open another app: the alert, the bubble (drag it, tap it), and after 3 minutes the popup.
+4. Custos: open another app: the alert, the bubble (drag it to the other side, let go: it snaps; tap it: the panel, with the time ticking; Back, a tap outside and Close each dismiss it; a companion icon opens that app; Open Vinco opens the focus screen), and after 3 minutes the popup. Try it in dark and light palettes, with the largest font size, and rotated in an app that turns.
 5. Imperium: open another app and wait 3 minutes: back to Vinco. Open it again at once: back again with the resting notice. After 3 minutes it opens.
 6. Silentium: press Home, open recents, pull the shade, open another app: Vinco comes back each time. Call the phone from another phone and answer: nothing interferes. Open the dialer: allowed.
 7. Kill Vinco from recents during a focus (Custos): the guard carries on. Restart the phone during a focus: it carries on after unlocking and stops at the end time.
 8. Let a focus run out: the bubble and every guard stop at the end, even with Vinco closed.
 
 Compile check on the PC (needs Android Studio's JDK and the Android SDK): `npx expo prebuild -p android --no-install` (the `android/` folder is generated and gitignored), add `android/local.properties` with `sdk.dir=C:/Users/<you>/AppData/Local/Android/Sdk`, set `JAVA_HOME` to Android Studio's `jbr`, then from `android/`: `.\gradlew.bat :vigil:compileDebugKotlin`.
+
+## The reel counter (built, 1 Nov)
+
+The Vigil counts reels and shorts in the marked apps, per local day, in the same accessibility service as the focus guard. Everything stays on the phone; nothing is sent anywhere.
+
+### Levels as built
+
+| Level            | Counts | Badge | Milestone cards | Later                                       |
+| ---------------- | ------ | ----- | --------------- | ------------------------------------------- |
+| Pax              | yes    | no    | no              |                                             |
+| Vigil            | yes    | yes   | yes             |                                             |
+| Custos (`guard`) | yes    | yes   | yes             | the "why are you opening this?" check (1.1) |
+| Imperium         | yes    | yes   | yes             | blocking after the limit, Clementia (1.2)   |
+
+- **Badge** (Vigil and up): a small dark pill at the top left ("12 reels", tabular digits) while a marked app is in front. It never takes a touch. Marble below 80% of the budget, gold from 80% up to the budget, porphyry past it. Hidden as soon as another app (or Vinco) comes to the front; keyboards and the status bar don't hide it.
+- **Milestone cards** (Vigil and up): when the count reaches the budget ("Budget reached") and at every 25 ("25 reels today"); the budget wins a tie. A card near the top with the tone's line and a "Close" button that wakes after 5 seconds. It goes when the user leaves the app, or after 60 seconds. This is the simplest form of PLAN.md section 7 (the quote, video and time-lost cards are not built).
+- **Not built yet:** the Tributum (the badge and cards use the plain budget), the badge's tap panel and dragging, the "under budget" 3 denarii, a picker for extra marked apps.
+- Rules live in `src/features/guard/reels.ts` (`getReelStepIn`, `getReelBadgeStage`, tested) and are mirrored in Kotlin `VigilReelPolicy.kt`: keep the two in step.
+
+### Detection
+
+- **Signal:** `TYPE_VIEW_SCROLLED` from a marked package (any other package is dropped on the first line, O(1)). The event gives the list's first and last visible item (`fromIndex`, `toIndex`), the item count and, on Android 9+, the scroll deltas.
+- **A reels pager** is a vertical list that settles on one item (`fromIndex == toIndex`) and either has a known resource id (the rule table) or fills most of the screen (at least 90% of the width and 75% of the height). Sideways scrolls (tabs, the stories tray) are ignored.
+- **A reel counts** when the user settles on an item further down than any counted before in that pager and stays on it **1.2 seconds** (one delayed check, no polling). So flinging past reels counts only the ones stayed on; scrolling back up never counts again (the highest counted item is remembered for the last 8 pagers, so going from the feed to Reels and back doesn't start over); leaving the app inside the 1.2 s cancels it.
+- **First reel:** when a pager is first seen because the user swiped down from a reel, that reel counts at once. A reel opened and left without any swipe is not counted (there is no scroll event to see).
+- **No positions:** for a list that reports none, and only where the rule says `byDistance` (TikTok), a full-screen vertical scroll of 60% of the list's height past the furthest point counted is one reel. Android 9+ only.
+- **Rule table:** `VigilReelRules.kt`, one line per app, easy to update when an app changes:
+
+| App       | Package(s)                                             | Rule                                                              |
+| --------- | ------------------------------------------------------ | ----------------------------------------------------------------- |
+| Instagram | `com.instagram.android`                                | id `clips_viewer_view_pager`, then the full-screen pager fallback |
+| YouTube   | `com.google.android.youtube`                           | ids `reel_recycler`, `reel_player_page_container`, then fallback  |
+| TikTok    | `com.zhiliaoapp.musically`, `com.ss.android.ugc.trill` | full-screen pager fallback, plus by distance                      |
+| Facebook  | `com.facebook.katana`                                  | full-screen pager fallback                                        |
+| Snapchat  | `com.snapchat.android`                                 | full-screen pager fallback                                        |
+| Any other | passed to `configure` (no picker in the UI yet)        | full-screen pager fallback                                        |
+
+The default list is `REEL_APPS` in `src/features/guard/reels.ts`. The ids come from public knowledge of these apps and **must be confirmed on a phone** (Android Studio's Layout Inspector or `adb shell uiautomator dump`); the fallback keeps counting if they change.
+
+### Known limits
+
+- **Instagram:** the home feed is also a vertical list; it counts only if it settles on a single post filling most of the screen (rare). If a new version's Reels viewer stops sending scroll events, nothing counts until the rule changes.
+- **YouTube:** Shorts opened from the home shelf use the same player. The regular watch page is not a pager.
+- **TikTok:** ids change with every release, so it relies on the fallback and, without positions, on distance. The comments sheet is not full screen, so it doesn't count.
+- **Facebook and Snapchat:** custom views that may not report positions. If nothing counts, add an id or `byDistance` after testing.
+- **Split screen:** only apps matched by id count (a half-screen pager fails the size check). **Picture-in-picture** plays no new reels. **Landscape** works (the screen size is read at each check).
+- **Screen locked inside the 1.2 s:** that reel still counts (no event tells the lock apart).
+- **Renamed packages:** a renamed package is simply not counted until the list changes.
+
+### Counting and storage
+
+- **Native store:** SharedPreferences `vinco.vigil.reels` (`VigilReelStore.kt`), apart from `vinco.vigil` (which a focus ending clears). Today's count is a plain int (O(1) per reel); past days sit in a small JSON object, the last 60 kept. The day is the local `yyyy-MM-dd` at the moment of counting, so midnight starts at 0, and a clock or time zone change counts into the day it now is (a day seen before resumes). It survives Vinco being closed and reboots.
+- **Settings:** `configure` stores the level, budget, packages, and the overlay words and colours there too; nothing is counted until the app has sent them once. The service reloads them at once.
+- **JavaScript:** `useReelWatch()` (mounted in the root layout) sends `configure` when the level, budget, tone or palette changes, and copies the native days into SQLite `reel_days` (migration `0014_reel_days`: `day` primary key, `count`, `updated_at`) on launch, on return to the front and on every `onReel`. Native stays the source of truth for today. `useReelCount()` reads today and yesterday from the table (live).
+- **Bridge:** `GuardBridge` gained `canCountReels` and `getReelDays()`, and `configure` takes optional `copy` and `colors` (`ReelWatchConfig`, `src/features/guard/reelBridge.ts`). A development build from before 1 Nov lacks the native functions: the bridge then keeps the stub's reel members.
+- **Guard screen:** with the module, "Reels today" shows "12 of 30" (coloured like the badge), yesterday, and the apps counted. With the service off it says what the counter reads and offers "Turn on the counter" (the prominent disclosure). In Expo Go the preview notice stays.
+- **Service off:** counts stay, nothing new is counted, the guard screen says the counter is off.
+- **A focus at the same time:** both run. The badge sits top left, the focus bubble top right; Imperium and Silentium sending the user back to Vinco hide the badge.
+
+### Privacy and the Play declaration
+
+- `vigil_accessibility.xml`: `typeWindowStateChanged|typeViewScrolled`, `flagReportViewIds`, `canRetrieveWindowContent` **true**. Why: to tell the reels pager from a normal feed, the counter reads, for a scroll in a marked app only, the scrolling view's **resource id, its bounds and its scroll positions** (`event.getSource()`, released at once). It never reads text, content descriptions, usernames, captions, messages or video, never walks the view tree, and logs nothing. Only the number of reels a day is stored.
+- **Declaration text (Play Console):** "Vinco uses the Accessibility API to count short-form videos (reels) the user watches in apps they choose, and to guard focus sessions the user starts. For reels it detects when a new full-screen video scrolls into view, using only the scrolling list's id, size and position. No screen content is read, stored or transmitted." The video shows the guard screen's disclosure, turning the service on, a few reels counted in Instagram, and the badge.
+- **Disclosure copy updated:** `guardCopy.reels.offBody` (the guard screen), `focusCopy.permission.watches` and `stays` (the focus setup), `permissionsCopy.items.overlay.why`, and the service description (`vigil_strings.xml`).
+
+### Testing the reel counter on the phone
+
+1. New native code: build a new development build (`npx eas-cli@latest build -p android --profile development`), install it, `npx expo start`.
+2. Turn on "Vinco focus guard" in Accessibility (the guard screen's button). User menu, Guard: "Reels today" shows 0 of 30.
+3. **Pax:** in Instagram Reels, swipe 5 reels staying 2 s on each. Back in Vinco the count is 5 (6 if the first swipe started from a reel). No badge.
+4. **Vigil:** set the level and a budget of 5. Reopen Instagram Reels: the badge shows; it turns gold at 4, the "Budget reached" card shows at 5 (Close works after 5 s), porphyry from 6.
+5. Fling fast past 5 reels: only the one stayed on counts. Scroll back up 3: no count. Scroll down again over the same 3: no count.
+6. Repeat 3 to 5 in **YouTube Shorts**, **TikTok**, **Facebook Reels** and **Snapchat Spotlight**. Note per app: right, double counts, or none (then fix the rule table).
+7. Scroll the Instagram home feed and YouTube home for a minute: the count must not move.
+8. Split screen (Instagram plus another app), Shorts in landscape, a picture-in-picture video.
+9. Kill Vinco, watch 3 reels, reopen: the count includes them. Reboot: the count is kept. After midnight: a new day at 0, and yesterday shows.
+10. Start a Custos focus and open Instagram: the focus bubble and the badge both show.
+11. Turn the service off: the guard screen says the counter is off; the count so far stays.
 
 ### Are you up? (wake prompt, 1 Nov)
 
@@ -185,6 +282,6 @@ A `preview` build (`--profile preview`) is the same app without the PC, for livi
 
 1. Development build and the empty local modules (half a day).
 2. Aurora: scheduling, the alarm screen and the march mission (the simplest), then sky and post.
-3. The Vigil: counting in Pax, then the badge (Vigil level), milestone cards.
+3. The Vigil: counting in Pax, then the badge (Vigil level), milestone cards (built 1 Nov; next: the marked-app picker, the tap panel, the Tributum).
 4. Guard dialogues (1.1), Imperium (1.2).
 5. App icon switching (the Forum's icons) can ride on the same development build: `expo-alternate-app-icons` or a small module with activity aliases.

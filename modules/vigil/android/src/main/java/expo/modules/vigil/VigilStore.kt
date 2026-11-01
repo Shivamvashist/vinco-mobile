@@ -7,54 +7,6 @@ import android.provider.Settings
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** The words the overlays show. Written by the app (src/copy/focus.ts); these are the defaults. */
-data class VigilCopy(
-  val alertTitle: String = "Focus is on",
-  val alertBody: String = "This app is outside your focus.",
-  val nudgeTitle: String = "Back to the line",
-  val nudgeBody: String = "Three minutes away from your focus.",
-  val openVinco: String = "Open Vinco",
-  /** Followed by the countdown, as in "Closes in 2:41". */
-  val closingIn: String = "Closes in",
-  /** Followed by the time left, as in "Resting. Opens again in 1:20". */
-  val cooldown: String = "Resting. Opens again in"
-) {
-  fun toJson(): JSONObject = JSONObject()
-    .put("alertTitle", alertTitle)
-    .put("alertBody", alertBody)
-    .put("nudgeTitle", nudgeTitle)
-    .put("nudgeBody", nudgeBody)
-    .put("openVinco", openVinco)
-    .put("closingIn", closingIn)
-    .put("cooldown", cooldown)
-
-  companion object {
-    /** Unknown keys are ignored; missing or blank ones keep the default. */
-    fun from(values: Map<String, String>): VigilCopy {
-      val base = VigilCopy()
-      fun pick(key: String, fallback: String) = values[key]?.takeIf { it.isNotBlank() }?.take(MAX_LEN) ?: fallback
-      return VigilCopy(
-        alertTitle = pick("alertTitle", base.alertTitle),
-        alertBody = pick("alertBody", base.alertBody),
-        nudgeTitle = pick("nudgeTitle", base.nudgeTitle),
-        nudgeBody = pick("nudgeBody", base.nudgeBody),
-        openVinco = pick("openVinco", base.openVinco),
-        closingIn = pick("closingIn", base.closingIn),
-        cooldown = pick("cooldown", base.cooldown)
-      )
-    }
-
-    fun fromJson(json: JSONObject?): VigilCopy {
-      if (json == null) return VigilCopy()
-      val values = mutableMapOf<String, String>()
-      json.keys().forEach { key -> values[key] = json.optString(key) }
-      return from(values)
-    }
-
-    private const val MAX_LEN = 120
-  }
-}
-
 /** A running focus, as the phone keeps it. Times are wall-clock milliseconds. */
 data class VigilSession(
   val guard: VigilGuardLevel,
@@ -64,7 +16,9 @@ data class VigilSession(
   val copy: VigilCopy,
   /** `SystemClock.elapsedRealtime()` at which the focus ends, valid only on `bootCount`. */
   val elapsedEndsAt: Long,
-  val bootCount: Int
+  val bootCount: Int,
+  /** The overlays' colours (the palette active when the focus began). */
+  val palette: VigilPalette = VigilPalette()
 )
 
 enum class VigilGuardLevel(val key: String) {
@@ -95,6 +49,7 @@ class VigilStore(context: Context) {
       .putString(KEY_COPY, session.copy.toJson().toString())
       .putLong(KEY_ELAPSED_ENDS, session.elapsedEndsAt)
       .putInt(KEY_BOOT, session.bootCount)
+      .putString(KEY_PALETTE, session.palette.toJson().toString())
       .remove(KEY_APP_WINDOWS)
       .commit()
   }
@@ -153,6 +108,11 @@ class VigilStore(context: Context) {
     } catch (_: Exception) {
       VigilCopy()
     }
+    val palette = try {
+      VigilPalette.fromJson(prefs.getString(KEY_PALETTE, null)?.let(::JSONObject))
+    } catch (_: Exception) {
+      VigilPalette()
+    }
     return VigilSession(
       guard = guard,
       startedAt = prefs.getLong(KEY_STARTED, 0L),
@@ -160,7 +120,8 @@ class VigilStore(context: Context) {
       allowedPackages = allowed,
       copy = copy,
       elapsedEndsAt = prefs.getLong(KEY_ELAPSED_ENDS, 0L),
-      bootCount = prefs.getInt(KEY_BOOT, UNKNOWN_BOOT)
+      bootCount = prefs.getInt(KEY_BOOT, UNKNOWN_BOOT),
+      palette = palette
     )
   }
 
@@ -174,6 +135,7 @@ class VigilStore(context: Context) {
     private const val KEY_COPY = "copy"
     private const val KEY_ELAPSED_ENDS = "elapsedEndsAt"
     private const val KEY_BOOT = "bootCount"
+    private const val KEY_PALETTE = "palette"
     private const val KEY_APP_WINDOWS = "appWindows"
 
     /** Which boot of the phone this is, so measured time is never compared across a restart. */
