@@ -102,14 +102,23 @@ export function FocusComplete({ session, tone, onClaim, onDone }: FocusCompleteP
             <Animated.View style={laurelStyle}>
               <Laurel width={theme.space.giant * 3} strokeWidth={1.6} />
             </Animated.View>
-            <Txt variant="eyebrow">{focusCopy.complete.minutesHeld(session.minutes)}</Txt>
+            <Txt variant="eyebrow" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+              {focusCopy.complete.minutesHeld(session.minutes)}
+            </Txt>
             <Txt variant="title" align="center" accessibilityRole="header">
               {focusCopy.complete.title}
             </Txt>
             {isClaimed ? (
               <Animated.View style={[styles.reward, revealStyle]}>
                 {outcome === 'paid' ? (
-                  <Txt variant="display" color="currency" style={styles.tabular}>
+                  <Txt
+                    variant="display"
+                    color="currency"
+                    style={styles.tabular}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
+                  >
                     {focusCopy.complete.earned(session.reward)}
                   </Txt>
                 ) : (

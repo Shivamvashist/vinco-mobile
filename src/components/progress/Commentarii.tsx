@@ -233,9 +233,7 @@ function WeightLog({ today, logs, todayWeightKg, onLogWeight }: WeightLogProps) 
                 <Txt variant="heading" style={styles.headline}>
                   {thisWeek != null ? weight.thisWeek(proofCopy.kg(thisWeek)) : weight.noneThisWeek}
                 </Txt>
-                <Txt variant="caption">
-                  {change != null ? weight.change(change) : thisWeek != null ? weight.firstWeek : ''}
-                </Txt>
+                {change != null ? <Txt variant="caption">{weight.change(change)}</Txt> : null}
               </>
             ) : null}
             <View style={[styles.chips, styles.lineChips]}>
@@ -260,11 +258,6 @@ function WeightLog({ today, logs, todayWeightKg, onLogWeight }: WeightLogProps) 
                 <Txt variant="caption">{body.allHidden}</Txt>
               )}
             </View>
-            {logs.calories.length === 0 ? (
-              <Txt variant="micro" style={styles.headline}>
-                {body.caloriesEmpty}
-              </Txt>
-            ) : null}
           </>
         ) : (
           <Txt variant="body" color="textMuted" style={styles.headline}>

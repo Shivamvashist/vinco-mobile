@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View } from 'react-native';
+import { useWindowDimensions, View } from 'react-native';
 
 import { PressableScale } from '@/components/PressableScale';
 import { RollingNumber } from '@/components/RollingNumber';
@@ -85,9 +85,15 @@ export function DurationPicker({ value, onChange }: DurationPickerProps) {
 
 type ChipProps = { label: string; accessibilityLabel: string; isSelected: boolean; onPress: () => void };
 
+/** Chips grow with the phone's font size up to this, then the row wraps instead of clipping. */
+const MAX_CHIP_FONT_SCALE = 1.6;
+
 function Chip({ label, accessibilityLabel, isSelected, onPress }: ChipProps) {
   const styles = useStyles();
   const theme = useTheme();
+  const { fontScale } = useWindowDimensions();
+  const minWidth =
+    (theme.layout.minTouchTarget + theme.space.xs) * Math.min(MAX_CHIP_FONT_SCALE, Math.max(1, fontScale));
   return (
     <PressableScale
       accessibilityRole="radio"
@@ -95,9 +101,17 @@ function Chip({ label, accessibilityLabel, isSelected, onPress }: ChipProps) {
       accessibilityLabel={accessibilityLabel}
       hitSlop={theme.space.xs}
       onPress={onPress}
+      containerStyle={[styles.chipCell, { minWidth }]}
       style={[styles.chip, isSelected && styles.chipSelected]}
     >
-      <Txt variant="labelSmall" color={isSelected ? 'text' : 'textMuted'} style={styles.tabular}>
+      <Txt
+        variant="labelSmall"
+        color={isSelected ? 'text' : 'textMuted'}
+        style={styles.tabular}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.75}
+      >
         {label}
       </Txt>
     </PressableScale>
@@ -108,11 +122,12 @@ const useStyles = createStyles((theme) => ({
   wrap: { gap: theme.space.lg },
   reading: { alignItems: 'center', alignSelf: 'stretch' },
   tabular: { fontVariant: ['tabular-nums'] },
-  presets: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: theme.space.sm },
+  // One row of equal chips on any phone width; with large text they wrap rather than clip.
+  presets: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.space.xs },
+  chipCell: { flexGrow: 1, flexBasis: 0 },
   chip: {
-    minWidth: theme.layout.minTouchTarget,
     minHeight: theme.layout.choiceChipHeight,
-    paddingHorizontal: theme.space.md,
+    paddingHorizontal: theme.space.xs,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: theme.radius.pill,

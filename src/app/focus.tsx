@@ -9,7 +9,7 @@ import { FocusComplete } from '@/components/focus/FocusComplete';
 import { FocusSetup } from '@/components/focus/FocusSetup';
 import { launchRewardFlight } from '@/components/hud';
 import { Screen } from '@/components/Screen';
-import { allowedPackagesFor, type FocusGuard, planRetreatPayment } from '@/features/focus';
+import { allowedPackagesFor, type FocusGuard } from '@/features/focus';
 import { useDialerPackage } from '@/hooks/useDialerPackage';
 import { useEntrance } from '@/hooks/useEntrance';
 import { useFocus } from '@/hooks/useFocus';
@@ -89,7 +89,6 @@ export default function FocusScreen() {
               session={focus.running}
               remainingMs={focus.remainingMs}
               truceReserve={purse.truceReserve}
-              retreatPayment={planRetreatPayment(purse.truceReserve, purse.denarii)}
               onRetreat={focus.retreat}
               comites={comites}
               dialerPackage={dialerPackage}
@@ -107,7 +106,6 @@ export default function FocusScreen() {
               permissions={permissions}
               log={log}
               onBegin={handleBegin}
-              onGetTruce={() => router.push('/forum')}
               onSeeLog={() => router.push('/focus-log')}
               onClose={close}
             />

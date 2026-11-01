@@ -93,14 +93,12 @@ export function AuroraStatus({ settings }: { settings: AuroraSettings }) {
         />
         <SettingsRow
           label={copy.exact}
-          detail={copy.exactDetail}
           value={yesOr(status?.exact)}
           onPress={status?.exact === false ? () => void auroraBridge.openExactAlarmSettings() : undefined}
         />
         {ANDROID_VERSION >= 34 ? (
           <SettingsRow
             label={copy.fullScreen}
-            detail={copy.fullScreenDetail}
             value={yesOr(status?.fullScreen)}
             onPress={
               status?.fullScreen === false
@@ -111,7 +109,6 @@ export function AuroraStatus({ settings }: { settings: AuroraSettings }) {
         ) : null}
         <SettingsRow
           label={copy.notifications}
-          detail={copy.notificationsDetail}
           value={yesOr(status?.notifications)}
           onPress={status?.notifications === false ? () => void allowNotifications() : undefined}
         />

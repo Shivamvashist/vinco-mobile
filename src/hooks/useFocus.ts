@@ -41,7 +41,7 @@ const APP_OPENED_AT = new Date().toISOString();
 
 export type FocusStartResult = 'started' | 'busy' | 'failed';
 
-/** What a retreat did: given up (paid), waiting on the stand-down, nothing running, or an error. */
+/** What a retreat did: given up (a Truce spent), refused for want of a Truce, nothing running, or an error. */
 export type FocusRetreatResult = FocusRetreat['status'] | 'failed';
 
 export type FocusController = {
@@ -58,8 +58,11 @@ export type FocusController = {
   settled: FocusSessionRow | null;
   /** `allowedPackages`: the Comites and the Phone app, passed to the native guard. */
   start: (minutes: number, guard: FocusGuard, allowedPackages: readonly string[]) => FocusStartResult;
-  /** Gives up the running focus, paid with a Truce or denarii, or after the stand-down. Never pays. */
-  retreat: (options?: { afterStandDown?: boolean }) => FocusRetreatResult;
+  /**
+   * Gives up the running focus for one Truce. Never pays. With no Truce it changes nothing
+   * ('noTruce'); the native guard is told only once the Truce is spent.
+   */
+  retreat: () => FocusRetreatResult;
   /** The settled result was seen (claimed or dismissed): it won't open again. */
   dismissSettled: () => void;
 };
@@ -184,10 +187,10 @@ export function useFocus(): FocusController {
     }
   };
 
-  const retreat = ({ afterStandDown = false }: { afterStandDown?: boolean } = {}): FocusRetreatResult => {
+  const retreat = (): FocusRetreatResult => {
     if (runningId == null) return 'none';
     try {
-      const result = retreatFocus(db, runningId, new Date(), { afterStandDown });
+      const result = retreatFocus(db, runningId, new Date());
       if (result.status === 'retreated') {
         anchor.current = null;
         void cancelFocusHeld(result.session.id);

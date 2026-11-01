@@ -6,7 +6,6 @@ import type { ToneLines } from './toneLines';
 export const tasksCopy = {
   eyebrow: 'To-do',
   title: 'Your plan',
-  intro: 'Tasks help plan the day. They never decide it: your orders do.',
   back: 'Back',
 
   sections: {
@@ -17,7 +16,6 @@ export const tasksCopy = {
   carriedOver: 'carried over',
   remove: (title: string): string => `Remove ${title}`,
   checkLabel: (title: string, isDone: boolean): string => `${title}, ${isDone ? 'done' : 'not done'}`,
-  tomorrowHint: 'Planned for tomorrow',
 
   /** Shown when nothing is planned. */
   emptyLine: {

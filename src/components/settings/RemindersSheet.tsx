@@ -73,7 +73,6 @@ export function RemindersSheet({
         <View style={styles.card}>
           <SettingsRow
             label={copy.master}
-            detail={copy.masterDetail}
             toggle={{ value: settings.isOn && !isRefused, onChange: onToggleOn }}
           />
         </View>

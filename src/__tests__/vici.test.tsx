@@ -33,7 +33,7 @@ describe('Vici', () => {
     startHeldArc(1);
     const app = renderRouter(APP_DIR, { initialUrl: '/vici' });
     fireEvent.press(await screen.findByLabelText(arcCopy.treasury.visit));
-    expect(await screen.findByText(forumCopy.balanceLabel)).toBeTruthy();
+    expect(await screen.findByText(forumCopy.title)).toBeTruthy();
     expect(app.getPathname()).toBe('/forum');
   });
 

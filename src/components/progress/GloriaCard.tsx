@@ -78,10 +78,6 @@ export function GloriaCard({ total, thisWeek, conqueredDay, today, onOpenHistory
           }
         />
       </View>
-      {conqueredDay > 0 ? <Txt variant="micro">{copy.line(conqueredDay)}</Txt> : null}
-      <Txt variant="micro" style={styles.rules}>
-        {copy.rules}
-      </Txt>
       {onOpenHistory ? (
         <Pressable
           accessibilityRole="button"
@@ -113,7 +109,6 @@ const useStyles = createStyles((theme) => ({
   title: { flexDirection: 'row', alignItems: 'center', gap: theme.space.sm, flexShrink: 1 },
   total: { alignItems: 'flex-end' },
   chart: { marginTop: theme.space.lg, marginBottom: theme.space.sm },
-  rules: { marginTop: theme.space.xs },
   history: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -2,19 +2,18 @@ import { focusGloria } from '@/features/gloria';
 
 import {
   allowedPackagesFor,
+  canRetreat,
   focusRetreatReason,
   formatHoursMinutes,
   heldMinutes,
   isFocusRetreatReason,
   minutesAtOffset,
   parseCustomMinutes,
-  planRetreatPayment,
   rulerIndex,
   sanitizeComites,
   shouldWarnNoTruce,
   splitFocusClock,
   splitHoursMinutes,
-  standDownLeftMs,
   summarizeFocusLog,
   toggleComes,
   weekStartOf,
@@ -90,13 +89,12 @@ describe('custom length', () => {
 });
 
 describe('retreat', () => {
-  it('pays with a Truce first, then 50 denarii, else the stand-down', () => {
-    expect(planRetreatPayment(1, 0)).toBe('truce');
-    expect(planRetreatPayment(2, 500)).toBe('truce');
-    expect(planRetreatPayment(0, 50)).toBe('denarii');
-    expect(planRetreatPayment(0, 49)).toBe('standDown');
-    expect(planRetreatPayment(0, -10)).toBe('standDown');
-    expect(planRetreatPayment(Number.NaN, Number.NaN)).toBe('standDown');
+  it('needs a Truce: no denarii and no stand-down', () => {
+    expect(canRetreat(1)).toBe(true);
+    expect(canRetreat(3)).toBe(true);
+    expect(canRetreat(0)).toBe(false);
+    expect(canRetreat(-1)).toBe(false);
+    expect(canRetreat(Number.NaN)).toBe(false);
   });
 
   it('warns before a focus only when no Truce is held', () => {
@@ -108,14 +106,6 @@ describe('retreat', () => {
     expect(focusRetreatReason(12)).toBe('focus_retreat_12');
     expect(isFocusRetreatReason('focus_retreat_12')).toBe(true);
     expect(isFocusRetreatReason('focus_1')).toBe(false);
-  });
-
-  it('counts the stand-down down from 30 seconds, never past it', () => {
-    expect(standDownLeftMs(0, 0)).toBe(30_000);
-    expect(standDownLeftMs(0, 12_000)).toBe(18_000);
-    expect(standDownLeftMs(0, 31_000)).toBe(0);
-    // The clock moved back: still the full stand-down, never more.
-    expect(standDownLeftMs(10_000, 0)).toBe(30_000);
   });
 });
 

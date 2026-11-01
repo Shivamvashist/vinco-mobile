@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { CrashScreen } from '@/components/CrashScreen';
 import { TabBar } from '@/components/navigation/TabBar';
 import { TabsHeader } from '@/components/navigation/TabsHeader';
 import { TabSwipe } from '@/components/navigation/TabSwipe';
@@ -63,4 +64,9 @@ export default function TabsLayout() {
       </Tabs>
     </GestureHandlerRootView>
   );
+}
+
+/** A tab that throws while drawing shows a recovery screen in place, inside the app's theme. */
+export function ErrorBoundary({ error, retry }: { error: Error; retry: () => Promise<void> }) {
+  return <CrashScreen error={error} where="tabs" retry={() => void retry()} />;
 }

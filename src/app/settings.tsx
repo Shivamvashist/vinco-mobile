@@ -100,7 +100,6 @@ export default function SettingsScreen() {
           />
           <SettingsRow
             label={rows.sound}
-            detail={rows.soundDetail}
             toggle={{ value: preferences.soundEnabled, onChange: setSoundEnabled }}
           />
           <SettingsRow

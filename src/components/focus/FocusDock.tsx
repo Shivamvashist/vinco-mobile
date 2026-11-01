@@ -7,7 +7,7 @@ import { Txt } from '@/components/Txt';
 import { focusCopy } from '@/copy';
 import type { FocusComes } from '@/features/focus';
 import { guardBridge } from '@/features/guard';
-import { createStyles, useFeedback, useTheme } from '@/theme';
+import { cardSurface, createStyles, useFeedback, useTheme } from '@/theme';
 
 import { AppGlyph } from './AppGlyph';
 
@@ -20,8 +20,8 @@ export type FocusDockProps = {
 const copy = focusCopy.active;
 
 /**
- * The dock on the running focus: the Phone app (always), then the companions, launched from here.
- * With none chosen, a "+" explains they are picked before a focus begins.
+ * The dock on the running focus, under the tiles: the Phone app (always), then the companions,
+ * launched from here. With none chosen, a "+" explains they are picked before a focus begins.
  */
 export function FocusDock({ comites, dialerPackage }: FocusDockProps) {
   const theme = useTheme();
@@ -93,18 +93,15 @@ function DockButton({
 }
 
 const useStyles = createStyles((theme) => ({
+  // The full width of the tiles above it, so the controls read as one grid.
   dock: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: theme.space.lg,
+    flexWrap: 'wrap',
+    justifyContent: 'space-evenly',
+    rowGap: theme.space.xs,
     paddingVertical: theme.space.sm,
-    paddingHorizontal: theme.space.md,
-    borderRadius: theme.radius.lg,
-    borderCurve: 'continuous',
-    borderWidth: theme.layout.hairline,
-    borderColor: theme.effects.cardBorder,
-    backgroundColor: theme.colors.surface,
-    alignSelf: 'center',
+    paddingHorizontal: theme.space.xs,
+    ...cardSurface(theme),
   },
   button: {
     alignItems: 'center',

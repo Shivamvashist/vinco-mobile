@@ -44,6 +44,35 @@ export {
   toReelEventCount,
 } from './reelBridge';
 export {
+  firstReelDay,
+  REEL_WEEKS_SHOWN,
+  type ReelBarValue,
+  reelBarValues,
+  type ReelLogView,
+  type ReelRange,
+  reelRangeNavigation,
+  reelRangeOf,
+  reelReferenceValue,
+  type ReelSpan,
+  shiftReelRange,
+} from './reelHistory';
+export {
+  checkReelPass,
+  clampReelPasses,
+  countReelPasses,
+  getReelAllowanceWithPasses,
+  getReelBlockMode,
+  isReelBlocked,
+  isReelPassReason,
+  nextReelPassReason,
+  REEL_PASS,
+  REEL_PASS_REASONS,
+  type ReelBlockMode,
+  type ReelPassCheck,
+  type ReelPassReason,
+  reelPassShort,
+} from './reelPass';
+export {
   getMarkedPackages,
   getReelAppLabels,
   getReelBadgeStage,

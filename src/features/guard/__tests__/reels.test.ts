@@ -29,12 +29,17 @@ describe('reel step-ins', () => {
     expect(getReelStepIn(25, 30, 'pax')).toBeNull();
   });
 
-  it('steps in at the budget and every 25, the budget winning a tie', () => {
+  it('steps in at the allowance and every 25 under it, the allowance winning a tie', () => {
     expect(getReelStepIn(30, 30, 'vigil')).toBe('budget');
     expect(getReelStepIn(25, 30, 'vigil')).toBe('milestone');
     expect(getReelStepIn(50, 50, 'imperium')).toBe('budget');
-    expect(getReelStepIn(75, 30, 'guard')).toBe('milestone');
-    expect(getReelStepIn(31, 30, 'vigil')).toBeNull();
+    expect(getReelStepIn(29, 30, 'vigil')).toBeNull();
+  });
+
+  it('blocks every reel past the allowance (no more milestones there)', () => {
+    expect(getReelStepIn(31, 30, 'vigil')).toBe('block');
+    expect(getReelStepIn(75, 30, 'guard')).toBe('block');
+    expect(getReelStepIn(42, 42, 'vigil')).toBe('budget');
   });
 
   it('ignores counts that are not whole and positive', () => {
@@ -98,9 +103,35 @@ describe('native reel config', () => {
       level: 'vigil',
       reelBudget: 35,
       markedPackages: ['com.instagram.android'],
+      passDay: '',
+      passes: 0,
+      denarii: 0,
+      passPrice: 20,
+      passReels: 12,
+      passMax: 3,
       copy: { badge: '{count} reels' },
       colors: { surface: '#26221E' },
     });
+  });
+
+  it('sends the passes of the day (kept in range) and the purse', () => {
+    const config = toNativeReelConfig({
+      level: 'guard',
+      reelBudget: 30,
+      markedPackages: [],
+      passDay: '2026-11-01',
+      passes: 7,
+      denarii: 42.7,
+    });
+    expect(config).toMatchObject({ passDay: '2026-11-01', passes: 3, denarii: 42 });
+    const odd = toNativeReelConfig({
+      level: 'guard',
+      reelBudget: 30,
+      markedPackages: [],
+      passDay: 'today',
+      denarii: -5,
+    });
+    expect(odd).toMatchObject({ passDay: '', passes: 0, denarii: 0 });
   });
 
   it('falls back to Pax for an unknown level', () => {

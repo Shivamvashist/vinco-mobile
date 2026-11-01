@@ -66,6 +66,13 @@ export const commonCopy = {
     body: 'Your progress is still on this phone. Close Vinco fully and open it again. If this keeps happening, reinstalling an update usually fixes it.',
   },
 
+  /** Shown in place of a screen that failed to draw (the error boundaries in src/app). */
+  crash: {
+    title: 'Something broke',
+    body: 'Your records are safe. Try again. If it keeps happening, send the lines below to the developer.',
+    retry: 'Try again',
+  },
+
   /** Screen-reader labels for shared controls. */
   close: 'Close',
   back: 'Back',

@@ -10,8 +10,8 @@ export type FocusPurse = {
 };
 
 /**
- * What a retreat could be paid with, live: the Truces held and the denarii. Read here rather than
- * from useCampaign, so the focus screens don't need the arc. The retreat itself re-reads both
+ * The Truces held (a retreat spends one) and the denarii, live. Read here rather than from
+ * useCampaign, so the focus screens don't need the arc. The retreat itself re-reads the Truces
  * inside its transaction.
  */
 export function useFocusPurse(): FocusPurse {

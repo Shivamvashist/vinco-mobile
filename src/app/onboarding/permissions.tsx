@@ -1,36 +1,31 @@
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { FlowLayout } from '@/components/onboarding/FlowLayout';
-import { PermissionList } from '@/components/permissions/PermissionList';
-import { onboardingCopy } from '@/copy';
-import { ESSENTIAL_PERMISSIONS, useAppPermissions } from '@/hooks/useAppPermissions';
+import { PermissionRow } from '@/components/permissions/PermissionRow';
+import { Txt } from '@/components/Txt';
+import { onboardingCopy, permissionsCopy } from '@/copy';
+import { useAppPermissions } from '@/hooks/useAppPermissions';
 import { getStepPosition, useOnboardingStore } from '@/stores';
+import { createStyles } from '@/theme';
 
 const copy = onboardingCopy.permissions;
 
 /**
- * Asks ahead for what the next steps and the days use: reminders, the camera (selfie) and the
- * microphone (oath), plus the alarm and the focus guard in the Vinco build. Every one is
- * optional: Continue always goes on, and each is asked again in context if still off.
+ * Asks only for reminders, the one permission every plan uses from Day I. The camera is asked
+ * when the selfie is taken, the microphone when the oath is recorded, the alarm and the focus
+ * guard when they are set up. Optional: Continue always goes on.
  */
 export default function OnboardingPermissionsScreen() {
+  const styles = useStyles();
   const arcKind = useOnboardingStore((state) => state.arcKind);
   const setLastStep = useOnboardingStore((state) => state.setLastStep);
   const position = getStepPosition('permissions', arcKind);
-  const permissions = useAppPermissions();
-  const [isAsking, setIsAsking] = useState(false);
+  const reminders = useAppPermissions().items.notifications;
 
   useEffect(() => setLastStep('permissions'), [setLastStep]);
-
-  const canAskAny = ESSENTIAL_PERMISSIONS.some((key) => permissions.items[key].canAsk);
-  const goNext = () => router.push('/onboarding/oath');
-
-  const handleAllowAll = () => {
-    setIsAsking(true);
-    void permissions.requestEssentials().finally(() => setIsAsking(false));
-  };
 
   return (
     <FlowLayout
@@ -39,23 +34,21 @@ export default function OnboardingPermissionsScreen() {
       backHref="/onboarding/tone"
       title={copy.title}
       subtitle={copy.subtitle}
-      footer={
-        canAskAny || isAsking ? (
-          <>
-            <Button
-              label={copy.allowAll}
-              accessibilityHint={copy.allowAllHint}
-              loading={isAsking}
-              onPress={handleAllowAll}
-            />
-            <Button label={onboardingCopy.continue} variant="ghost" cue={null} onPress={goNext} />
-          </>
-        ) : (
-          <Button label={onboardingCopy.continue} onPress={goNext} />
-        )
-      }
+      footer={<Button label={onboardingCopy.continue} onPress={() => router.push('/onboarding/oath')} />}
     >
-      <PermissionList permissions={permissions} />
+      <View style={styles.body}>
+        <PermissionRow
+          icon="bell"
+          label={permissionsCopy.items.notifications.label}
+          why={permissionsCopy.items.notifications.why}
+          permission={reminders}
+        />
+        <Txt variant="caption">{copy.later}</Txt>
+      </View>
     </FlowLayout>
   );
 }
+
+const useStyles = createStyles((theme) => ({
+  body: { gap: theme.space.md },
+}));

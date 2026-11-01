@@ -2,23 +2,20 @@ import { View } from 'react-native';
 
 import { guardCopy } from '@/copy';
 import { getReelBadgeStage, type ReelBadgeStage } from '@/features/guard';
-import { type ColorRole, createStyles } from '@/theme';
+import { cardSurface, type ColorRole, createStyles, useTheme } from '@/theme';
 
-import { Button } from '../Button';
-import { Card } from '../Card';
+import { Icon } from '../Icon';
+import { PressableScale } from '../PressableScale';
 import { Txt } from '../Txt';
 
 export type ReelCountCardProps = {
   count: number;
-  budget: number;
-  /** Null when nothing was kept for yesterday. */
-  yesterday: number | null;
-  /** The apps counted, by name. */
-  appNames: readonly string[];
+  /** The budget plus today's passes. */
+  allowance: number;
   /** The guard service: on, off, or null while it is being read. */
   isServiceOn: boolean | null;
-  /** Opens the accessibility settings (this card is the disclosure before it). */
-  onTurnOn: () => void;
+  /** Opens the reel counter (/reels). */
+  onPress: () => void;
 };
 
 const copy = guardCopy.reels;
@@ -30,66 +27,48 @@ const STAGE_COLORS: Record<ReelBadgeStage, ColorRole> = {
 };
 
 /**
- * Today's reels against the budget (the guard screen). The number takes the badge's colours:
- * marble, gold from 80% of the budget, porphyry past it. With the guard service off, the card
- * says plainly what the counter reads before offering to open the settings (Play's prominent
- * disclosure); counts already kept stay.
+ * Today's reels on the guard screen, as one compact row that opens the reel counter (/reels),
+ * where the log, the pass and the settings live. The number takes the badge's colours: marble,
+ * gold from 80% of the allowance, porphyry past it. With the guard service off it says so.
  */
-export function ReelCountCard({
-  count,
-  budget,
-  yesterday,
-  appNames,
-  isServiceOn,
-  onTurnOn,
-}: ReelCountCardProps) {
+export function ReelCountCard({ count, allowance, isServiceOn, onPress }: ReelCountCardProps) {
   const styles = useStyles();
-  const stage = getReelBadgeStage(count, budget);
+  const theme = useTheme();
+  const stage = getReelBadgeStage(count, allowance);
+  const label = copy.countLabel(count, allowance);
 
   return (
-    <Card style={styles.card}>
-      <View accessible accessibilityRole="text" accessibilityLabel={copy.countLabel(count, budget)}>
-        <Txt
-          variant="display"
-          color={STAGE_COLORS[stage]}
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.75}
-        >
-          {copy.count(count, budget)}
+    <PressableScale
+      accessibilityRole="button"
+      accessibilityLabel={isServiceOn === false ? `${label}. ${copy.offTitle}` : label}
+      accessibilityHint={copy.openHint}
+      onPress={onPress}
+      scaleTo="card"
+      style={styles.card}
+    >
+      <View style={styles.text}>
+        <Txt variant="heading" color={STAGE_COLORS[stage]} numberOfLines={1}>
+          {copy.count(count, allowance)}
         </Txt>
-      </View>
-      <Txt variant="caption">{yesterday == null ? copy.noYesterday : copy.yesterday(yesterday)}</Txt>
-      <Txt variant="caption">{copy.apps(appNames)}</Txt>
-      {isServiceOn === false ? (
-        <View style={styles.off}>
-          <Txt variant="label" accessibilityRole="header">
+        {isServiceOn === false ? (
+          <Txt variant="caption" color="danger">
             {copy.offTitle}
           </Txt>
-          <Txt variant="body" color="textMuted">
-            {copy.offBody}
-          </Txt>
-          <Txt variant="caption">{copy.offKept}</Txt>
-          <Button
-            label={copy.turnOn}
-            accessibilityHint={copy.turnOnHint}
-            onPress={onTurnOn}
-            variant="secondary"
-            size="compact"
-          />
-        </View>
-      ) : null}
-    </Card>
+        ) : null}
+      </View>
+      <Icon name="forward" color="textMuted" size={theme.layout.iconSize} />
+    </PressableScale>
   );
 }
 
 const useStyles = createStyles((theme) => ({
-  card: { gap: theme.space.xs },
-  off: {
-    gap: theme.space.sm,
-    marginTop: theme.space.md,
-    paddingTop: theme.space.md,
-    borderTopWidth: theme.layout.hairline,
-    borderTopColor: theme.colors.border,
+  card: {
+    ...cardSurface(theme),
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.space.md,
+    padding: theme.layout.cardPadding,
+    minHeight: theme.layout.minTouchTarget,
   },
+  text: { flex: 1, gap: theme.space.xxs },
 }));

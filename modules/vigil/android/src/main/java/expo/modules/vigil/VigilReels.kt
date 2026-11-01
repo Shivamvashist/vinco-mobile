@@ -26,7 +26,9 @@ object VigilReelEvents {
  * - Hears scroll events from the marked apps only (any other package is dropped on the first line)
  *   and asks [VigilReelDetector] whether a new reel is on screen; a reel counts after its dwell.
  * - Counts into [VigilReelStore] (per local day, kept on the phone) and tells JavaScript.
- * - Vigil level and up: the live badge while a marked app is in front, and the milestone card.
+ * - Vigil level and up: the live badge while a marked app is in front (draggable; a tap opens the
+ *   reel panel), the budget and milestone cards under the allowance, and past it the blocking card
+ *   on every reel counted (VigilReelOverlays).
  *
  * Nothing is read from the screen but the scrolling view's id, size and positions; nothing is
  * logged or stored but the day's count. No polling, no wake locks: work happens only on events,
@@ -35,7 +37,7 @@ object VigilReelEvents {
 class VigilReels(private val service: AccessibilityService) {
   private val handler = Handler(Looper.getMainLooper())
   private val detector = VigilReelDetector()
-  private val badge = VigilBadge(service)
+  private val overlays = VigilReelOverlays(service)
   private var config: VigilReelConfig? = null
   private var keyboards: Set<String> = emptySet()
   /** The app in front (keyboards and the status bar don't change it). */
@@ -48,7 +50,7 @@ class VigilReels(private val service: AccessibilityService) {
     val current = config
     if (current == null || current.markedPackages.isEmpty()) {
       detector.reset()
-      badge.hideAll()
+      overlays.hideAll()
       return
     }
     front?.let { onWindow(it) }
@@ -57,7 +59,7 @@ class VigilReels(private val service: AccessibilityService) {
   fun stop() {
     handler.removeCallbacksAndMessages(null)
     detector.reset()
-    badge.hideAll()
+    overlays.hideAll()
   }
 
   /** A window came to the front (the service has already dropped Vinco's own overlay windows). */
@@ -68,14 +70,14 @@ class VigilReels(private val service: AccessibilityService) {
     if (packageName !in current.markedPackages) {
       // Left the reels: a reel still in its dwell doesn't count, and the windows go.
       detector.cancelPending()
-      badge.hideAll()
+      overlays.hideAll()
       return
     }
     detector.cancelPending(packageName)
     if (current.level.showsBadge) {
-      badge.showBadge(VigilReelStore.todayCount(service), current)
+      overlays.showBadge(VigilReelStore.todayCount(service), current)
     } else {
-      badge.hideAll()
+      overlays.hideAll()
     }
   }
 
@@ -110,8 +112,7 @@ class VigilReels(private val service: AccessibilityService) {
     val total = VigilReelStore.increment(service)
     VigilReelEvents.emit(total, VigilReelStore.today())
     if (!current.level.showsBadge || front !in current.markedPackages) return
-    badge.showBadge(total, current)
-    VigilReelPolicy.milestone(total, current.budget, current.level)?.let { badge.showCard(it, total, current) }
+    overlays.onCounted(total, current)
   }
 
   /** The scrolling view's identity, id and size. Nothing else is read; the node is let go at once. */

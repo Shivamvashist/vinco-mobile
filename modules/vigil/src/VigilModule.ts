@@ -34,13 +34,22 @@ export type VigilNativeWakeWatch = {
 export type VigilNativeFocusEvent = { type: string; packageName: string | null };
 
 /**
- * What configure sends: the reel watch. `copy` holds the overlay words with "{count}" and
- * "{budget}" placeholders; `colors` the overlay colours as "#RRGGBB".
+ * What configure sends: the reel watch. `copy` holds the overlay words with "{count}", "{budget}",
+ * "{passes}", "{reels}" and "{price}" placeholders; `colors` the overlay colours as "#RRGGBB".
  */
 export type VigilNativeReelConfig = {
   level: string;
   reelBudget: number;
   markedPackages: string[];
+  /** The phone's day the passes belong to (yyyy-MM-dd), '' for none. */
+  passDay: string;
+  /** Reel passes used on passDay: each adds passReels to the budget. */
+  passes: number;
+  /** Denarii held, so the overlays offer a pass only when it is affordable. */
+  denarii: number;
+  passPrice: number;
+  passReels: number;
+  passMax: number;
   copy: Record<string, string>;
   colors: Record<string, string>;
 };

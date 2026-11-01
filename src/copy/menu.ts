@@ -5,7 +5,6 @@ export const menuCopy = {
   account: {
     name: 'Your account',
     status: 'On this phone only',
-    detail: 'Sign-in and backup arrive in an update.',
   },
   items: {
     settings: { label: 'Settings', detail: 'Tone, look, sounds, wake-up' },

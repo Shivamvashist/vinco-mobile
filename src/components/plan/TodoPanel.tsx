@@ -33,13 +33,7 @@ export function TodoPanel({ tasks, onAdd, onEdit }: TodoPanelProps) {
         key={item.task.id}
         title={item.task.title}
         isDone={item.isDone}
-        note={
-          kind === 'tomorrow'
-            ? tasksCopy.tomorrowHint
-            : item.task.carriedFrom
-              ? tasksCopy.carriedOver
-              : undefined
-        }
+        note={kind !== 'tomorrow' && item.task.carriedFrom ? tasksCopy.carriedOver : undefined}
         canTick={kind !== 'tomorrow'}
         onToggle={() => tasks.toggle(item)}
         // The pencil opens the sheet, which renames, changes how often, or removes.
@@ -49,15 +43,6 @@ export function TodoPanel({ tasks, onAdd, onEdit }: TodoPanelProps) {
 
   return (
     <View>
-      <Txt variant="caption" style={styles.intro}>
-        {tasksCopy.intro}
-      </Txt>
-      {isEmpty ? null : (
-        <Txt variant="micro" style={styles.intro}>
-          {tasksCopy.edit.hint}
-        </Txt>
-      )}
-
       {tasks.hasSaveError ? (
         <Card variant="sunk" style={styles.block} accessibilityRole="alert">
           <Txt variant="caption" color="danger">
@@ -99,7 +84,6 @@ export function TodoPanel({ tasks, onAdd, onEdit }: TodoPanelProps) {
 }
 
 const useStyles = createStyles((theme) => ({
-  intro: { marginTop: theme.space.sm },
   block: { marginTop: theme.space.lg },
   list: { gap: theme.space.sm },
   add: { marginTop: theme.space.xxl, marginBottom: theme.space.lg },

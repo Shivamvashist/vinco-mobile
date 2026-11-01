@@ -18,12 +18,26 @@ class ReelWatchConfig : Record {
   /** Overlay colours as "#RRGGBB" (VigilBadge roles). Missing ones keep Basalt. */
   @Field val colors: Map<String, String> = emptyMap()
 
+  /** The reel pass: the phone's day it belongs to, how many today, the purse, and its rules. */
+  @Field val passDay: String = ""
+  @Field val passes: Int = 0
+  @Field val denarii: Int = 0
+  @Field val passPrice: Int = 20
+  @Field val passReels: Int = 12
+  @Field val passMax: Int = 3
+
   fun toConfig(): VigilReelConfig = VigilReelConfig(
     level = VigilReelLevel.of(level),
     budget = reelBudget,
     markedPackages = markedPackages.toSet(),
     words = copy,
-    colors = colors
+    colors = colors,
+    passDay = passDay,
+    passes = passes,
+    denarii = denarii,
+    passPrice = passPrice,
+    passReels = passReels,
+    passMax = passMax
   )
 }
 

@@ -27,7 +27,6 @@ import { useGloria } from '@/hooks/useGloria';
 import { useSealedResults } from '@/hooks/useSealedResults';
 import { useToday } from '@/hooks/useToday';
 import type { DayKey } from '@/lib/dates';
-import { toRoman } from '@/lib/toRoman';
 import { usePreferencesStore } from '@/stores';
 import { createStyles } from '@/theme';
 
@@ -170,7 +169,6 @@ export default function VidiScreen() {
 function TimelapseCard({ selfies }: { selfies: number }) {
   const styles = useStyles();
   const copy = progressCopy.timelapse;
-  const isReady = selfies >= TIMELAPSE_SELFIES;
   return (
     <Card>
       <View style={styles.timelapseHeader}>
@@ -180,7 +178,6 @@ function TimelapseCard({ selfies }: { selfies: number }) {
       <View style={styles.timelapseBar}>
         <ProgressBar value={selfies / TIMELAPSE_SELFIES} size="thick" accessibilityLabel={copy.title} />
       </View>
-      <Txt variant="caption">{isReady ? copy.ready : copy.unlocks(toRoman(TIMELAPSE_SELFIES))}</Txt>
       {selfies >= 2 ? (
         <View style={styles.timelapsePlay}>
           <Button

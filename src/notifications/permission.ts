@@ -1,5 +1,7 @@
 import * as Notifications from 'expo-notifications';
 
+import { setUpNotifications } from './scheduler';
+
 /** The notification permission as the app's screens show it. */
 export type NotificationPermission = {
   status: 'granted' | 'denied' | 'undetermined';
@@ -21,10 +23,12 @@ export async function readNotificationPermission(): Promise<NotificationPermissi
 
 /**
  * Shows Android's notification dialog (Android 13 and later; older phones allow by default).
- * Returns the permission afterwards; failures read as "not allowed".
+ * The channels are made first: Android 13 may skip the dialog for an app with none yet (a fresh
+ * install). Returns the permission afterwards; failures read as "not allowed".
  */
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
   try {
+    await setUpNotifications();
     return toPermission(await Notifications.requestPermissionsAsync());
   } catch (error) {
     if (__DEV__) console.warn('[notifications] Could not ask for the permission.', error);

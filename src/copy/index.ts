@@ -20,6 +20,7 @@ export { notificationsCopy } from './notifications';
 export { periodsCopy } from './periods';
 export { permissionsCopy } from './permissions';
 export { progressCopy } from './progress';
+export { reelsCopy } from './reels';
 export { rewardsCopy } from './rewards';
 export { settingsCopy } from './settings';
 export { proofCopy } from './proof';

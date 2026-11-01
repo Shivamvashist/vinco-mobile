@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { IconButton } from '@/components/IconButton';
 import { Txt } from '@/components/Txt';
-import { focusCopy, pickTone } from '@/copy';
+import { focusCopy } from '@/copy';
 import type { FocusSessionRow } from '@/db';
 import {
   DEFAULT_FOCUS_GUARD,
@@ -29,8 +29,8 @@ import { DurationPicker } from './DurationPicker';
 import { FocusLog } from './FocusLog';
 import { GuardPermissionNotice } from './GuardPermissionNotice';
 import { GuardPicker } from './GuardPicker';
-import { NoTruceSheet } from './NoTruceSheet';
 import { SlideToConfirm } from './SlideToConfirm';
+import { TruceSheet } from './TruceSheet';
 
 export type FocusSetupProps = {
   tone: Tone;
@@ -43,16 +43,15 @@ export type FocusSetupProps = {
   permissions: GuardPermissions;
   log: { totals: FocusTotals; sessions: readonly FocusSessionRow[] };
   onBegin: (minutes: number, guard: FocusGuard) => 'started' | 'busy' | 'failed';
-  onGetTruce: () => void;
   /** Opens the full focus log. */
   onSeeLog?: () => void;
   onClose: () => void;
 };
 
 /**
- * The focus setup, top to bottom: the time, the guard, the companions, the guard's permission
- * notice and the focus log; the reward line and "Slide to begin" stay pinned at the bottom. With
- * no Truce held, sliding first says what retreating early would cost.
+ * The focus setup, top to bottom: the time, the guard (and its permission notice), the companions
+ * and the focus log; the reward line and "Slide to begin" stay pinned at the bottom. With no Truce
+ * held, sliding first says the focus can't end early without one, and offers to buy one.
  */
 export function FocusSetup({
   tone,
@@ -64,7 +63,6 @@ export function FocusSetup({
   permissions,
   log,
   onBegin,
-  onGetTruce,
   onSeeLog,
   onClose,
 }: FocusSetupProps) {
@@ -79,13 +77,11 @@ export function FocusSetup({
   const denarii = expectedFocusReward(minutes, guard, rewardedToday);
   const gloria = focusGloria(minutes);
   const rewardLine =
-    denarii > 0 ? focusCopy.setup.reward(denarii, gloria) : focusCopy.setup.rewardGloriaOnly(gloria);
-  const rewardNote =
     denarii > 0
-      ? null
+      ? focusCopy.setup.reward(denarii, gloria)
       : focusReward(minutes, guard) > 0
-        ? focusCopy.setup.rewardDailyLimit
-        : focusCopy.setup.rewardTooShort;
+        ? focusCopy.setup.rewardDailyLimit(gloria)
+        : focusCopy.setup.rewardTooShort(gloria);
 
   const begin = () => {
     setSheet(null);
@@ -116,25 +112,18 @@ export function FocusSetup({
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.intro}>
-          <Txt variant="title" align="center" accessibilityRole="header">
-            {focusCopy.setup.title}
-          </Txt>
-          <Txt variant="body" color="textMuted" align="center">
-            {pickTone(focusCopy.setup.subtitle, tone)}
-          </Txt>
-        </View>
+        <Txt variant="title" align="center" accessibilityRole="header">
+          {focusCopy.setup.title}
+        </Txt>
 
-        <Section title={focusCopy.setup.timeSection}>
-          <DurationPicker value={minutes} onChange={setMinutes} />
-        </Section>
+        <DurationPicker value={minutes} onChange={setMinutes} />
 
         <Section title={focusCopy.setup.guardSection}>
           <GuardPicker value={guard} onChange={setGuard} />
           <GuardPermissionNotice guard={guard} permissions={permissions} />
         </Section>
 
-        <Section title={focusCopy.comites.section} caption={focusCopy.comites.caption}>
+        <Section title={focusCopy.comites.section}>
           <ComitesRow comites={comites} onOpenPicker={() => setSheet('comites')} />
         </Section>
 
@@ -142,7 +131,11 @@ export function FocusSetup({
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + theme.space.lg }]}>
-        <View style={styles.rewardRow}>
+        <View
+          style={styles.rewardRow}
+          accessible
+          accessibilityLabel={focusCopy.setup.rewardLabel(rewardLine)}
+        >
           <Icon
             name="coin"
             color={denarii > 0 ? 'currency' : 'textFaint'}
@@ -152,11 +145,6 @@ export function FocusSetup({
             {rewardLine}
           </Txt>
         </View>
-        {rewardNote ? (
-          <Txt variant="caption" align="center">
-            {rewardNote}
-          </Txt>
-        ) : null}
         {error ? (
           <Txt variant="caption" color="danger" align="center" accessibilityLiveRegion="polite">
             {error}
@@ -176,29 +164,25 @@ export function FocusSetup({
         onToggle={onToggleComes}
         onClose={() => setSheet(null)}
       />
-      <NoTruceSheet
+      <TruceSheet
         visible={sheet === 'noTruce'}
+        mode="begin"
         onClose={() => setSheet(null)}
-        onGetTruce={() => {
-          setSheet(null);
-          onGetTruce();
-        }}
+        // Bought: the user slid to begin, so the focus begins.
+        onBought={begin}
         onBeginAnyway={begin}
       />
     </View>
   );
 }
 
-function Section({ title, caption, children }: { title: string; caption?: string; children: ReactNode }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   const styles = useStyles();
   return (
     <View style={styles.section}>
-      <View style={styles.sectionHead}>
-        <Txt variant="overline" accessibilityRole="header">
-          {title}
-        </Txt>
-        {caption ? <Txt variant="caption">{caption}</Txt> : null}
-      </View>
+      <Txt variant="overline" accessibilityRole="header">
+        {title}
+      </Txt>
       {children}
     </View>
   );
@@ -220,9 +204,7 @@ const useStyles = createStyles((theme) => ({
     paddingBottom: theme.space.xxl,
     gap: theme.space.xxl,
   },
-  intro: { gap: theme.space.sm },
   section: { gap: theme.space.md },
-  sectionHead: { gap: theme.space.xxs },
   footer: {
     paddingHorizontal: theme.layout.flowGutter,
     paddingTop: theme.space.md,

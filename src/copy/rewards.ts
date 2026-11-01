@@ -52,7 +52,7 @@ export const rewardsCopy = {
         .join(', '),
     /** When the reserve is full, a Truce reward comes as its price instead. */
     truceConverted: (count: number, denarii: number): string =>
-      `Your Truce reserve is full, so ${count === 1 ? 'the Truce comes' : 'the Truces come'} as ${denarii} denarii.`,
+      `Reserve full: ${count === 1 ? 'the Truce comes' : 'the Truces come'} as ${denarii} denarii.`,
     paid: (pay: ClaimPay): string =>
       [
         `+${pay.denarii} denarii`,
@@ -76,10 +76,7 @@ export const rewardsCopy = {
     seeAllLabel: 'See all labours',
     eyebrow: 'Labores · Tasks to earn',
     back: 'Back',
-    intro:
-      'Do the deed, then claim the pay. Each one pays once per day or week; an unclaimed one expires when its period ends.',
     groups: { daily: 'Daily', weekly: 'Weekly' },
-    groupNote: { daily: 'New every day', weekly: 'Monday to Sunday' },
     resets: (type: 'daily' | 'weekly', days: number): string =>
       type === 'daily' ? 'Resets at midnight' : days <= 1 ? 'Resets tomorrow' : `Resets in ${days} days`,
     claim: 'Claim',
@@ -87,11 +84,7 @@ export const rewardsCopy = {
     claimed: 'Claimed',
     needsOrders: 'Needs an order today',
     forumTitle: 'Labours: tasks to earn',
-    forumBody:
-      'Daily and weekly bounties that pay denarii, Gloria and now and then a Truce. Claim them by hand.',
     forumAction: 'Open the Labours',
-    wages:
-      'Held and conquered days, run pay and focus pay land on their own. Labours are the bounties on top.',
     items: {
       selfie: { title: "Take today's selfie", line: 'Proof of the day, kept on your phone.' },
       weight: { title: 'Log your weight', line: 'One number, for the weekly trend.' },
@@ -135,7 +128,6 @@ export const rewardsCopy = {
     totalLabel: (amount: number): string => `${amount} Gloria earned on your journey`,
     weekTitle: 'This week',
     weekTotal: (amount: number): string => `${compact(amount)} this week`,
-    line: (amount: number): string => `Dashed line: a conquered day (${amount})`,
     describeBar: (dayLabel: string, amount: number): string => `${dayLabel}: ${amount} Gloria`,
     rules: 'Order held +10, full goal +5 more, conquered day +20, to-do +3, focus +1 a minute, plus claims.',
     calendarLegend: 'Deeper tint, more Gloria',

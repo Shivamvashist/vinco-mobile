@@ -7,19 +7,18 @@ import type { ToneLines } from './toneLines';
 export const guardCopy = {
   preview: {
     title: 'Arrives with the Vinco build',
-    body: 'Counting reels and ringing alarms need parts of Android that Expo Go cannot reach. Choose now: your choice is kept and switches on with the build.',
+    body: 'Your choice is saved and switches on with the build.',
   },
 
   levels: {
     eyebrow: 'Guard · The watch',
     title: 'How hard should Vinco guard you?',
-    intro: 'Pick one. Each level includes the ones before it.',
     names: {
       pax: { name: '"Pax"', plain: 'Peace', does: 'Counts only. Nothing interrupts you.' },
       vigil: {
         name: '"Vigil"',
         plain: 'The watch',
-        does: 'Counts reels and shows the floating badge and milestone cards.',
+        does: 'Counts reels with a floating badge, and steps in past your budget.',
       },
       guard: {
         name: '"Custos"',
@@ -37,7 +36,7 @@ export const guardCopy = {
     budgetLabel: 'Reels a day',
     budgetValue: (reels: number): string => `${reels} reels`,
     budgetAdjust: 'Daily reel budget',
-    budgetNote: 'Past it, 10 more reels cost 15 denarii, doubling each time that day. Three times at most.',
+    budgetNote: 'Past it: a reel pass, 12 more for 20 denarii (3 a day).',
     privacyTitle: 'What the Vigil reads',
     privacy:
       'Only whether a reels screen is open and when a new video starts. Never messages, captions, usernames, passwords or video. Nothing on screen is saved or sent.',
@@ -59,6 +58,7 @@ export const guardCopy = {
     offKept: 'Counts so far are kept.',
     turnOn: 'Turn on the counter',
     turnOnHint: 'Opens the accessibility settings. Find "Vinco focus guard" and turn it on.',
+    openHint: 'Opens the reel counter: the log, the reel pass and its settings',
     /** Native badge and cards: "{count}" and "{budget}" are filled in on the phone. */
     overlay: {
       badge: '{count} reels',
@@ -78,13 +78,30 @@ export const guardCopy = {
         roast: 'That thumb has scrolled further than a legion marches. Put the phone down and go move.',
       } satisfies ToneLines,
       close: 'Close',
+      panelTitle: 'Reels today',
+      panelCount: '{count} of {budget}',
+      panelPasses: '{passes} of {max} passes used',
+      passAction: 'Reel pass +{reels}',
+      passPrice: '{price} denarii',
+      passesUsed: 'All {max} passes used today. The count starts again at midnight.',
+      passShort: 'A pass costs {price} denarii. Earn them by holding the line.',
+      blockTitle: '{count} reels, past your budget',
+      blockBody: {
+        philosopher:
+          'You set this limit in a calmer hour. Keep your word: leave the feed and take the day back.',
+        centurion: 'Budget spent. Every reel now is off the line. Leave and get back to your orders.',
+        roast:
+          'The algorithm is thrilled. Your thumb has clocked a full shift: leave now and go do one real thing.',
+      } satisfies ToneLines,
+      leave: 'Leave',
+      badgeHint: 'Shows your reels today',
     },
   },
 
   aurora: {
-    eyebrow: '"Aurora" · Alarm',
+    eyebrow: 'Alarm',
     title: 'Aurora',
-    intro: 'An alarm that stops only after a mission. "I\'m sick" stops it and calls a sick-day Truce.',
+    intro: 'Stops only after a mission.',
     on: 'Aurora on',
     time: 'Rings at',
     daysLabel: 'On these days',
@@ -102,7 +119,6 @@ export const guardCopy = {
       count === 0
         ? 'No alarm passes. Buy one in the Forum.'
         : `${count} alarm ${count === 1 ? 'pass' : 'passes'} held`,
-    followsWake: 'Matches your wake-up time',
   },
 
   settings: {

@@ -39,9 +39,11 @@ export function EarnList({ isLudus }: EarnListProps) {
                 <Txt variant="body" color={isLive ? 'text' : 'textMuted'}>
                   {label}
                 </Txt>
-                <Txt variant="micro" color={isLive ? 'accent' : 'textFaint'}>
-                  {tag}
-                </Txt>
+                {isLive ? null : (
+                  <Txt variant="micro" color="textFaint">
+                    {tag}
+                  </Txt>
+                )}
               </View>
               <Txt variant="label" color={isLive ? 'currency' : 'textFaint'}>
                 {amount}

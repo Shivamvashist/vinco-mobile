@@ -43,11 +43,4 @@ export {
   summarizeFocusPeriod,
 } from './history';
 export { type FocusLogFacts, type FocusTotals, heldMinutes, summarizeFocusLog, weekStartOf } from './log';
-export {
-  focusRetreatReason,
-  isFocusRetreatReason,
-  planRetreatPayment,
-  type RetreatPayment,
-  shouldWarnNoTruce,
-  standDownLeftMs,
-} from './retreat';
+export { canRetreat, focusRetreatReason, isFocusRetreatReason, shouldWarnNoTruce } from './retreat';

@@ -84,9 +84,6 @@ export function FocusTile() {
           <RollingNumber value={copy.ready} variant="display" fit />
         )}
       </View>
-      <Txt variant="caption" color={isRunning ? 'accent' : 'textMuted'} numberOfLines={1}>
-        {copy.readyCaption}
-      </Txt>
     </HeroTile>
   );
 }

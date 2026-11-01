@@ -1,7 +1,8 @@
 import { and, desc, eq, inArray } from 'drizzle-orm';
 
-import { FOCUS_REASONS, TRUCES } from '@/features/campaign';
+import { FOCUS_REASONS } from '@/features/campaign';
 import {
+  canRetreat,
   clampFocusMinutes,
   focusEndsAt,
   type FocusGuard,
@@ -10,13 +11,10 @@ import {
   getFocusState,
   isFocusGuard,
   nextFocusReason,
-  planRetreatPayment,
-  type RetreatPayment,
 } from '@/features/focus';
 import type { DayKey } from '@/lib/dates';
 
 import { type AppDatabase, nowIso } from './database';
-import { getDenariiBalance } from './forum';
 import { type FocusSessionRow, focusSessions, ledger, truces } from './schema';
 import { getTruceReserve } from './truces';
 
@@ -64,25 +62,17 @@ export function abandonFocus(db: AppDatabase, id: number, now: Date = new Date()
   );
 }
 
-/** What a retreat did: paid and given up, waiting on the stand-down, or nothing to retreat from. */
+/** What a retreat did: given up (a Truce spent), refused for want of a Truce, or nothing to retreat from. */
 export type FocusRetreat =
-  | { status: 'retreated'; paidWith: RetreatPayment; session: FocusSessionRow }
-  | { status: 'standDown' }
-  | { status: 'none' };
+  { status: 'retreated'; session: FocusSessionRow } | { status: 'noTruce' } | { status: 'none' };
 
 /**
- * Retreats from a running focus, paid in one transaction with fresh values: a Truce from the
- * reserve, else 50 denarii (a Truce bought on the spot), else nothing once the 30-second
- * stand-down is over (`afterStandDown`). Without it and with neither, it returns 'standDown' and
- * changes nothing. The cost is keyed by the session ('focus_retreat_<id>'), so several retreats in
- * a day never collide and one session is never charged twice. Retreating never pays.
+ * Retreats from a running focus, in one transaction with fresh values: it spends one Truce from
+ * the reserve and closes the session. With no Truce held it returns 'noTruce' and changes nothing
+ * (the focus runs on). The Truce is keyed by the session ('focus_retreat_<id>'), so several
+ * retreats in a day never collide and one session is never charged twice. Retreating never pays.
  */
-export function retreatFocus(
-  db: AppDatabase,
-  id: number,
-  now: Date = new Date(),
-  { afterStandDown = false }: { afterStandDown?: boolean } = {},
-): FocusRetreat {
+export function retreatFocus(db: AppDatabase, id: number, now: Date = new Date()): FocusRetreat {
   return db.transaction((tx): FocusRetreat => {
     const running = tx
       .select()
@@ -90,21 +80,12 @@ export function retreatFocus(
       .where(and(eq(focusSessions.id, id), eq(focusSessions.status, 'running')))
       .get();
     if (!running) return { status: 'none' };
-    const paidWith = planRetreatPayment(getTruceReserve(tx), getDenariiBalance(tx));
-    if (paidWith === 'standDown' && !afterStandDown) return { status: 'standDown' };
-    const reason = focusRetreatReason(running.id);
+    if (!canRetreat(getTruceReserve(tx))) return { status: 'noTruce' };
     const createdAt = nowIso(now);
-    if (paidWith === 'truce') {
-      tx.insert(truces)
-        .values({ day: running.day, reason, amount: -1, createdAt })
-        .onConflictDoNothing()
-        .run();
-    } else if (paidWith === 'denarii') {
-      tx.insert(ledger)
-        .values({ day: running.day, reason, amount: -TRUCES.priceDenarii, createdAt })
-        .onConflictDoNothing()
-        .run();
-    }
+    tx.insert(truces)
+      .values({ day: running.day, reason: focusRetreatReason(running.id), amount: -1, createdAt })
+      .onConflictDoNothing()
+      .run();
     const session = tx
       .update(focusSessions)
       .set({ status: 'abandoned', endedAt: createdAt, reward: 0 })
@@ -112,7 +93,7 @@ export function retreatFocus(
       .returning()
       .get();
     if (!session) throw new Error('Focus retreat: the session could not be closed.');
-    return { status: 'retreated', paidWith, session };
+    return { status: 'retreated', session };
   });
 }
 

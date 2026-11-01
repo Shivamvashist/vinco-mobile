@@ -34,7 +34,7 @@ export {
   selectDayOffset,
   useDevStore,
 } from './devStore';
-export { type FocusUiState, type FocusUiStore, useFocusUiStore } from './focusStore';
+export { type FocusUiState, type FocusUiStore, sanitizeFocusUi, useFocusUiStore } from './focusStore';
 export {
   DEFAULT_GUARD_STATE,
   type GuardState,

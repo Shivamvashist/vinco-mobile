@@ -91,7 +91,6 @@ export function UserMenu({ visible, onClose }: UserMenuProps) {
               {copy.account.name}
             </Txt>
             <Txt variant="caption">{copy.account.status}</Txt>
-            <Txt variant="micro">{copy.account.detail}</Txt>
           </View>
         </View>
 
@@ -102,7 +101,7 @@ export function UserMenu({ visible, onClose }: UserMenuProps) {
             key={item.key}
             icon={item.icon}
             label={copy.items[item.key].label}
-            detail={copy.items[item.key].detail}
+            hint={copy.items[item.key].detail}
             onPress={() => go(item.href)}
           />
         ))}
@@ -124,17 +123,20 @@ export function UserMenu({ visible, onClose }: UserMenuProps) {
 type MenuRowProps = {
   icon: IconName;
   label: string;
-  detail: string;
+  /** A status line under the label (the oath's plays left). */
+  detail?: string;
+  /** What the row opens: read with the label by screen readers, not shown. */
+  hint?: string;
   isDisabled?: boolean;
   onPress: () => void;
 };
 
-function MenuRow({ icon, label, detail, isDisabled = false, onPress }: MenuRowProps) {
+function MenuRow({ icon, label, detail, hint, isDisabled = false, onPress }: MenuRowProps) {
   const styles = useStyles();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${label}, ${detail}`}
+      accessibilityLabel={`${label}, ${detail ?? hint ?? ''}`}
       accessibilityState={{ disabled: isDisabled }}
       disabled={isDisabled}
       onPress={onPress}
@@ -145,9 +147,11 @@ function MenuRow({ icon, label, detail, isDisabled = false, onPress }: MenuRowPr
         <Txt variant="label" numberOfLines={1}>
           {label}
         </Txt>
-        <Txt variant="micro" numberOfLines={1}>
-          {detail}
-        </Txt>
+        {detail ? (
+          <Txt variant="micro" numberOfLines={1}>
+            {detail}
+          </Txt>
+        ) : null}
       </View>
     </Pressable>
   );

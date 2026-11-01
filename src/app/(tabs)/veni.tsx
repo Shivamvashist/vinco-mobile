@@ -1,35 +1,24 @@
-import { router, useLocalSearchParams, useNavigation } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { router } from 'expo-router';
+import { useState } from 'react';
 
 import { Button } from '@/components/Button';
-import { Card } from '@/components/Card';
-import { TodayLabours } from '@/components/labours/TodayLabours';
 import { OrderAmountSheet } from '@/components/orders/OrderAmountSheet';
-import { PlanOrderCard } from '@/components/orders/PlanOrderCard';
 import { CaloriesSheet } from '@/components/proof/CaloriesSheet';
 import { WeightSheet } from '@/components/proof/WeightSheet';
 import { Screen } from '@/components/Screen';
 import { TaskSheets, type TaskSheetTarget } from '@/components/tasks/TaskSheets';
 import { buildOrderRows } from '@/components/today/buildOrderRows';
-import { DailyLogButton } from '@/components/today/DailyLogButton';
-import { DailyLogSheet } from '@/components/today/DailyLogSheet';
+import { buildTodayLogs } from '@/components/today/buildTodayLogs';
 import { describeArcHeader } from '@/components/today/describeArcHeader';
-import { DawnCard } from '@/components/today/DawnCard';
 import { TodayHero } from '@/components/today/hero/TodayHero';
-import { DaySummarySheet } from '@/components/progress/DaySummarySheet';
-import { OrderList } from '@/components/today/OrderList';
-import { SealDayCard } from '@/components/today/SealDayCard';
-import { SickDayCard } from '@/components/today/SickDayCard';
+import { NoOrdersCard } from '@/components/today/NoOrdersCard';
 import { SickDaySheet } from '@/components/today/SickDaySheet';
 import { StampOverlay } from '@/components/today/StampOverlay';
-import { RunPaySheet } from '@/components/today/RunPaySheet';
-import { TodayTodo } from '@/components/today/TodayTodo';
-import { TruceBanner } from '@/components/today/TruceBanner';
+import { TodayNotices } from '@/components/today/TodayNotices';
+import { TodaySection } from '@/components/today/TodaySection';
 import { WakeSheet } from '@/components/today/WakeSheet';
 import { WorkoutSheet } from '@/components/today/WorkoutSheet';
-import { Txt } from '@/components/Txt';
-import { proofCopy, todayCopy } from '@/copy';
+import { todayCopy } from '@/copy';
 import { FEATURES } from '@/config/features';
 import { arcEndDay } from '@/features/arc';
 import { planTrucePayment } from '@/features/campaign';
@@ -46,20 +35,20 @@ import { useOwnOrderActions } from '@/hooks/useOwnOrderActions';
 import { useSickDay } from '@/hooks/useSickDay';
 import { useTasks } from '@/hooks/useTasks';
 import { useTodayOrders } from '@/hooks/useTodayOrders';
-import { formatClockMinutes, parseClockMinutes, toDayKey } from '@/lib/dates';
-import { createStyles, useFeedback } from '@/theme';
+import { useWakeLink } from '@/hooks/useWakeLink';
+import { parseClockMinutes, toDayKey } from '@/lib/dates';
+import { useFeedback } from '@/theme';
 
-type Sheet = 'wake' | 'workout' | 'weight' | 'calories' | 'log' | 'sick' | 'run' | 'summary' | null;
+type Sheet = 'wake' | 'workout' | 'weight' | 'calories' | 'sick' | null;
 
 /**
- * Veni: the day, under the shared tabs header. The hero, then one scroll: the orders (done ones
- * sink to the bottom) and the to-do. The daily log (selfie, weight, calories) sits behind one
- * round button at the bottom right. When every order is at its full goal the VINCO stamp lands.
- * Free training (the 'ludus' kind) has no streak to lose, only a run to keep going.
- * Opened as /veni?wake=1 (the "Are you up?" notification), it opens the wake sheet if still at dawn.
+ * Veni: the day, under the shared tabs header. One hero (the dawn card until wake-up is logged,
+ * then the Dies card), the Reels and Focus tiles, then one section: Orders or Tasks. A Truce
+ * offer, a save error or a finished arc show above the section only when they apply. When every
+ * order is at its full goal the VINCO stamp lands. Opened as /veni?wake=1 (the "Are you up?"
+ * notification), it opens the wake sheet if still at dawn.
  */
 export default function VeniScreen() {
-  const styles = useStyles();
   const play = useFeedback();
   const activeArc = useActiveArc();
   const { arc } = activeArc;
@@ -78,8 +67,6 @@ export default function VeniScreen() {
   const { today, targets, totalCount } = orders;
   const run = campaign.campaign;
   const close = () => setSheet(null);
-  const { wake: wakeParam } = useLocalSearchParams<{ wake?: string }>();
-  const navigation = useNavigation();
 
   const isLoaded = orders.isLoaded && activeArc.isLoaded;
   const isLudus = campaign.isLudus;
@@ -99,50 +86,7 @@ export default function VeniScreen() {
   const sleptMinutes = orders.sleptAt ? orders.sleptAt.getHours() * 60 + orders.sleptAt.getMinutes() : null;
 
   // From the "Are you up?" notification: straight into the wake sheet while the day is at dawn.
-  // Handled once per link (state adjusted while rendering), then the link is cleared on this
-  // screen (the global router can't navigate yet on a cold start from the notification).
-  const isWakeLink = wakeParam === '1';
-  const [hasHandledWakeLink, setHasHandledWakeLink] = useState(false);
-  if (isWakeLink && isLoaded && !hasHandledWakeLink) {
-    setHasHandledWakeLink(true);
-    if (isDawn) setSheet('wake');
-  }
-  if (!isWakeLink && hasHandledWakeLink) setHasHandledWakeLink(false);
-  useEffect(() => {
-    if (isWakeLink && hasHandledWakeLink) navigation.setParams({ wake: undefined } as never);
-  }, [isWakeLink, hasHandledWakeLink, navigation]);
-
-  const logItems = [
-    {
-      key: 'selfie',
-      icon: 'camera',
-      title: todayCopy.quickLogs.selfie,
-      value: selfie.todayPath ? todayCopy.quickLogs.selfieDone : null,
-      hint: todayCopy.quickLogs.selfieHint,
-      onPress: () => {
-        close();
-        router.push('/selfie');
-      },
-    },
-    {
-      key: 'weight',
-      icon: 'scale',
-      title: todayCopy.quickLogs.weight,
-      value: selfie.weightKg != null ? todayCopy.quickLogs.weightDone(proofCopy.kg(selfie.weightKg)) : null,
-      hint: todayCopy.quickLogs.weightHint,
-      onPress: () => setSheet('weight'),
-    },
-    {
-      key: 'calories',
-      icon: 'plate',
-      title: todayCopy.quickLogs.calories,
-      value:
-        selfie.calories != null ? todayCopy.quickLogs.caloriesDone(proofCopy.kcal(selfie.calories)) : null,
-      hint: todayCopy.quickLogs.caloriesHint,
-      onPress: () => setSheet('calories'),
-    },
-  ] as const;
-  const loggedCount = logItems.filter((item) => item.value != null).length;
+  useWakeLink(isLoaded, isDawn, () => setSheet('wake'));
 
   const taps = useOrderTaps(orders, {
     openSheet: setSheet,
@@ -171,42 +115,25 @@ export default function VeniScreen() {
   };
 
   const rows = isLoaded ? buildOrderRows(orders, taps) : [];
-  const ordersNote = isDawn
-    ? todayCopy.dawn.waiting
-    : !isLoaded || totalCount === 0
-      ? null
-      : isLudus && campaign.todayStatus === 'open'
-        ? run > 0
-          ? todayCopy.run.nudge(run)
-          : todayCopy.run.start
-        : // Until something besides wake-up is logged, one line says how to log and take back.
-          rows.every((row) => row.key === 'wake' || row.status === 'none')
-          ? todayCopy.ordersHint
-          : null;
-
-  const noOrdersCard =
+  const logs = buildTodayLogs(selfie, {
+    weight: () => setSheet('weight'),
+    calories: () => setSheet('calories'),
+  });
+  const ordersFooter =
     isLudus && totalCount === 0 && !isDawn ? (
-      <Card bordered style={styles.noOrders}>
-        <Txt variant="label">{todayCopy.noOrders.title}</Txt>
-        <Txt variant="caption">{todayCopy.noOrders.body}</Txt>
-        <PlanOrderCard
-          kind="suggestion"
-          icon="water"
-          name={todayCopy.noOrders.waterName}
-          line={todayCopy.noOrders.waterLine}
-          isAdded={false}
-          onToggle={() => {
-            if (!ownOrders.addVinco('water')) play('denied');
-          }}
-          addLabel={todayCopy.noOrders.add}
-          addedLabel={todayCopy.noOrders.added}
-        />
-      </Card>
+      <NoOrdersCard onAddWater={() => !ownOrders.addVinco('water') && play('denied')} />
+    ) : isLoaded && canAddOrder ? (
+      <Button
+        label={todayCopy.addOrder}
+        variant="ghost"
+        size="compact"
+        onPress={() => setTodoTarget({ type: 'order' })}
+      />
     ) : null;
 
   return (
     <>
-      <Screen gutter="tabBody" contentStyle={arc && isLoaded ? styles.roomForLog : undefined}>
+      <Screen gutter="tabBody">
         {arc && isLoaded && campaign.isLoaded ? (
           <TodayHero
             orders={orders}
@@ -214,129 +141,42 @@ export default function VeniScreen() {
             isDawn={isDawn}
             isFinished={header.isFinished}
             plannedWakeMinutes={plannedWakeMinutes}
-            onOpenSummary={() => setSheet('summary')}
-            onOpenRun={() => setSheet('run')}
+            onRise={() => setSheet('wake')}
+            // Free training has no campaign to protect, so no sick-day Truce.
+            onFeelingSick={
+              isLudus
+                ? undefined
+                : () => {
+                    setSickError(null);
+                    setSheet('sick');
+                  }
+            }
+            onFeelingBetter={() => !sickDay.cancel() && play('denied')}
           />
         ) : null}
 
-        {campaign.truceOffer ? (
-          <View style={styles.notice}>
-            <TruceBanner
-              campaign={campaign.truceOffer.campaignSaved}
-              missedDays={campaign.truceOffer.days.length}
-              onOpen={() => router.push('/campaign-lost')}
-            />
-          </View>
-        ) : null}
-
-        {header.isFinished ? (
-          <Card bordered style={[styles.notice, styles.finished]}>
-            <Txt variant="heading" accessibilityRole="header">
-              {todayCopy.finished.title}
-            </Txt>
-            <Txt variant="body" color="textMuted">
-              {todayCopy.finished.body}
-            </Txt>
-            <Button
-              label={todayCopy.finished.action}
-              size="compact"
-              onPress={() => router.navigate('/vici')}
-            />
-          </Card>
-        ) : null}
-
-        {isDawn ? (
-          <View style={styles.notice}>
-            <DawnCard
-              hour={now.getHours()}
-              plannedTime={plannedWakeMinutes != null ? formatClockMinutes(plannedWakeMinutes) : null}
-              onRise={() => setSheet('wake')}
-              // Free training has no campaign to protect, so no sick-day Truce.
-              onFeelingSick={
-                isLudus
-                  ? undefined
-                  : () => {
-                      setSickError(null);
-                      setSheet('sick');
-                    }
-              }
-            />
-          </View>
-        ) : null}
-        {arc && isLoaded && orders.isSickDay ? (
-          <View style={styles.notice}>
-            <SickDayCard onFeelingBetter={() => !sickDay.cancel() && play('denied')} />
-          </View>
-        ) : null}
-
-        {orders.hasSaveError ? (
-          <Card variant="sunk" style={[styles.notice, styles.error]} accessibilityRole="alert">
-            <Txt variant="caption" color="danger">
-              {todayCopy.saveError}
-            </Txt>
-          </Card>
-        ) : null}
+        <TodayNotices
+          truceOffer={campaign.truceOffer}
+          isFinished={header.isFinished}
+          hasSaveError={orders.hasSaveError}
+        />
 
         {arc ? (
-          <OrderList
+          <TodaySection
             rows={rows}
             isWaiting={isDawn}
-            note={ordersNote}
-            footer={
-              noOrdersCard ??
-              (isLoaded && canAddOrder ? (
-                <Button
-                  label={todayCopy.addOrder}
-                  variant="ghost"
-                  size="compact"
-                  onPress={() => setTodoTarget({ type: 'order' })}
-                />
-              ) : null)
-            }
-          />
-        ) : null}
-
-        {arc && isLoaded && campaign.todayStatus !== 'open' ? (
-          <View style={styles.notice}>
-            <SealDayCard status={campaign.todayStatus} onSeal={() => router.push('/day-card')} />
-          </View>
-        ) : null}
-
-        {/* Labours sit after the orders and the seal, so the core job stays at the top. */}
-        {arc && isLoaded ? <TodayLabours /> : null}
-
-        {FEATURES.tasks && arc && isLoaded && tasks.isLoaded ? (
-          <TodayTodo
-            tasks={tasks}
-            onAdd={() => setTodoTarget({ type: 'add' })}
-            onEdit={(item) => setTodoTarget({ type: 'edit', item })}
-            onOpenAll={() => router.push({ pathname: '/plan', params: { tab: 'todo' } })}
+            ordersFooter={ordersFooter}
+            tasks={{
+              tasks: FEATURES.tasks && isLoaded && tasks.isLoaded ? tasks : null,
+              logs,
+              onAdd: () => setTodoTarget({ type: 'add' }),
+              onEdit: (item) => setTodoTarget({ type: 'edit', item }),
+              onOpenAll: () => router.push({ pathname: '/plan', params: { tab: 'todo' } }),
+            }}
           />
         ) : null}
       </Screen>
 
-      {arc && isLoaded ? (
-        <View style={styles.logButton} pointerEvents="box-none">
-          <DailyLogButton done={loggedCount} total={logItems.length} onPress={() => setSheet('log')} />
-        </View>
-      ) : null}
-      <DailyLogSheet visible={sheet === 'log'} onClose={close} items={logItems} />
-      <RunPaySheet
-        visible={sheet === 'run'}
-        onClose={close}
-        nextReward={campaign.nextReward}
-        isLudus={isLudus}
-      />
-      {arc ? (
-        <DaySummarySheet
-          day={sheet === 'summary' ? today : null}
-          status={campaign.todayStatus}
-          isLudus={isLudus}
-          arcId={arc.id}
-          targets={targets}
-          onClose={close}
-        />
-      ) : null}
       <TaskSheets
         target={todoTarget}
         onClose={() => setTodoTarget(null)}
@@ -420,13 +260,3 @@ export default function VeniScreen() {
     </>
   );
 }
-
-const useStyles = createStyles((theme) => ({
-  // The daily log button floats over the bottom of the scroll; the content ends above it.
-  logButton: { position: 'absolute', right: theme.layout.screenGutter, bottom: theme.space.lg },
-  roomForLog: { paddingBottom: theme.layout.buttonHeight + theme.space.xxl },
-  notice: { marginTop: theme.space.lg },
-  finished: { gap: theme.space.sm },
-  noOrders: { gap: theme.space.sm },
-  error: { borderWidth: theme.layout.borderWidth, borderColor: theme.colors.dangerBorder },
-}));

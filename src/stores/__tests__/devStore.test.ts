@@ -29,4 +29,13 @@ describe('useDevStore', () => {
     useDevStore.getState().resetDayOffset();
     expect(useDevStore.getState().dayOffset).toBe(0);
   });
+
+  it('moves the clock back one day at a time, never behind the real clock', () => {
+    useDevStore.setState({ dayOffset: 2 });
+    useDevStore.getState().previousDay();
+    expect(useDevStore.getState().dayOffset).toBe(1);
+    useDevStore.getState().previousDay();
+    useDevStore.getState().previousDay();
+    expect(useDevStore.getState().dayOffset).toBe(0);
+  });
 });

@@ -1,4 +1,5 @@
 import { type StyleProp, type TextStyle, View } from 'react-native';
+import { useState } from 'react';
 import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated';
 
 import { useFitFontSize } from '@/hooks/useFitFontSize';
@@ -49,6 +50,12 @@ export function RollingNumber({
   const lineRatio = (type.lineHeight ?? baseSize * 1.2) / baseSize;
   const fitted = useFitFontSize(baseSize);
   const fitStyle = fit ? { fontSize: fitted.fontSize, lineHeight: fitted.fontSize * lineRatio } : null;
+  // The first value is simply there: an entrance on mount starts at opacity 0 and can stall when
+  // the app opens from the background, leaving the number blank. Only a changed value rolls in.
+  const [firstValue] = useState(value);
+  const [hasChanged, setHasChanged] = useState(false);
+  if (!hasChanged && value !== firstValue) setHasChanged(true);
+  const animate = hasChanged && !reduceMotion;
 
   return (
     <View
@@ -71,11 +78,7 @@ export function RollingNumber({
           </Txt>
         </View>
       ) : null}
-      <Animated.View
-        key={value}
-        entering={reduceMotion ? undefined : ENTER}
-        exiting={reduceMotion ? undefined : EXIT}
-      >
+      <Animated.View key={value} entering={animate ? ENTER : undefined} exiting={animate ? EXIT : undefined}>
         <Txt
           variant={variant}
           color={color}

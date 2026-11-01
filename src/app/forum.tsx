@@ -83,7 +83,6 @@ export default function ForumScreen() {
         >
           <Icon name="coin" size={COIN_SIZE} color="currency" />
           <View style={styles.purseText}>
-            <Txt variant="micro">{forumCopy.balanceLabel}</Txt>
             <Txt variant="heading" color="currency">
               {forumCopy.balance(forum.balance)}
             </Txt>
@@ -120,7 +119,6 @@ export default function ForumScreen() {
             {/* The bounties live on their own board; the Aerarium lists the wages. */}
             <Card bordered style={styles.labours}>
               <Txt variant="label">{rewardsCopy.labours.forumTitle}</Txt>
-              <Txt variant="caption">{rewardsCopy.labours.forumBody}</Txt>
               <Button
                 label={rewardsCopy.labours.forumAction}
                 variant="secondary"

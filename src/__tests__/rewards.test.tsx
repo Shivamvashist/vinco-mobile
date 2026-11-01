@@ -2,7 +2,7 @@
 import { fireEvent, screen } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
 
-import { arcCopy, rewardsCopy } from '@/copy';
+import { arcCopy, forumCopy, rewardsCopy } from '@/copy';
 import { db, getDenariiBalance, getTruceReserve, selectClaims, updateDayLog } from '@/db';
 import { DECORATION_REWARDS, LABOUR_RULES, resolveClaimPay } from '@/features/labours';
 import { toDayKey } from '@/lib/dates';
@@ -15,11 +15,11 @@ const describeReward = (reward: { denarii: number; gloria: number; truces?: numb
   rewardsCopy.rewards.describe(resolveClaimPay(reward, reserve));
 
 describe('Labours', () => {
-  it('shows the top labours on Today and claims one into the purse', async () => {
+  it('claims a labour from its board into the purse', async () => {
     startArc();
     markAwake();
     updateDayLog(db, toDayKey(new Date()), { selfiePath: 'file:///selfie.jpg' });
-    renderRouter(APP_DIR, { initialUrl: '/veni' });
+    renderRouter(APP_DIR, { initialUrl: '/labours' });
     const claim = await screen.findByLabelText(
       labours.claimLabel(labours.items.selfie.title, describeReward(LABOUR_RULES.selfie.reward, 1)),
     );
@@ -34,13 +34,13 @@ describe('Labours', () => {
 
   it('lists every labour on its board, grouped, with when it resets', async () => {
     startArc();
-    const app = renderRouter(APP_DIR, { initialUrl: '/veni' });
-    fireEvent.press(await screen.findByLabelText(labours.seeAllLabel));
+    const app = renderRouter(APP_DIR, { initialUrl: '/forum' });
+    fireEvent.press(await screen.findByLabelText(forumCopy.segments.earn));
+    fireEvent.press(await screen.findByLabelText(labours.forumAction));
     expect(await screen.findByText(labours.items.wakeWeek.title)).toBeTruthy();
     expect(app.getPathname()).toBe('/labours');
     expect(screen.getByText(labours.groups.daily)).toBeTruthy();
     expect(screen.getByText(labours.groups.weekly)).toBeTruthy();
-    expect(screen.getByText(labours.wages)).toBeTruthy();
   });
 });
 

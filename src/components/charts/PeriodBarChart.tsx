@@ -35,6 +35,11 @@ export type PeriodBarChartProps = {
   hint: string;
   /** Screen-reader label for the scale: "Scale up to 2h". */
   describeScale: (top: string) => string;
+  /**
+   * Optional dashed line at a value in the chart's units (the reel budget), labelled at its left.
+   * The scale stretches to show it.
+   */
+  reference?: { value: number; label: string; accessibilityLabel: string };
 };
 
 /** Height the tallest bar reaches. One-off, sized like Vidi's week charts. */
@@ -56,6 +61,7 @@ export function PeriodBarChart({
   scaleFloor = 1,
   hint,
   describeScale,
+  reference,
 }: PeriodBarChartProps) {
   const styles = useStyles();
   const theme = useTheme();
@@ -66,7 +72,9 @@ export function PeriodBarChart({
   const selected = bars.find((bar) => bar.key === selectedKey) ?? null;
 
   const totals = bars.map((bar) => (bar.isFuture ? 0 : sumOf(bar.values)));
-  const top = niceCeiling(Math.max(0, ...totals), scaleFloor);
+  const referenceValue =
+    reference && Number.isFinite(reference.value) && reference.value > 0 ? reference.value : 0;
+  const top = niceCeiling(Math.max(0, referenceValue, ...totals), scaleFloor);
   const gap = bars.length > 14 ? theme.space.xxs : bars.length > 7 ? theme.space.xs : theme.space.sm;
   const stagger = bars.length > 0 ? Math.min(60, STAGGER_BUDGET_MS / bars.length) : 0;
   const scaleText = formatScale(top);
@@ -91,6 +99,18 @@ export function PeriodBarChart({
           </Txt>
         </View>
         <View style={styles.midLine} pointerEvents="none" importantForAccessibility="no" />
+        {reference && referenceValue > 0 ? (
+          <View
+            style={[styles.reference, { bottom: (referenceValue / top) * BAR_AREA_HEIGHT }]}
+            pointerEvents="none"
+            accessible
+            accessibilityLabel={reference.accessibilityLabel}
+          >
+            <Txt variant="micro" color="accent" numberOfLines={1} style={styles.referenceLabel}>
+              {reference.label}
+            </Txt>
+          </View>
+        ) : null}
         <View style={[styles.bars, { gap }]}>
           {bars.map((bar, index) => {
             const isSelected = bar.key === selectedKey;
@@ -207,6 +227,23 @@ const useStyles = createStyles((theme) => ({
     bottom: BAR_AREA_HEIGHT / 2,
     borderTopWidth: theme.layout.hairline,
     borderColor: theme.colors.border,
+  },
+  reference: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 1,
+    borderTopWidth: theme.layout.borderWidth,
+    borderStyle: 'dashed',
+    borderColor: theme.colors.accent,
+  },
+  referenceLabel: {
+    position: 'absolute',
+    left: 0,
+    bottom: theme.space.xxs,
+    paddingHorizontal: theme.space.xxs,
+    borderRadius: theme.radius.xs,
+    backgroundColor: theme.colors.surface,
   },
   bars: { flexDirection: 'row', alignItems: 'flex-end', height: BAR_AREA_HEIGHT },
   column: {

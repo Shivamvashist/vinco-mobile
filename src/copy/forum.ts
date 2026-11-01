@@ -2,13 +2,13 @@ import type { ForumCategory, ForumItemId } from '@/features/forum';
 
 /** The Forum (shop), the Aerarium (ways to earn) and the treasury's history. */
 export const forumCopy = {
-  eyebrow: 'The Forum · Shop',
+  eyebrow: 'Shop',
   title: 'The Forum',
   back: 'Back',
   balance: (amount: number): string => `${amount} ${amount === 1 ? 'denarius' : 'denarii'}`,
   balanceLabel: 'In your purse',
   earnedThisWeek: (amount: number): string => `${amount} earned this week`,
-  rule: 'Denarii are earned by holding the line. They are never sold for real money.',
+  rule: 'Denarii are earned, never sold for real money.',
 
   segments: { shop: 'Shop', earn: 'Earn', history: 'History' },
 
@@ -22,32 +22,32 @@ export const forumCopy = {
     truce: {
       name: 'Truce',
       latin: null,
-      description: 'A rest day that keeps your campaign alive. Call it when a day falls.',
+      description: 'A rest day that keeps your campaign alive.',
     },
     venia: {
       name: 'Alarm pass',
       latin: '"Venia" (pardon)',
-      description: 'Stops Aurora once without its mission. For the morning you truly cannot.',
+      description: 'Stops Aurora once without its mission.',
     },
     cardAurum: {
       name: 'Aurum card',
       latin: null,
-      description: 'A day card in solid gold, for the days worth showing off.',
+      description: 'A day card in solid gold.',
     },
     cardNox: {
       name: 'Nox card',
       latin: null,
-      description: 'Black and gold, framed. For the night-watch crowd.',
+      description: 'Black and gold, framed.',
     },
     designStamp: {
       name: 'Stamp card',
       latin: null,
-      description: 'The seal slammed across your day. One word underneath.',
+      description: 'The seal slammed across your day.',
     },
     designMemento: {
       name: 'Memento card',
       latin: '"Memento" (remember)',
-      description: 'One line worth keeping, and the day. Nothing else.',
+      description: 'One line worth keeping, and the day.',
     },
     iconLaurel: {
       name: 'Laurel icon',
@@ -67,9 +67,9 @@ export const forumCopy = {
     held: (count: number, max: number): string => `${count} of ${max} held`,
     owned: 'Owned',
     worksWithAurora: 'Works once Aurora arrives',
-    worksWithBuild: 'Switches once app icons arrive in an update',
+    worksWithBuild: 'Switches on in an update',
     onDayCard: 'Pick it on your day card',
-    keptForCampaign: 'Kept for your next campaign (free training needs none)',
+    keptForCampaign: 'Kept for your next campaign',
   },
 
   sheet: {
@@ -89,7 +89,7 @@ export const forumCopy = {
 
   earn: {
     title: 'The Aerarium',
-    subtitle: '"Aerarium" (the treasury): the wages that land on their own.',
+    subtitle: 'The treasury',
     ways: {
       dayHeld: 'Hold the line for a day',
       dayConquered: 'Conquer a day',
@@ -108,11 +108,11 @@ export const forumCopy = {
       vigil: 'With the Vigil',
       decorations: 'With decorations',
     },
-    ludusNote: 'Free training pays the same denarii. Truces belong to campaigns.',
+    ludusNote: 'Truces belong to campaigns.',
   },
 
   history: {
-    empty: 'Nothing yet. Hold the line today and your first denarii land at once.',
+    empty: 'Nothing yet. Hold the line today to earn your first.',
     reasons: {
       day_held: 'Day held',
       day_conquered: 'Day conquered',
@@ -127,6 +127,9 @@ export const forumCopy = {
       focus_2: 'Focus held',
       focus_3: 'Focus held',
       truce_bought: 'Truce, at the moment of need',
+      reel_pass_1: 'Reel pass, 12 more reels',
+      reel_pass_2: 'Reel pass, 12 more reels',
+      reel_pass_3: 'Reel pass, 12 more reels',
     } as Record<string, string>,
     /** A retreat from a focus paid in denarii (a Truce bought on the spot). */
     focusRetreat: 'Focus retreat, Truce bought on the spot',

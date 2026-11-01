@@ -10,9 +10,11 @@ const litres = (value: number): string => `${Number(value.toFixed(2))}`;
 /** The Veni (Today) tab. */
 export const todayCopy = {
   eyebrow: `${tabsCopy.veni.latin} · ${tabsCopy.veni.meaning}`,
-  ordersSection: 'Your orders',
-  /** One quiet line under the orders heading: how to log and how to take a step back. */
-  ordersHint: 'Tap to log. Press and hold to take one back.',
+  /** The one section under the tiles: a switch between the orders and the day's tasks. */
+  section: {
+    orders: 'Orders',
+    tasks: 'Tasks',
+  },
   /** "Day XII of LX" (shown in caps). */
   arcEyebrow: (dayRoman: string, lengthRoman: string): string => `Day ${dayRoman} of ${lengthRoman}`,
   arcFinishedEyebrow: 'Arc complete',
@@ -21,21 +23,13 @@ export const todayCopy = {
   /** After a campaign's last day: the way on, from Today. */
   finished: {
     title: 'Campaign complete',
-    body: 'You finished what you started. Begin another campaign, or switch to free training.',
     action: 'Choose what next',
-  },
-
-  /** Shown once every order holds, so the day can be sealed even after the stamp is dismissed. */
-  sealCard: {
-    heldTitle: 'Line held',
-    conqueredTitle: 'Day conquered',
-    detail: 'Your day card is ready. Seal it and share the proof.',
-    action: 'Seal the day',
   },
 
   /** Shown while a Truce can still save the campaign (until today ends). */
   truceBanner: {
     title: 'Yesterday fell',
+    /** For screen readers: the banner in one sentence. */
     detail: (campaign: number, days: number): string =>
       `${days === 1 ? 'A Truce' : `${days} Truces`} can still save your ${campaign}-day campaign, until midnight.`,
     action: 'See your options',
@@ -44,11 +38,9 @@ export const todayCopy = {
   saveError: 'That last change could not be saved. Try again; nothing else was lost.',
 
   ringLabel: (held: number, total: number): string => `${held} of ${total} orders held`,
-  /** Beside the orders heading: "2 of 5 done". */
-  ordersCount: (done: number, total: number): string => `${done} of ${total} done`,
   menuLabel: 'Open your menu',
 
-  /** The quick logs under the header: loud until done today, then small. */
+  /** The daily logs, as rows in the Tasks list: the value once logged today, else the name. */
   quickLogs: {
     selfie: 'Selfie',
     selfieDone: 'Selfie taken',
@@ -59,43 +51,26 @@ export const todayCopy = {
     calories: 'Calories',
     caloriesDone: (kcal: string): string => `${kcal} kcal`,
     caloriesHint: "Logs today's calories",
-    /** The round button on Today that opens the daily log, and its sheet. */
-    open: 'Daily log',
-    openLabel: (done: number, total: number): string => `Daily log, ${done} of ${total} logged today`,
-    openHint: 'Opens the selfie, weight and calories for today',
-    sheetTitle: 'Daily log',
-    sheetCaption: 'Optional, and only for you. The orders decide the day.',
-    notYet: 'Not yet',
-  },
-
-  /** Free training has no streak to lose: just a nudge to keep a run of full days going. */
-  run: {
-    nudge: (days: number): string => `Finish today's orders to keep your ${days}-day run going.`,
-    start: 'Finish every order today to start a run.',
   },
 
   /** The Dies card (the hero): today's orders as one big number over the day's path. */
   hero: {
-    label: 'Today',
-    /** Free training: the run in place of "Today" while there is one. */
-    runLabel: (days: number): string => (days === 1 ? '1 day in a row' : `${days} days in a row`),
     states: {
       open: 'Open',
       held: 'Held',
       conquered: 'Conquered',
       sick: 'Sick day',
-      dawn: 'Before dawn',
       finished: 'Arc complete',
     },
     of: (total: number): string => `/${total}`,
-    caption: (earned: number): string => (earned > 0 ? `orders held · +${earned} denarii` : 'orders held'),
-    dawnCaption: 'planned wake-up',
-    noOrders: 'no orders yet',
+    /**
+     * After a few seconds the count gives way to the sky: the sun or moon on the path and the
+     * time left in the day ("7 h 12 m", then "left").
+     */
+    left: 'left',
     /** For screen readers: the whole card in one sentence (activity: from `activity`, or empty). */
     accessibleLabel: (held: number, total: number, state: string, activity = ''): string =>
       `Today, ${state}. ${held} of ${total} orders held. ${activity ? `${activity} ` : ''}Opens today's summary.`,
-    dawnLabel: (time: string, activity = ''): string =>
-      `Today, before dawn. Planned wake-up ${time}.${activity ? ` ${activity}` : ''}`,
     /** The day path's marks in words: how many things were done today, and when the last was. */
     activity: (count: number, lastAt: string | null): string =>
       count <= 0
@@ -103,18 +78,49 @@ export const todayCopy = {
         : `${count} ${count === 1 ? 'activity' : 'activities'} today${lastAt ? `, last at ${lastAt}` : ''}.`,
   },
 
-  /** The run tile under the hero (the second tile is Focus: focusCopy.tile). */
+  /** The two tiles under the hero: Reels (here) and Focus (focusCopy.tile). */
   tiles: {
-    run: {
-      campaign: 'Campaign',
-      ludus: 'Run',
-      unit: (days: number): string => (days === 1 ? 'day in a row' : 'days in a row'),
-      hint: 'Opens what the run pays',
-      label: (days: number, next: string): string => `Run, ${days} in a row. Next: ${next}.`,
+    reels: {
+      title: 'Reels',
+      /** Under the count: the day's budget. */
+      of: (budget: number): string => `of ${budget}`,
+      /** Where reels can't be counted yet (Expo Go, no permission). */
+      setUp: 'Set up',
+      label: (count: number, budget: number): string => `Reels, ${count} of ${budget} today`,
+      setUpLabel: 'Reels, not counted yet',
+      hint: 'Opens the reel counter',
     },
   },
 
-  /** The run pay sheet, from the run tile. */
+  /** Today's summary, from the hero. Facts, not sentences. */
+  summary: {
+    title: 'Today',
+    orders: 'Orders',
+    denarii: 'Denarii',
+    run: 'Run',
+    ordersLabel: (held: number, total: number): string => `${held} of ${total} orders held`,
+    denariiLabel: (earned: number): string => `${earned} denarii today`,
+    runLabel: (days: number): string => `Run, ${days} in a row. Opens what the run pays.`,
+    timeline: 'Timeline',
+    empty: 'Nothing yet today.',
+    kinds: {
+      order: 'Order',
+      wake: 'Up',
+      task: 'Task',
+      focus: 'Focus',
+      selfie: 'Selfie',
+      weight: 'Weight',
+      calories: 'Calories',
+      reward: 'Reward',
+      truce: 'Truce',
+    },
+    /** Several in a row of the same kind: "Order ×3". */
+    times: (count: number): string => `×${count}`,
+    dayCard: 'Seal the day',
+    dayCardHint: 'Opens your day card',
+  },
+
+  /** The run pay sheet, from the summary. */
   runSheet: {
     title: '"Stipendium" (run pay)',
     body: 'Every week of a run pays on days 3, 5 and 7. Long runs pay a bonus on top.',
@@ -144,7 +150,6 @@ export const todayCopy = {
   /** Free training with no orders yet: one suggestion, and a way to add your own. */
   noOrders: {
     title: 'No orders yet',
-    body: 'Start with water, a litre at a time. Add anything else you will do every day.',
     waterName: 'Water',
     waterLine: 'A litre at a time, up to 4 L',
     add: 'Add',
@@ -204,12 +209,11 @@ export const todayCopy = {
 
   /** Before wake-up is logged, Today opens on the dawn card. */
   dawn: {
-    eyebrow: '"Surgo" · I rise',
     greeting: (hour: number): string =>
       hour < 5 ? 'Up early' : hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening',
+    /** For screen readers, on the planned time shown at the top of the dawn card. */
     planned: (time: string): string => `Planned wake-up: ${time}`,
     action: "I'm up",
-    waiting: "Your orders open once you're up.",
   },
 
   /** A sick day: a Truce called in advance. Neutral in every tone (it's a health moment). */
@@ -227,10 +231,6 @@ export const todayCopy = {
     confirm: 'Call a sick-day Truce',
     cancel: "I'll push through",
     failed: "The Truce couldn't be called. Nothing was spent. Try again.",
-    cardEyebrow: 'Sick day · Truce called',
-    cardTitle: 'Rest and recover',
-    cardBody:
-      'Your campaign is safe today. Log anything you manage. Hold every order and the Truce comes back at midnight.',
     better: "I'm feeling better",
     betterHint: 'Takes the Truce back',
   },

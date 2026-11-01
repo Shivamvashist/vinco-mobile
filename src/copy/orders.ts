@@ -5,22 +5,19 @@ export const ordersCopy = {
   screen: {
     eyebrow: 'Orders',
     title: 'Your orders',
-    intro:
-      'Every order must hold for the day to count. Hit the minimum and the campaign lives; hit the full goal and you conquer.',
-    introFree: 'Orders are done every day, no matter what. Finish them all and the day is yours.',
     vincoSection: 'Set by Vinco',
     vincoSectionFree: 'From Vinco',
     remove: 'Remove',
     addSuggestion: (name: string): string => `Add ${name.toLowerCase()}`,
     ownSection: 'Your own',
-    ownEmpty: 'None yet. Add one you will follow no matter what: reading, steps, study.',
+    ownEmpty: 'None yet. Reading, steps, study?',
     goals: (min: string, full: string): string => `Hold the line: ${min} · Conquer: ${full}`,
     /** An own order whose minimum is its goal: "12 glass a day". */
     daily: (full: string): string => `${full} a day`,
     /** A done-or-not order (no unit, once a day). */
     check: 'Once a day, done or not',
     standDown: 'Stand down',
-    standsDownTomorrow: 'Counts today, gone from tomorrow',
+    standsDownTomorrow: 'Gone from tomorrow',
     edit: 'Edit',
     editLabel: (name: string): string => `Edit ${name}`,
     /** A lower goal waiting for tomorrow, under today's: "From tomorrow: 8 glass a day". */
@@ -37,10 +34,7 @@ export const ordersCopy = {
   },
   vincoNames: { water: 'Water', wake: 'Wake-up', meal: 'Protein meal', workout: 'Workout' },
   /** Wake-up has one step: tapping "I'm up". */
-  wakeLine: (time: string | null): string =>
-    time
-      ? `Tap "I'm up" once you are out of bed · planned for ${time}`
-      : `Tap "I'm up" once you are out of bed`,
+  wakeLine: (time: string | null): string => (time ? `Up by ${time}` : `Tap "I'm up" once out of bed`),
 
   add: {
     title: 'Add an order',
@@ -104,14 +98,14 @@ export const ordersCopy = {
 
   removeSheet: {
     title: (name: string): string => `Remove ${name.toLowerCase()}?`,
-    body: 'It stops counting from today. Days already sealed keep their results. You can add it back any time.',
+    body: 'It stops counting from today. Sealed days keep their results.',
     confirm: 'Remove it',
     cancel: 'Keep it',
   },
 
   standDownSheet: {
     title: (name: string): string => `Stand down "${name}"?`,
-    body: 'It still counts today, so finish it. From tomorrow it is gone. Past days keep their results.',
+    body: 'It still counts today. From tomorrow it is gone.',
     bodyAddedToday: 'It was added today, so it is removed straight away.',
     confirm: 'Stand it down',
     cancel: 'Keep it',

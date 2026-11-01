@@ -21,7 +21,7 @@ const disclosure = focusCopy.permission;
 /**
  * Every permission Vinco uses, in three groups: the daily ones (reminders, camera, microphone),
  * Aurora's alarm access and the focus guard (optional). The native groups say they arrive with
- * the Vinco build where this build can't use them (Expo Go). Used by onboarding and Permissions.
+ * the Vinco build where this build can't use them (Expo Go). Used by the Permissions screen.
  */
 export function PermissionList({ permissions }: PermissionListProps) {
   const styles = useStyles();

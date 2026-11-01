@@ -15,7 +15,7 @@ export const MAX_DAY_OFFSET = 366;
 /** Tools for testing on a phone. Saved, so a restart keeps the simulated day. */
 type DevState = {
   isDevModeOn: boolean;
-  /** Days the app's calendar runs ahead of the phone's clock. Only ever moves forward. */
+  /** Days the app's calendar runs ahead of the phone's clock. Never below 0 (never behind the phone). */
   dayOffset: number;
 };
 
@@ -23,7 +23,12 @@ type DevActions = {
   setDevModeOn: (isOn: boolean) => void;
   /** Moves the app's calendar one day ahead, up to MAX_DAY_OFFSET. */
   advanceDay: () => void;
-  /** Back to the real clock. Only safe after a full reset: sealed future days would remain. */
+  /**
+   * One day back, never below 0. Moves the clock only: run the dev rewind first (src/dev/rewind.ts)
+   * so the days after the new today don't stay sealed.
+   */
+  previousDay: () => void;
+  /** Back to the real clock. Moves the clock only: after a full reset, or after the dev rewind. */
   resetDayOffset: () => void;
 };
 
@@ -49,6 +54,7 @@ export const useDevStore = create<DevStore>()(
       dayOffset: 0,
       setDevModeOn: (isDevModeOn) => set({ isDevModeOn }),
       advanceDay: () => set((state) => ({ dayOffset: Math.min(state.dayOffset + 1, MAX_DAY_OFFSET) })),
+      previousDay: () => set((state) => ({ dayOffset: Math.max(state.dayOffset - 1, 0) })),
       resetDayOffset: () => set({ dayOffset: 0 }),
     }),
     {

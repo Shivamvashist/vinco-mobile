@@ -1,14 +1,14 @@
-/** The shared permissions list: the onboarding step, the Permissions screen, Expo Go and the Vinco build. */
+/** The onboarding step (reminders only) and the shared permissions list: the Permissions screen, Expo Go and the Vinco build. */
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import { getRecordingPermissionsAsync } from 'expo-audio';
 import { useCameraPermissions } from 'expo-camera';
 import { renderRouter } from 'expo-router/testing-library';
+import * as Notifications from 'expo-notifications';
 import { Linking } from 'react-native';
 
 import { auroraCopy, focusCopy, onboardingCopy, permissionsCopy } from '@/copy';
 import { auroraBridge } from '@/features/aurora';
 import { guardBridge } from '@/features/guard';
-import { useOnboardingStore } from '@/stores';
 import { APP_DIR, resetAppState, startArc } from '@/testing/routeKit';
 
 const copy = permissionsCopy;
@@ -35,15 +35,17 @@ afterEach(() => {
 });
 
 describe('Onboarding permissions step', () => {
-  it('comes after the tone, and Continue goes to the oath', async () => {
-    useOnboardingStore.getState().setLastStep('permissions');
-    const app = renderRouter(APP_DIR, { initialUrl: '/' });
+  it('asks only for reminders, and Continue goes to the oath', async () => {
+    const app = renderRouter(APP_DIR, { initialUrl: '/onboarding/permissions' });
     expect(await screen.findByText(onboardingCopy.permissions.title)).toBeTruthy();
     expect(app.getPathname()).toBe('/onboarding/permissions');
     expect(screen.getByLabelText(onboardingCopy.stepAccessibilityLabel(3, 5))).toBeTruthy();
-    // Everything allowed (the fakes): no "Allow all", just Continue.
-    await waitFor(() => expect(screen.queryByText(copy.status.checking)).toBeNull());
-    expect(screen.queryByLabelText(onboardingCopy.permissions.allowAll)).toBeNull();
+    expect(screen.getByText(copy.items.notifications.label)).toBeTruthy();
+    // The camera, the microphone, the alarm and the guard wait until they are used.
+    expect(screen.queryByText(copy.items.camera.label)).toBeNull();
+    expect(screen.queryByText(copy.items.microphone.label)).toBeNull();
+    expect(screen.queryByText(copy.groups.alarm)).toBeNull();
+    expect(screen.queryByText(copy.groups.guard)).toBeNull();
 
     act(() => jest.advanceTimersByTime(600));
     fireEvent.press(screen.getByLabelText(onboardingCopy.continue));
@@ -51,27 +53,20 @@ describe('Onboarding permissions step', () => {
     expect(app.getPathname()).toBe('/onboarding/oath');
   });
 
-  it('asks for what is still open with Allow all, and Continue still goes on', async () => {
+  it('never asks for the camera, and Continue goes on with reminders refused', async () => {
     const requestCamera = jest.fn(async () => undefined);
     setCamera(false, requestCamera);
+    jest
+      .mocked(Notifications.getPermissionsAsync)
+      .mockResolvedValueOnce({ granted: false, status: 'denied', canAskAgain: false } as never);
     const app = renderRouter(APP_DIR, { initialUrl: '/onboarding/permissions' });
-    expect(await screen.findByText(copy.status.undetermined)).toBeTruthy();
-
-    fireEvent.press(screen.getByLabelText(onboardingCopy.permissions.allowAll));
-    await waitFor(() => expect(requestCamera).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText(copy.status.denied)).toBeTruthy();
 
     act(() => jest.advanceTimersByTime(600));
     fireEvent.press(screen.getByLabelText(onboardingCopy.continue));
     expect(await screen.findByText(onboardingCopy.oath.title)).toBeTruthy();
     expect(app.getPathname()).toBe('/onboarding/oath');
-  });
-
-  it('says the alarm and the guard arrive with the Vinco build in Expo Go', async () => {
-    renderRouter(APP_DIR, { initialUrl: '/onboarding/permissions' });
-    expect(await screen.findByText(copy.groups.guard)).toBeTruthy();
-    expect(screen.getAllByText(copy.vincoBuild)).toHaveLength(2);
-    expect(screen.queryByText(copy.items.accessibility.label)).toBeNull();
-    expect(screen.queryByText(auroraCopy.status.exact)).toBeNull();
+    expect(requestCamera).not.toHaveBeenCalled();
   });
 });
 
@@ -91,6 +86,14 @@ describe('Permissions screen', () => {
     await waitFor(() => expect(openSettings).toHaveBeenCalledTimes(1));
     // Reminders and camera read as allowed.
     expect(screen.getAllByText(copy.status.granted).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('says the alarm and the guard arrive with the Vinco build in Expo Go', async () => {
+    renderRouter(APP_DIR, { initialUrl: '/permissions' });
+    expect(await screen.findByText(copy.groups.guard)).toBeTruthy();
+    expect(screen.getAllByText(copy.vincoBuild)).toHaveLength(2);
+    expect(screen.queryByText(copy.items.accessibility.label)).toBeNull();
+    expect(screen.queryByText(auroraCopy.status.exact)).toBeNull();
   });
 
   it('shows the alarm and the guard rows in the Vinco build, with the guard disclosure', async () => {

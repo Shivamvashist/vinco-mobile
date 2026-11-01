@@ -1,6 +1,6 @@
 /**
  * DEV ONLY: the dev tools card in Settings, shown when dev mode is on (dev builds only).
- * Moves the calendar ahead, fills today's orders, adds denarii, opens the theme lab and resets everything.
+ * Moves the calendar ahead or back (removing the days after the new today), fills today's orders, adds denarii, opens the theme lab and resets everything.
  */
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -19,6 +19,9 @@ import { MAX_DAY_OFFSET, useDevStore } from '@/stores';
 import { createStyles, useFeedback } from '@/theme';
 
 import { fillDayOrders } from './devActions';
+import { LastCrash } from './LastCrash';
+import { planRewind, type RewindPlan, RewindError } from './rewind';
+import { useDevRewind } from './useDevRewind';
 
 export type DevPanelProps = {
   /** The active arc's orders, or null before onboarding: the day tools need an arc. */
@@ -32,7 +35,16 @@ export function DevPanel({ targets }: DevPanelProps) {
   const resetJourney = useResetJourney();
   const dayOffset = useDevStore((state) => state.dayOffset);
   const advanceDay = useDevStore((state) => state.advanceDay);
+  const rewind = useDevRewind();
   const [isResetOpen, setIsResetOpen] = useState(false);
+  // Kept while the sheet slides out, so its words don't vanish mid-exit.
+  const [rewindPlan, setRewindPlan] = useState<RewindPlan | null>(null);
+  const [isRewindOpen, setIsRewindOpen] = useState(false);
+  const openRewind = (plan: RewindPlan | null) => {
+    if (!plan) return;
+    setRewindPlan(plan);
+    setIsRewindOpen(true);
+  };
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const isAtMaxOffset = dayOffset >= MAX_DAY_OFFSET;
 
@@ -46,6 +58,21 @@ export function DevPanel({ targets }: DevPanelProps) {
       setMessage({ text: devCopy.failed, isError: true });
     }
   };
+
+  const confirmRewind = (plan: RewindPlan) => {
+    setIsRewindOpen(false);
+    try {
+      rewind(plan);
+      setMessage(null);
+    } catch (error) {
+      console.warn('[dev] Rewind failed.', error);
+      play('denied');
+      const isBeforeArc = error instanceof RewindError && error.reason === 'before_first_arc';
+      setMessage({ text: isBeforeArc ? devCopy.rewindBeforeArc : devCopy.failed, isError: true });
+    }
+  };
+  const previousPlan = planRewind(today, dayOffset, 'previous');
+  const realPlan = planRewind(today, dayOffset, 'real');
 
   const fill = (level: 'hold' | 'conquer') => {
     if (targets) run(() => fillDayOrders(db, today, targets, level));
@@ -70,6 +97,7 @@ export function DevPanel({ targets }: DevPanelProps) {
         </Txt>
       ) : null}
 
+      <LastCrash />
       <View style={styles.actions}>
         <Button
           label={devCopy.holdToday}
@@ -96,6 +124,23 @@ export function DevPanel({ targets }: DevPanelProps) {
         <Txt variant="caption" style={styles.note}>
           {isAtMaxOffset ? devCopy.atMaxOffset : devCopy.nextDayHint}
         </Txt>
+        <Button
+          label={devCopy.previousDay}
+          variant="secondary"
+          size="compact"
+          disabled={!previousPlan}
+          accessibilityHint={devCopy.rewindHint}
+          onPress={() => openRewind(previousPlan)}
+        />
+        {dayOffset > 1 ? (
+          <Button
+            label={devCopy.backToToday}
+            variant="secondary"
+            size="compact"
+            accessibilityHint={devCopy.rewindHint}
+            onPress={() => openRewind(realPlan)}
+          />
+        ) : null}
         <Button
           label={devCopy.addDenarii(DEV_GRANT_DENARII)}
           variant="secondary"
@@ -124,6 +169,27 @@ export function DevPanel({ targets }: DevPanelProps) {
           onPress={() => setIsResetOpen(true)}
         />
       </View>
+
+      <BottomSheet
+        visible={isRewindOpen}
+        onClose={() => setIsRewindOpen(false)}
+        title={rewindPlan ? devCopy.rewindTitle(commonCopy.fullDateLabel(rewindPlan.newToday)) : ''}
+      >
+        <Txt variant="body" color="textMuted">
+          {rewindPlan ? devCopy.rewindBody(commonCopy.fullDateLabel(rewindPlan.newToday)) : ''}
+        </Txt>
+        <View style={styles.sheetActions}>
+          <Button
+            label={devCopy.rewindConfirm}
+            variant="danger"
+            cue="denied"
+            onPress={() => {
+              if (rewindPlan) confirmRewind(rewindPlan);
+            }}
+          />
+          <Button label={devCopy.cancel} variant="ghost" cue={null} onPress={() => setIsRewindOpen(false)} />
+        </View>
+      </BottomSheet>
 
       <BottomSheet visible={isResetOpen} onClose={() => setIsResetOpen(false)} title={devCopy.resetTitle}>
         <Txt variant="body" color="textMuted">

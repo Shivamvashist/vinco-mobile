@@ -1,10 +1,10 @@
 import { View } from 'react-native';
 
 import { todayCopy } from '@/copy';
-import { createStyles, iconTile } from '@/theme';
+import { cardSurface, createStyles, useTheme } from '@/theme';
 
 import { Button } from '../Button';
-import { Card } from '../Card';
+import { Glow } from '../Glow';
 import { Icon } from '../Icon';
 import { Txt } from '../Txt';
 
@@ -14,48 +14,70 @@ export type DawnCardProps = {
   /** The planned wake time, already formatted ("6:30 am"), or null if none. */
   plannedTime: string | null;
   onRise: () => void;
-  /** Opens the sick-day sheet. Omitted when there is no arc to protect. */
+  /** Opens the sick-day sheet. Omitted when there is no campaign to protect. */
   onFeelingSick?: () => void;
 };
 
 /**
- * The first thing on Today until wake-up is logged: one greeting, one button, and a quiet
- * way out for a sick day. "I'm up" opens the wake sheet; the orders wait below until then.
- * A surface card with first light rising from the bottom, like the hero.
+ * The hero's first face, until wake-up is logged: the same size and shape as the Dies card, so
+ * the swap reads as one card turning over. The planned time in a pill, one greeting, one button,
+ * and a quiet way out for a sick day. "I'm up" opens the wake sheet.
  */
 export function DawnCard({ hour, plannedTime, onRise, onFeelingSick }: DawnCardProps) {
+  const theme = useTheme();
   const styles = useStyles();
   const copy = todayCopy.dawn;
   return (
-    <Card glow={{ color: 'accent', intensity: 0.7 }} style={styles.card}>
-      <View style={styles.sun}>
-        <Icon name="sunrise" color="accent" />
+    <View style={styles.card}>
+      <Glow color="accent" intensity={0.7} />
+      <View style={styles.top}>
+        {plannedTime ? (
+          <View style={styles.pill} accessible accessibilityLabel={copy.planned(plannedTime)}>
+            <Icon name="sunrise" size={theme.layout.iconSizeSmall} color="accent" />
+            <Txt variant="micro" color="textMuted">
+              {plannedTime}
+            </Txt>
+          </View>
+        ) : null}
       </View>
-      <Txt variant="eyebrow" color="accent" style={styles.eyebrow}>
-        {copy.eyebrow}
-      </Txt>
       <Txt variant="title" align="center" accessibilityRole="header">
         {copy.greeting(hour)}
       </Txt>
-      {plannedTime ? (
-        <Txt variant="caption" align="center" style={styles.planned}>
-          {copy.planned(plannedTime)}
-        </Txt>
-      ) : null}
-      <View style={styles.action}>
+      <View style={styles.actions}>
         <Button label={copy.action} cue="tap" onPress={onRise} />
         {onFeelingSick ? (
-          <Button label={todayCopy.sickDay.dawnAction} variant="ghost" cue="tap" onPress={onFeelingSick} />
+          <Button
+            label={todayCopy.sickDay.dawnAction}
+            variant="ghost"
+            size="compact"
+            cue="tap"
+            onPress={onFeelingSick}
+          />
         ) : null}
       </View>
-    </Card>
+    </View>
   );
 }
 
 const useStyles = createStyles((theme) => ({
-  card: { alignItems: 'center', paddingVertical: theme.space.xxl },
-  sun: iconTile(theme, 'accentSoft', 'round'),
-  eyebrow: { marginTop: theme.space.md, marginBottom: theme.space.xs },
-  planned: { marginTop: theme.space.xs },
-  action: { alignSelf: 'stretch', marginTop: theme.space.xl, gap: theme.space.xs },
+  card: {
+    minHeight: theme.layout.heroCardHeight,
+    padding: theme.layout.cardPadding,
+    ...cardSurface(theme),
+    borderRadius: theme.radius.xl,
+    overflow: 'hidden',
+    justifyContent: 'space-between',
+    gap: theme.space.md,
+  },
+  top: { flexDirection: 'row', alignItems: 'center', minHeight: theme.layout.minTouchTarget },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.space.xs,
+    paddingHorizontal: theme.space.sm,
+    paddingVertical: theme.space.xxs,
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.colors.surfaceSunk,
+  },
+  actions: { gap: theme.space.xxs },
 }));

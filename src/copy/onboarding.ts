@@ -140,13 +140,13 @@ export const onboardingCopy = {
     } satisfies ToneLines,
   },
 
-  /** After the tone, before the oath (microphone) and the selfie (camera). Every one is optional. */
+  /** After the tone: reminders only. Everything else is asked for when it is first used. */
   permissions: {
-    title: 'What Vinco will use',
+    title: 'A nudge when it counts',
     subtitle:
-      'Allow these now so nothing stops you on Day I. Every one is optional; change them any time from your menu.',
-    allowAll: 'Allow all',
-    allowAllHint: 'Asks for reminders, the camera and the microphone, one after another.',
+      'Allow reminders so Vinco can nudge you while an order is still open. Optional; change it any time from your menu.',
+    later:
+      'The camera, the microphone, the alarm and the focus guard are asked for when you first use them, never before.',
   },
 
   oath: {

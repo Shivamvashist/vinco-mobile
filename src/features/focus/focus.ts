@@ -52,8 +52,6 @@ export const FOCUS_RULES = {
   appSessionMinutes: 3,
   /** Imperium: then it can't be opened again for this long. */
   appCooldownMinutes: 3,
-  /** With no Truce and too few denarii, a retreat waits this long (a stand-down the user can cancel). */
-  standDownSeconds: 30,
   /** Apps the user may keep during every guard ("Comites"), besides the Phone app. */
   maxComites: 3,
   /**

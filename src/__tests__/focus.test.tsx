@@ -1,13 +1,13 @@
 /**
  * Focus ("Acies"): the Focus tile opens the screen, setup and slide to begin, the No Truce sheet,
- * the end paid once behind a Claim, retreats paid with a Truce, denarii or the stand-down, the
- * Silentium lock, the screensaver, and reopening on launch.
+ * the end paid once behind a Claim, retreats that need a Truce (bought on the spot from the Truce
+ * tile), the rain toggle, the Silentium lock, the screensaver, and reopening on launch.
  */
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import * as Brightness from 'expo-brightness';
 import { renderRouter } from 'expo-router/testing-library';
 
-import { focusCopy, rewardsCopy } from '@/copy';
+import { focusCopy, forumCopy, rewardsCopy } from '@/copy';
 import {
   db,
   getDenariiBalance,
@@ -19,12 +19,22 @@ import {
   startFocus,
 } from '@/db';
 import { ledger, truces } from '@/db/schema';
+import { TRUCES } from '@/features/campaign';
 import { toDayKey } from '@/lib/dates';
+import { useFocusUiStore } from '@/stores';
 import { APP_DIR, markAwake, resetAppState, startArc } from '@/testing/routeKit';
 
+// The clock starts at 8 am and runs on through the file (renderRouter keeps the time it finds), so
+// the 25-minute focuses below never cross midnight into a new day, whenever the suite runs.
+beforeAll(() => {
+  const morning = new Date();
+  morning.setHours(8, 0, 0, 0);
+  jest.useFakeTimers({ now: morning });
+});
 beforeEach(resetAppState);
 
 const MINUTE = 60_000;
+const TRUCE_PRICE = TRUCES.priceDenarii;
 const today = () => toDayKey(new Date());
 
 function holdTruce() {
@@ -58,11 +68,13 @@ describe('Focus setup', () => {
     fireEvent.press(screen.getByLabelText(focusCopy.spokenDuration(25)));
     fireEvent.press(guardCard(focusCopy.setup.guards.imperium.name));
     expect(screen.getByText(focusCopy.setup.reward(8, 25))).toBeTruthy();
-    expect(screen.getByText(focusCopy.setup.guards.imperium.rules[1] ?? '')).toBeTruthy();
+    expect(screen.getByText(focusCopy.setup.guards.imperium.rule)).toBeTruthy();
 
     slide(focusCopy.setup.begin);
-    expect(await screen.findByText(focusCopy.noTruce.title)).toBeTruthy();
-    fireEvent.press(screen.getByLabelText(focusCopy.noTruce.beginAnyway));
+    expect(await screen.findByText(focusCopy.truce.title)).toBeTruthy();
+    // No denarii: the sheet says why a Truce can't be bought.
+    expect(screen.getByText(focusCopy.truce.cannotAfford(TRUCE_PRICE))).toBeTruthy();
+    fireEvent.press(screen.getByLabelText(focusCopy.truce.beginAnyway));
     expect(await screen.findByLabelText(focusCopy.active.timeLeftLabel('0:25:00'))).toBeTruthy();
     expect(getRunningFocus(db)).toMatchObject({ guard: 'imperium', minutes: 25 });
 
@@ -79,6 +91,16 @@ describe('Focus setup', () => {
     // The counters show on the result, so the claim has somewhere to fly.
     expect(screen.getByLabelText(rewardsCopy.hud.denariiLabel(8))).toBeTruthy();
     expect(screen.getByLabelText(focusCopy.complete.done)).toBeTruthy();
+  });
+
+  it('buys a Truce from the No Truce sheet, then begins', async () => {
+    earn(60);
+    await openSetup();
+    slide(focusCopy.setup.begin);
+    fireEvent.press(await screen.findByLabelText(forumCopy.sheet.buy(TRUCE_PRICE)));
+    expect(await screen.findByLabelText(focusCopy.active.retreat)).toBeTruthy();
+    expect(getTruceReserve(db)).toBe(1);
+    expect(getDenariiBalance(db)).toBe(60 - TRUCE_PRICE);
   });
 
   it('takes a custom length in whole minutes', async () => {
@@ -120,7 +142,7 @@ describe('Retreat', () => {
     await openSetup();
     fireEvent.press(guardCard(focusCopy.setup.guards[guard].name));
     slide(focusCopy.setup.begin);
-    const anyway = screen.queryByLabelText(focusCopy.noTruce.beginAnyway);
+    const anyway = screen.queryByLabelText(focusCopy.truce.beginAnyway);
     if (anyway) fireEvent.press(anyway);
     expect(await screen.findByLabelText(focusCopy.active.retreat)).toBeTruthy();
   }
@@ -135,38 +157,55 @@ describe('Retreat', () => {
     expect(db.select().from(ledger).all()).toEqual([]);
   });
 
-  it('costs 50 denarii with no Truce held', async () => {
+  it('with no Truce, snaps back and offers one on the shaking tile; bought, the slide ends it', async () => {
     earn(60);
     await beginFocus();
     slide(focusCopy.active.retreat);
+    // Nothing ended, nothing charged.
+    expect(getRunningFocus(db)).toBeDefined();
+    expect(getDenariiBalance(db)).toBe(60);
+    fireEvent.press(screen.getByLabelText(focusCopy.active.buyTruce));
+    expect(await screen.findByText(focusCopy.truce.retreatLine)).toBeTruthy();
+    fireEvent.press(screen.getByLabelText(forumCopy.sheet.buy(TRUCE_PRICE)));
+    await waitFor(() => expect(getTruceReserve(db)).toBe(1));
+    expect(await screen.findByLabelText(focusCopy.active.trucesLabel(1))).toBeTruthy();
+
+    slide(focusCopy.active.retreat);
     expect(await screen.findByText(focusCopy.complete.retreatTitle)).toBeTruthy();
-    expect(getDenariiBalance(db)).toBe(10);
+    expect(getTruceReserve(db)).toBe(0);
+    expect(getDenariiBalance(db)).toBe(60 - TRUCE_PRICE);
   });
 
-  it('stands down for 30 seconds with neither, and can be cancelled', async () => {
+  it('says why a Truce cannot be bought, and the focus runs on', async () => {
     earn(20);
     await beginFocus();
     slide(focusCopy.active.retreat);
-    expect(await screen.findByText(focusCopy.active.standDownLeft(30))).toBeTruthy();
-    act(() => jest.advanceTimersByTime(5000));
-    expect(screen.getByText(focusCopy.active.standDownLeft(25))).toBeTruthy();
-    fireEvent.press(screen.getByLabelText(focusCopy.active.standDownCancel));
-    act(() => jest.advanceTimersByTime(40_000));
+    fireEvent.press(screen.getByLabelText(focusCopy.active.buyTruce));
+    expect(
+      await screen.findByText(`${focusCopy.truce.cannotAfford(TRUCE_PRICE - 20)} ${focusCopy.truce.runsOn}`),
+    ).toBeTruthy();
+    expect(screen.queryByLabelText(forumCopy.sheet.buy(TRUCE_PRICE))).toBeNull();
+    fireEvent.press(screen.getByLabelText(focusCopy.truce.back));
     expect(getRunningFocus(db)).toBeDefined();
-    // The screen went to sleep meanwhile: a touch wakes it.
-    fireEvent(screen.getByHintText(focusCopy.active.wake), 'touchStart');
-
-    slide(focusCopy.active.retreat);
-    act(() => jest.advanceTimersByTime(31_000));
-    expect(await screen.findByText(focusCopy.complete.retreatTitle)).toBeTruthy();
-    expect(getRunningFocus(db)).toBeUndefined();
     expect(getDenariiBalance(db)).toBe(20);
+  });
+
+  it('remembers the rain sound toggle', async () => {
+    holdTruce();
+    await beginFocus();
+    const toggle = screen.getByLabelText(focusCopy.active.rainSoundOn);
+    expect(toggle.props.accessibilityState).toMatchObject({ checked: false });
+    fireEvent.press(toggle);
+    expect(useFocusUiStore.getState().isRainSoundOn).toBe(true);
+    expect(screen.getByLabelText(focusCopy.active.rainSoundOn).props.accessibilityState).toMatchObject({
+      checked: true,
+    });
   });
 
   it('locks the screen under Silentium: no minimise', async () => {
     holdTruce();
     await beginFocus('silentium');
-    expect(screen.getByText(focusCopy.active.locked)).toBeTruthy();
+    expect(screen.getByLabelText(focusCopy.active.locked)).toBeTruthy();
     expect(screen.queryByLabelText(focusCopy.active.minimise)).toBeNull();
   });
 });

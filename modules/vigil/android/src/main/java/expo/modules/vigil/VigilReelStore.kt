@@ -30,8 +30,28 @@ data class VigilReelConfig(
   /** The overlay words (src/copy/guard.ts `reels.overlay`), with "{count}" and "{budget}" filled in here. */
   val words: Map<String, String> = emptyMap(),
   /** The overlay colours as "#RRGGBB" (surface, border, text, near, over). */
-  val colors: Map<String, String> = emptyMap()
-)
+  val colors: Map<String, String> = emptyMap(),
+  /** The phone's day (yyyy-MM-dd) the passes belong to: they count only on that day. */
+  val passDay: String = "",
+  /** Reel passes bought on passDay (in the app; the ledger is JavaScript's). */
+  val passes: Int = 0,
+  /** Denarii held when last sent: a pass is offered only when affordable. */
+  val denarii: Int = 0,
+  val passPrice: Int = 20,
+  val passReels: Int = 12,
+  val passMax: Int = 3
+) {
+  /** Today's passes: none once the day has turned (midnight resets them). */
+  fun passesToday(today: String = VigilReelStore.today()): Int =
+    if (passDay == today) passes.coerceIn(0, passMax) else 0
+
+  /** Reels allowed today: the budget plus every pass. */
+  fun allowance(today: String = VigilReelStore.today()): Int = VigilReelPolicy.allowance(budget, passesToday(today), passReels)
+
+  /** Whether the overlays offer a pass now: passes left and enough denarii. */
+  fun canOfferPass(today: String = VigilReelStore.today()): Boolean =
+    passesToday(today) < passMax && denarii >= passPrice
+}
 
 /**
  * The reel counts and the reel watch's settings, in their own SharedPreferences file
@@ -55,6 +75,9 @@ object VigilReelStore {
   private const val KEY_MARKED = "marked"
   private const val KEY_COPY = "copy"
   private const val KEY_COLORS = "colors"
+  private const val KEY_PASS = "pass"
+  private const val KEY_BADGE_START = "badgeStart"
+  private const val KEY_BADGE_Y = "badgeY"
   private const val KEEP_DAYS = 60
   private const val MAX_TEXT = 160
   private const val MAX_PACKAGES = 50
@@ -69,7 +92,12 @@ object VigilReelStore {
       budget = config.budget.coerceIn(1, 10_000),
       markedPackages = config.markedPackages.map { it.trim() }.filter { it.isNotEmpty() }.take(MAX_PACKAGES).toSet(),
       words = config.words.mapValues { it.value.take(MAX_TEXT) },
-      colors = config.colors.filterValues { it.matches(COLOR) }
+      colors = config.colors.filterValues { it.matches(COLOR) },
+      passes = config.passes.coerceIn(0, 10),
+      denarii = config.denarii.coerceAtLeast(0),
+      passPrice = config.passPrice.coerceIn(1, 10_000),
+      passReels = config.passReels.coerceIn(0, 1_000),
+      passMax = config.passMax.coerceIn(0, 10)
     )
     prefs(context).edit()
       .putBoolean(KEY_CONFIGURED, true)
@@ -78,6 +106,7 @@ object VigilReelStore {
       .putString(KEY_MARKED, clean.markedPackages.joinToString("\n"))
       .putString(KEY_COPY, JSONObject(clean.words).toString())
       .putString(KEY_COLORS, JSONObject(clean.colors).toString())
+      .putString(KEY_PASS, passJson(clean).toString())
       .apply()
     cachedConfig = clean
   }
@@ -94,7 +123,7 @@ object VigilReelStore {
       markedPackages = p.getString(KEY_MARKED, null).orEmpty().split('\n').filter { it.isNotBlank() }.toSet(),
       words = readMap(p.getString(KEY_COPY, null)),
       colors = readMap(p.getString(KEY_COLORS, null))
-    )
+    ).let { withPass(it, p.getString(KEY_PASS, null)) }
     cachedConfig = read
     return read
   }
@@ -126,6 +155,18 @@ object VigilReelStore {
     return all.entries.sortedBy { it.key }.map { it.key to it.value }
   }
 
+  /** Where the badge sits: on the left side or not, and its height as a share of the screen. */
+  @Synchronized
+  fun badgePlace(context: Context): Pair<Boolean, Float> {
+    val p = prefs(context)
+    return p.getBoolean(KEY_BADGE_START, true) to p.getFloat(KEY_BADGE_Y, 0.12f).coerceIn(0f, 1f)
+  }
+
+  @Synchronized
+  fun saveBadgePlace(context: Context, atStart: Boolean, yFraction: Float) {
+    prefs(context).edit().putBoolean(KEY_BADGE_START, atStart).putFloat(KEY_BADGE_Y, yFraction.coerceIn(0f, 1f)).apply()
+  }
+
   fun today(): String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Calendar.getInstance().time)
 
   /**
@@ -152,6 +193,31 @@ object VigilReelStore {
       json.keys().asSequence().associateWith { json.optInt(it, 0) }
     } catch (_: Exception) {
       emptyMap()
+    }
+  }
+
+  private fun passJson(config: VigilReelConfig): JSONObject = JSONObject()
+    .put("day", config.passDay)
+    .put("passes", config.passes)
+    .put("denarii", config.denarii)
+    .put("price", config.passPrice)
+    .put("reels", config.passReels)
+    .put("max", config.passMax)
+
+  private fun withPass(config: VigilReelConfig, raw: String?): VigilReelConfig {
+    if (raw == null) return config
+    return try {
+      val json = JSONObject(raw)
+      config.copy(
+        passDay = json.optString("day", ""),
+        passes = json.optInt("passes", 0),
+        denarii = json.optInt("denarii", 0),
+        passPrice = json.optInt("price", 20),
+        passReels = json.optInt("reels", 12),
+        passMax = json.optInt("max", 3)
+      )
+    } catch (_: Exception) {
+      config
     }
   }
 

@@ -1,242 +1,211 @@
 package expo.modules.vigil
 
+import android.animation.ValueAnimator
+import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Color
-import android.graphics.PixelFormat
-import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
-import android.os.Handler
-import android.os.Looper
-import android.util.TypedValue
+import android.os.SystemClock
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
-import android.widget.LinearLayout
+import android.view.animation.DecelerateInterpolator
+import android.widget.FrameLayout
 import android.widget.TextView
+import kotlin.math.abs
 
 /**
- * The reel watch's windows over a marked app (Vigil level and up): the live badge and the
- * milestone card. Apart from the focus windows (VigilOverlay), so a focus and the reel watch can
- * both be on screen.
+ * The reel badge over a marked app (Vigil level and up): a small pill with the day's count in
+ * tabular digits, marble, gold near the allowance, porphyry past it.
  *
- * - The badge is a small dark pill with the day's count in tabular digits. It never takes a touch
- *   (the app under it works as usual) and turns gold near the budget and porphyry past it.
- * - The card steps in at a milestone. Its "Close" button wakes after [CARD_LOCK_MS]; it also goes
- *   when the user leaves the app, and on its own after [CARD_MAX_MS].
- *
- * Words and colours come from the app (`configure`); missing ones keep the Basalt defaults. With
- * "Display over other apps" they are application overlays; without it, the accessibility overlay.
- * If neither can be drawn, counting carries on without them.
+ * It can be moved and tapped: a drag past the touch slop moves it, and on release it glides to
+ * the nearer side; a tap (no drag) runs `onTap` (the reel panel). Its side and height are kept in
+ * prefs (VigilReelStore), so it comes back where it was left, and it is clamped into the screen
+ * again after a rotation or a size change. Every window call is on the main thread and wrapped,
+ * so a WindowManager error never reaches the accessibility service.
  */
-class VigilBadge(private val service: Context) {
-  private val windowManager = service.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-  private val handler = Handler(Looper.getMainLooper())
-  private var badge: TextView? = null
-  private var card: View? = null
-  private val hideCardLater = Runnable { hideCard() }
+class VigilBadge(private val context: Context, private val windows: VigilReelWindows) {
+  private var root: VigilRoot? = null
+  private var pill: TextView? = null
+  private var params: WindowManager.LayoutParams? = null
+  private var snap: ValueAnimator? = null
+  private var lastTapAt = 0L
+  private var onTap: () -> Unit = {}
 
-  fun showBadge(count: Int, config: VigilReelConfig) {
-    val text = badgeText(count, config)
-    val stage = VigilReelPolicy.stage(count, config.budget)
-    val existing = badge
-    if (existing != null) {
-      existing.text = text
-      styleBadge(existing, stage, count, config)
+  val isShown: Boolean get() = root != null
+
+  fun show(count: Int, allowance: Int, config: VigilReelConfig, onTap: () -> Unit) {
+    this.onTap = onTap
+    val words = VigilReelWords(config, count, allowance)
+    val palette = VigilReelWords.palette(config)
+    val existing = pill
+    val existingParams = params
+    if (existing != null && existingParams != null && existingParams.type == windows.overlayType()) {
+      style(existing, words, palette, count, allowance)
       return
     }
-    val view = TextView(service).apply {
-      this.text = text
-      setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
-      typeface = Typeface.DEFAULT_BOLD
-      // Tabular digits: the pill doesn't jump as the count changes.
-      fontFeatureSettings = "tnum"
+    // First time, or the overlay permission changed: (re)create it with the type allowed now.
+    hide()
+    val text = VigilViews.timeText(context, "", 15f, palette.text).apply {
+      typeface = VigilType.semiBold(context)
       gravity = Gravity.CENTER
-      minWidth = dp(56)
-      minHeight = dp(32)
-      setPadding(dp(12), dp(4), dp(12), dp(4))
-      elevation = dp(4).toFloat()
+      minWidth = VigilType.dp(context, 56)
+      minHeight = VigilType.dp(context, 44)
+      setPadding(VigilType.dp(context, 14), 0, VigilType.dp(context, 14), 0)
+      elevation = VigilType.dp(context, 6f)
+      importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
     }
-    styleBadge(view, stage, count, config)
-    val params = params(touchable = false).apply {
+    style(text, words, palette, count, allowance)
+    val view = VigilRoot(context).apply {
+      setPadding(VigilType.dp(context, 4), VigilType.dp(context, 4), VigilType.dp(context, 4), VigilType.dp(context, 8))
+      clipToPadding = false
+      isClickable = true
+      addView(text, FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT))
+      contentDescription = text.contentDescription
+    }
+    view.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
+    val layout = windows.params(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT).apply {
       gravity = Gravity.TOP or Gravity.START
-      x = dp(12)
-      y = dp(88)
     }
-    if (add(view, params)) badge = view
+    place(layout, view.measuredWidth, view.measuredHeight)
+    attachDrag(view, layout)
+    view.onConfigChanged = { reposition() }
+    if (!windows.add(view, layout)) return
+    root = view
+    pill = text
+    params = layout
   }
 
-  fun hideBadge() {
-    badge?.let(::remove)
-    badge = null
+  fun hide() {
+    snap?.cancel()
+    snap = null
+    root?.let(windows::remove)
+    root = null
+    pill = null
+    params = null
   }
 
-  fun showCard(milestone: VigilReelMilestone, count: Int, config: VigilReelConfig) {
-    hideCard()
-    val words = config.words
-    val (titleKey, bodyKey) = when (milestone) {
-      VigilReelMilestone.BUDGET -> "budgetTitle" to "budgetBody"
-      VigilReelMilestone.EVERY -> "milestoneTitle" to "milestoneBody"
-    }
-    val title = VigilReelPolicy.fill(words[titleKey] ?: DEFAULT_WORDS.getValue(titleKey), count, config.budget)
-    val body = VigilReelPolicy.fill(words[bodyKey] ?: DEFAULT_WORDS.getValue(bodyKey), count, config.budget)
-    val close = words["close"] ?: DEFAULT_WORDS.getValue("close")
-    val view = cardView(title, body, close, config)
-    val params = params(touchable = true).apply {
-      gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-      width = WindowManager.LayoutParams.MATCH_PARENT
-      y = dp(140)
-    }
-    if (add(view, params)) {
-      card = view
-      handler.postDelayed(hideCardLater, CARD_MAX_MS)
-    }
-  }
-
-  fun hideCard() {
-    handler.removeCallbacks(hideCardLater)
-    card?.let(::remove)
-    card = null
-  }
-
-  fun hideAll() {
-    hideCard()
-    hideBadge()
-    handler.removeCallbacksAndMessages(null)
-  }
-
-  private fun badgeText(count: Int, config: VigilReelConfig): String {
-    val key = if (count == 1) "badgeOne" else "badge"
-    return VigilReelPolicy.fill(config.words[key] ?: DEFAULT_WORDS.getValue(key), count, config.budget)
-  }
-
-  private fun styleBadge(view: TextView, stage: VigilReelStage, count: Int, config: VigilReelConfig) {
+  private fun style(view: TextView, words: VigilReelWords, palette: VigilPalette, count: Int, allowance: Int) {
+    view.text = words.get(if (count == 1) "badgeOne" else "badge")
+    val stage = VigilReelPolicy.stage(count, allowance)
     val line = when (stage) {
-      VigilReelStage.CALM -> color(config, "text")
-      VigilReelStage.NEAR -> color(config, "near")
-      VigilReelStage.OVER -> color(config, "over")
+      VigilReelStage.CALM -> palette.text
+      VigilReelStage.NEAR -> palette.accent
+      VigilReelStage.OVER -> palette.danger
     }
     view.setTextColor(line)
-    view.background = rounded(color(config, "surface"), 16, if (stage == VigilReelStage.CALM) color(config, "border") else line)
-    val label = config.words["badgeLabel"] ?: DEFAULT_WORDS.getValue("badgeLabel")
-    view.contentDescription = VigilReelPolicy.fill(label, count, config.budget)
-  }
-
-  private fun cardView(title: String, body: String, close: String, config: VigilReelConfig): View {
-    val pad = dp(20)
-    val inner = LinearLayout(service).apply {
-      orientation = LinearLayout.VERTICAL
-      setPadding(pad, pad, pad, pad)
-      background = rounded(color(config, "surface"), 20, color(config, "border"))
-      elevation = dp(8).toFloat()
+    view.background = GradientDrawable().apply {
+      setColor(palette.surface)
+      cornerRadius = VigilType.dp(context, 999f)
+      setStroke(VigilViews.hairline(context), if (stage == VigilReelStage.CALM) palette.border else palette.alpha(line, 0.7f))
     }
-    inner.addView(text(title, 20f, color(config, "text"), bold = true))
-    inner.addView(text(body, 16f, color(config, "muted"), bold = false).apply { setPadding(0, dp(6), 0, 0) })
-    val button = text(close, 16f, color(config, "onNear"), bold = true).apply {
-      gravity = Gravity.CENTER
-      minHeight = dp(48)
-      background = rounded(color(config, "near"), 14, null)
-      contentDescription = close
-      isEnabled = false
-      alpha = 0.4f
-      setOnClickListener { hideCard() }
+    val description = "${words.get("badgeLabel")} ${words.get("badgeHint")}"
+    view.contentDescription = description
+    root?.contentDescription = description
+  }
+
+  /** The kept side and height, inside the screen. */
+  private fun place(layout: WindowManager.LayoutParams, width: Int, height: Int) {
+    val (screenW, screenH) = windows.screenSize()
+    val (atStart, yFraction) = VigilReelStore.badgePlace(context)
+    val margin = VigilType.dp(context, EDGE_DP)
+    layout.x = if (atStart) margin else (screenW - width - margin).coerceAtLeast(0)
+    val minY = VigilType.dp(context, TOP_DP)
+    val maxY = (screenH - height - VigilType.dp(context, BOTTOM_DP)).coerceAtLeast(minY)
+    layout.y = (yFraction * screenH).toInt().coerceIn(minY, maxY)
+  }
+
+  /** After a rotation or a size change: back on its side, inside the new screen. */
+  private fun reposition() {
+    val view = root ?: return
+    val layout = params ?: return
+    snap?.cancel()
+    place(layout, view.width.takeIf { it > 0 } ?: view.measuredWidth, view.height.takeIf { it > 0 } ?: view.measuredHeight)
+    windows.update(view, layout)
+  }
+
+  @SuppressLint("ClickableViewAccessibility")
+  private fun attachDrag(view: View, layout: WindowManager.LayoutParams) {
+    var downX = 0f
+    var downY = 0f
+    var startX = 0
+    var startY = 0
+    var moved = false
+    val slop = VigilType.dp(context, 8f)
+    // Screen readers and switch access click it like a button.
+    view.setOnClickListener {
+      val now = SystemClock.elapsedRealtime()
+      if (now - lastTapAt < TAP_DEBOUNCE_MS) return@setOnClickListener
+      lastTapAt = now
+      VigilViews.tick(view)
+      onTap()
     }
-    inner.addView(
-      button,
-      LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-        .apply { topMargin = dp(16) }
-    )
-    // The card can be closed after a short pause, so the step-in is read, not swiped away.
-    handler.postDelayed({
-      button.isEnabled = true
-      button.alpha = 1f
-    }, CARD_LOCK_MS)
-    return LinearLayout(service).apply {
-      setPadding(dp(16), 0, dp(16), 0)
-      addView(inner, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
-    }
-  }
-
-  private fun text(value: String, sizeSp: Float, color: Int, bold: Boolean) = TextView(service).apply {
-    text = value
-    setTextColor(color)
-    setTextSize(TypedValue.COMPLEX_UNIT_SP, sizeSp)
-    if (bold) typeface = Typeface.DEFAULT_BOLD
-  }
-
-  private fun params(touchable: Boolean): WindowManager.LayoutParams {
-    val type = if (VigilOverlay.canDrawOverlays(service)) {
-      WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-    } else {
-      WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
-    }
-    var flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-    if (!touchable) flags = flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-    return WindowManager.LayoutParams(
-      WindowManager.LayoutParams.WRAP_CONTENT,
-      WindowManager.LayoutParams.WRAP_CONTENT,
-      type,
-      flags,
-      PixelFormat.TRANSLUCENT
-    )
-  }
-
-  private fun add(view: View, params: WindowManager.LayoutParams): Boolean = try {
-    windowManager.addView(view, params)
-    true
-  } catch (_: Exception) {
-    false
-  }
-
-  private fun remove(view: View) {
-    try {
-      windowManager.removeView(view)
-    } catch (_: Exception) {
-      // Already gone.
-    }
-  }
-
-  private fun rounded(fill: Int, radiusDp: Int, stroke: Int?) = GradientDrawable().apply {
-    setColor(fill)
-    cornerRadius = dp(radiusDp).toFloat()
-    if (stroke != null) setStroke(dp(1), stroke)
-  }
-
-  private fun color(config: VigilReelConfig, role: String): Int {
-    val value = config.colors[role] ?: DEFAULT_COLORS.getValue(role)
-    return try {
-      Color.parseColor(value)
-    } catch (_: Exception) {
-      Color.parseColor(DEFAULT_COLORS.getValue(role))
+    view.setOnTouchListener { touched, event ->
+      when (event.actionMasked) {
+        MotionEvent.ACTION_DOWN -> {
+          snap?.cancel()
+          downX = event.rawX
+          downY = event.rawY
+          startX = layout.x
+          startY = layout.y
+          moved = false
+          touched.animate().scaleX(0.94f).scaleY(0.94f).setDuration(90L).start()
+          true
+        }
+        MotionEvent.ACTION_MOVE -> {
+          val dx = event.rawX - downX
+          val dy = event.rawY - downY
+          if (abs(dx) > slop || abs(dy) > slop) moved = true
+          if (moved) {
+            val (screenW, screenH) = windows.screenSize()
+            layout.x = (startX + dx).toInt().coerceIn(0, (screenW - touched.width).coerceAtLeast(0))
+            layout.y = (startY + dy).toInt().coerceIn(0, (screenH - touched.height).coerceAtLeast(0))
+            windows.update(touched, layout)
+          }
+          true
+        }
+        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+          touched.animate().scaleX(1f).scaleY(1f).setDuration(120L).start()
+          if (moved) snapToSide(touched, layout) else if (event.actionMasked == MotionEvent.ACTION_UP) touched.performClick()
+          true
+        }
+        else -> false
+      }
     }
   }
 
-  private fun dp(value: Int): Int =
-    TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value.toFloat(), service.resources.displayMetrics).toInt()
+  /** Glides to the nearer side and keeps the place for next time. */
+  private fun snapToSide(view: View, layout: WindowManager.LayoutParams) {
+    val (screenW, screenH) = windows.screenSize()
+    val margin = VigilType.dp(context, EDGE_DP)
+    val atStart = layout.x + view.width / 2 < screenW / 2
+    val minY = VigilType.dp(context, TOP_DP)
+    val maxY = (screenH - view.height - VigilType.dp(context, BOTTOM_DP)).coerceAtLeast(minY)
+    layout.y = layout.y.coerceIn(minY, maxY)
+    VigilReelStore.saveBadgePlace(context, atStart, layout.y.toFloat() / screenH.coerceAtLeast(1))
+    val target = if (atStart) margin else (screenW - view.width - margin).coerceAtLeast(0)
+    snap?.cancel()
+    snap = ValueAnimator.ofInt(layout.x, target).apply {
+      duration = SNAP_MS
+      interpolator = DecelerateInterpolator(1.8f)
+      addUpdateListener {
+        if (root !== view) {
+          cancel()
+          return@addUpdateListener
+        }
+        layout.x = it.animatedValue as Int
+        windows.update(view, layout)
+      }
+      start()
+    }
+  }
 
-  companion object {
-    const val CARD_LOCK_MS = 5_000L
-    const val CARD_MAX_MS = 60_000L
-
-    /** Basalt, for a build that hasn't heard from the app yet. */
-    private val DEFAULT_COLORS = mapOf(
-      "surface" to "#26221E",
-      "border" to "#3B352E",
-      "text" to "#ECE5D8",
-      "muted" to "#A99F90",
-      "near" to "#D2AC55",
-      "onNear" to "#1D1A17",
-      "over" to "#D0697D"
-    )
-
-    private val DEFAULT_WORDS = mapOf(
-      "badge" to "{count} reels",
-      "badgeOne" to "1 reel",
-      "badgeLabel" to "{count} reels today. Budget {budget}.",
-      "budgetTitle" to "Budget reached",
-      "budgetBody" to "{count} reels today. That was the budget. Close the app and win the day back.",
-      "milestoneTitle" to "{count} reels",
-      "milestoneBody" to "{count} reels so far today. Is this what you came for?",
-      "close" to "Close"
-    )
+  private companion object {
+    const val SNAP_MS = 220L
+    const val TAP_DEBOUNCE_MS = 500L
+    const val EDGE_DP = 8
+    const val TOP_DP = 48
+    const val BOTTOM_DP = 96
   }
 }
+

@@ -127,9 +127,9 @@ describe('retreating from a focus', () => {
     const db = createTestDatabase();
     holdTruces(db, 2);
     const first = startFocus(db, { day: TODAY, guard: 'custos', minutes: 25 }, START);
-    expect(retreatFocus(db, first.id, at(5))).toMatchObject({ status: 'retreated', paidWith: 'truce' });
+    expect(retreatFocus(db, first.id, at(5))).toMatchObject({ status: 'retreated' });
     const second = startFocus(db, { day: TODAY, guard: 'imperium', minutes: 25 }, at(6));
-    expect(retreatFocus(db, second.id, at(10))).toMatchObject({ status: 'retreated', paidWith: 'truce' });
+    expect(retreatFocus(db, second.id, at(10))).toMatchObject({ status: 'retreated' });
     expect(getTruceReserve(db)).toBe(0);
     expect(
       selectFocusOn(db, TODAY)
@@ -141,36 +141,19 @@ describe('retreating from a focus', () => {
     ]);
   });
 
-  it('buys a Truce on the spot for 50 denarii when none is held, once per session', () => {
+  it('refuses a retreat with no Truce held, whatever the purse, and the focus runs on', () => {
     const db = createTestDatabase();
-    earn(db, 120);
-    const first = startFocus(db, { day: TODAY, guard: 'custos', minutes: 25 }, START);
-    expect(retreatFocus(db, first.id, at(5))).toMatchObject({ paidWith: 'denarii' });
-    // A second call for the same session finds nothing running and charges nothing.
-    expect(retreatFocus(db, first.id, at(6))).toEqual({ status: 'none' });
-    const second = startFocus(db, { day: TODAY, guard: 'custos', minutes: 25 }, at(7));
-    expect(retreatFocus(db, second.id, at(8))).toMatchObject({ paidWith: 'denarii' });
-    expect(getDenariiBalance(db)).toBe(20);
-    expect(
-      db
-        .select()
-        .from(ledger)
-        .all()
-        .filter((row) => row.amount < 0),
-    ).toHaveLength(2);
-  });
-
-  it('asks for the stand-down when neither a Truce nor 50 denarii is held, and then retreats for free', () => {
-    const db = createTestDatabase();
-    earn(db, 49);
+    earn(db, 500);
     const session = startFocus(db, { day: TODAY, guard: 'silentium', minutes: 60 }, START);
-    expect(retreatFocus(db, session.id, at(5))).toEqual({ status: 'standDown' });
+    expect(retreatFocus(db, session.id, at(5))).toEqual({ status: 'noTruce' });
     expect(getRunningFocus(db)?.id).toBe(session.id);
-    expect(retreatFocus(db, session.id, at(6), { afterStandDown: true })).toMatchObject({
-      status: 'retreated',
-      paidWith: 'standDown',
-    });
-    expect(getDenariiBalance(db)).toBe(49);
+    expect(getDenariiBalance(db)).toBe(500);
+    // A Truce bought meanwhile (the Forum) makes the retreat possible, charged once.
+    holdTruces(db, 1);
+    expect(retreatFocus(db, session.id, at(6))).toMatchObject({ status: 'retreated' });
+    expect(retreatFocus(db, session.id, at(7))).toEqual({ status: 'none' });
+    expect(getTruceReserve(db)).toBe(0);
+    expect(getDenariiBalance(db)).toBe(500);
     expect(getRunningFocus(db)).toBeUndefined();
   });
 

@@ -60,7 +60,14 @@ export {
 } from './customOrders';
 export { getDayStanding } from './dayStanding';
 export { ownOrderStepKey, selectOrderStepsForDay } from './orderSteps';
-export { saveReelDays, selectReelDaysBetween } from './reels';
+export {
+  buyReelPass,
+  ReelPassError,
+  saveReelDays,
+  selectReelDays,
+  selectReelDaysBetween,
+  selectReelPasses,
+} from './reels';
 export { clearJourney } from './reset';
 export type {
   ArcOrderRow,

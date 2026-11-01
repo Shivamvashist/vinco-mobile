@@ -61,7 +61,7 @@ export default function AppearanceScreen() {
           onPress={() => (router.canGoBack() ? router.back() : router.replace('/settings'))}
         />
       </View>
-      <ScreenHeader eyebrow={settingsCopy.eyebrow} title={copy.title} caption={copy.caption} />
+      <ScreenHeader eyebrow={settingsCopy.eyebrow} title={copy.title} />
 
       <SectionHeader title={copy.mode} />
       <SegmentedControl

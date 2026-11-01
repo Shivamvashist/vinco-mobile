@@ -30,26 +30,31 @@ export function getReelAppLabels(): string[] {
   return [...new Set(REEL_APPS.map((app) => app.label))];
 }
 
-/** When the Vigil steps in with a card: the budget just reached, or a round milestone. */
-export type ReelStepIn = 'budget' | 'milestone';
+/**
+ * When the Vigil steps in with a card: the allowance just reached, a round milestone under it, or
+ * the blocking card on every reel past it (it supersedes the milestones there).
+ */
+export type ReelStepIn = 'budget' | 'milestone' | 'block';
 
 /**
- * The step-in at this count, or null. Vigil level and up; Pax never interrupts. The budget wins
- * when both fall on the same reel. Mirrors VigilReelPolicy.milestone (Kotlin).
+ * The step-in at this count, or null. Vigil level and up; Pax never interrupts. `allowance` is the
+ * budget plus today's reel passes. The allowance wins when it and a milestone fall on the same
+ * reel. Mirrors VigilReelPolicy.stepIn (Kotlin).
  */
-export function getReelStepIn(count: number, budget: number, level: GuardLevel): ReelStepIn | null {
+export function getReelStepIn(count: number, allowance: number, level: GuardLevel): ReelStepIn | null {
   if (!levelIncludes(level, 'vigil') || !Number.isInteger(count) || count <= 0) return null;
-  if (count === budget) return 'budget';
+  if (count > allowance) return 'block';
+  if (count === allowance) return 'budget';
   return getReelMilestone(count) == null ? null : 'milestone';
 }
 
 /** The badge's colour: calm (marble), near the budget (gold, from 80%), over (porphyry, past it). */
 export type ReelBadgeStage = 'calm' | 'near' | 'over';
 
-/** Mirrors VigilReelPolicy.stage (Kotlin). */
-export function getReelBadgeStage(count: number, budget: number): ReelBadgeStage {
-  if (count > budget) return 'over';
-  if (count * 5 >= budget * 4) return 'near';
+/** Against the allowance (the budget plus today's passes). Mirrors VigilReelPolicy.stage (Kotlin). */
+export function getReelBadgeStage(count: number, allowance: number): ReelBadgeStage {
+  if (count > allowance) return 'over';
+  if (count * 5 >= allowance * 4) return 'near';
   return 'calm';
 }
 

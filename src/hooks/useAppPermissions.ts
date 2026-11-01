@@ -26,12 +26,7 @@ export type AppPermission = {
 
 export type AppPermissions = {
   items: Record<AppPermissionKey, AppPermission>;
-  /** Asks for reminders, the camera and the microphone one after another (only the ones still askable). */
-  requestEssentials: () => Promise<void>;
 };
-
-/** The permissions the daily loop uses, asked together by "Allow all". */
-export const ESSENTIAL_PERMISSIONS = ['notifications', 'camera', 'microphone'] as const;
 
 type Simple = { status: AppPermissionStatus; canAsk: boolean };
 type AlarmAccess = { exact: boolean; fullScreen: boolean };
@@ -40,7 +35,7 @@ const CHECKING: Simple = { status: 'checking', canAsk: false };
 
 /**
  * Every permission Vinco uses, read now and again whenever the app comes back to the foreground
- * (the user may have just changed one in the phone's settings). Shared by onboarding and the
+ * (the user may have just changed one in the phone's settings). Shared by onboarding (reminders) and the
  * Permissions screen so the two never drift apart.
  */
 export function useAppPermissions(): AppPermissions {
@@ -120,15 +115,7 @@ export function useAppPermissions(): AppPermissions {
     overlay: native(guard.isSupported, guard.granted?.overlay, async () => guard.open('overlay')),
   };
 
-  return {
-    items,
-    requestEssentials: async () => {
-      for (const key of ESSENTIAL_PERMISSIONS) {
-        const item = items[key];
-        if (item.canAsk) await item.request();
-      }
-    },
-  };
+  return { items };
 }
 
 /** A phone permission response in the list's terms. Android may still ask after one refusal. */

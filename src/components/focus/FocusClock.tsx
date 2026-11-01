@@ -33,6 +33,7 @@ export function FocusClock({ remainingMs, fontSize }: FocusClockProps) {
           { fontSize: fontSize * SECONDS_SHARE, lineHeight: fontSize * SECONDS_SHARE * 1.2 },
         ]}
         importantForAccessibility="no"
+        maxFontSizeMultiplier={1}
       >
         {seconds}
       </Txt>

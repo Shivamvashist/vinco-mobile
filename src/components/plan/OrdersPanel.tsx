@@ -95,10 +95,6 @@ export function OrdersPanel({ onAdd }: OrdersPanelProps) {
   return (
     <>
       <View>
-        <Txt variant="caption" style={styles.intro}>
-          {isFree ? ordersCopy.screen.introFree : ordersCopy.screen.intro}
-        </Txt>
-
         {kinds.length > 0 || addable.length > 0 ? (
           <SectionHeader
             title={isFree ? ordersCopy.screen.vincoSectionFree : ordersCopy.screen.vincoSection}
@@ -324,7 +320,6 @@ function describeOwnGoals(order: CustomOrder): string {
 }
 
 const useStyles = createStyles((theme) => ({
-  intro: { marginTop: theme.space.sm },
   list: { gap: theme.space.sm },
   card: {
     flexDirection: 'row',

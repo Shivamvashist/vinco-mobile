@@ -65,7 +65,7 @@ describe('Free training', () => {
   it("removes one of Vinco's orders from the plan, and offers it back", async () => {
     startLudus(0, { water: DEFAULT_ORDER_TARGETS.water, workout: DEFAULT_ORDER_TARGETS.workout });
     renderRouter(APP_DIR, { initialUrl: '/plan' });
-    expect(await screen.findByText(ordersCopy.screen.introFree)).toBeTruthy();
+    expect(await screen.findByText(ordersCopy.screen.vincoSectionFree)).toBeTruthy();
     // Removing is in each order's edit sheet.
     press(ordersCopy.screen.editLabel(ordersCopy.vincoNames.water));
     press(ordersCopy.vincoEdit.remove(ordersCopy.vincoNames.water));
@@ -85,11 +85,11 @@ describe('Free training', () => {
     // Yesterday: nothing done.
     markAwake();
     const app = renderRouter(APP_DIR, { initialUrl: '/veni' });
-    expect(await screen.findByText(todayCopy.run.start)).toBeTruthy();
+    expect(await screen.findByLabelText(/^Today, Open\./)).toBeTruthy();
     act(() => jest.advanceTimersByTime(600));
     expect(app.getPathname()).toBe('/veni');
     expect(screen.queryByText(campaignCopy.lost.title)).toBeNull();
-    expect(screen.queryByText(todayCopy.tiles.run.campaign)).toBeNull();
+    expect(screen.queryByText(todayCopy.truceBanner.title)).toBeNull();
   });
 
   it('shows the run so far and how to keep it', async () => {
@@ -99,20 +99,18 @@ describe('Free training', () => {
     holdDay(addDays(today, -1));
     markAwake();
     renderRouter(APP_DIR, { initialUrl: '/veni' });
-    expect(await screen.findByLabelText(/^Run, 2 in a row/)).toBeTruthy();
-    expect(screen.getByText(todayCopy.run.nudge(2))).toBeTruthy();
-    // No day of an arc: the hero names the run, and the eyebrow only the plan.
-    expect(screen.getByText(todayCopy.hero.runLabel(2))).toBeTruthy();
+    // The run lives in today's summary, from the hero.
+    fireEvent.press(await screen.findByLabelText(/^Today, Open\./));
+    expect(await screen.findByLabelText(todayCopy.summary.runLabel(2))).toBeTruthy();
+    // No day of an arc: the eyebrow names only the plan.
     expect(screen.getByText(todayCopy.ludusEyebrow)).toBeTruthy();
     expect(screen.queryByText(/Day [IVXLC]+/)).toBeNull();
   });
 
-  it('shows just today on the hero before a run, with no Truce banner or sick-day Truce', async () => {
+  it('opens on the dawn card before a run, with no Truce banner or sick-day Truce', async () => {
     startLudus(3);
     renderRouter(APP_DIR, { initialUrl: '/veni' });
-    // The hero's label (the tab bar says Today too).
-    expect((await screen.findAllByText(todayCopy.hero.label)).length).toBeGreaterThan(0);
-    expect(screen.queryByText(/^\d+ days? in a row$/)).toBeNull();
+    expect(await screen.findByLabelText(todayCopy.dawn.action)).toBeTruthy();
     expect(screen.queryByLabelText(todayCopy.sickDay.dawnAction)).toBeNull();
     expect(screen.queryByText(campaignCopy.truce.title)).toBeNull();
   });

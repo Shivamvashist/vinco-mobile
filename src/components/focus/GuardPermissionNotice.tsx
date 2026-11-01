@@ -20,9 +20,8 @@ const copy = focusCopy.permission;
  * What the guard needs before it can block, said before the user is sent to the phone's settings
  * (Google Play requires this prominent disclosure for the accessibility service): what is watched,
  * what it does, that nothing leaves the phone, then a clear button. A focus still runs without it
- * (timer and reward), and the notice says blocking is off. In Expo Go: blocking arrives later.
- * A quiet last line says how to turn off Android's own accessibility shortcut bubble, which some
- * phones add when the service is turned on (it is the system's, never Vinco's).
+ * (timer and reward). In Expo Go: one line, blocking needs the Vinco build. The helper lines
+ * (blocking is off, Android's shortcut bubble) live on the permissions screen, not here.
  */
 export function GuardPermissionNotice({ guard, permissions }: GuardPermissionNoticeProps) {
   const theme = useTheme();
@@ -61,8 +60,6 @@ export function GuardPermissionNotice({ guard, permissions }: GuardPermissionNot
           variant="secondary"
           size="compact"
         />
-        <Txt variant="caption">{copy.blockingOff}</Txt>
-        <Txt variant="caption">{copy.shortcutTip}</Txt>
       </Card>
     );
   }
@@ -80,7 +77,6 @@ export function GuardPermissionNotice({ guard, permissions }: GuardPermissionNot
           variant="secondary"
           size="compact"
         />
-        <Txt variant="caption">{copy.shortcutTip}</Txt>
       </Card>
     );
   }

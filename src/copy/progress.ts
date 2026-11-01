@@ -42,8 +42,6 @@ export const progressCopy = {
   timelapse: {
     title: 'Timelapse',
     count: (selfies: number, needed: number): string => `${Math.min(selfies, needed)} of ${needed} selfies`,
-    unlocks: (dayRoman: string): string => `Your first timelapse unlocks on Day ${dayRoman}.`,
-    ready: 'Enough selfies for your first full timelapse. Saving it as a video arrives in an update.',
     play: 'Play the timelapse',
   },
 
@@ -64,10 +62,9 @@ export const progressCopy = {
       everyDay: 'Done or not',
       doneDays: (done: number, logged: number): string => `Done ${done} of ${logged} days.`,
       atGoal: (done: number, logged: number): string => `At goal ${done} of ${logged} days.`,
-      allHidden: 'Every chart is hidden. Tap an order above to show it.',
+      allHidden: 'Every chart is hidden.',
       /** Vinco's orders have their own logs; only the user's own get a chart here. */
-      empty:
-        'Add an order of your own and its week shows here. Water, sleep and workout have their own logs.',
+      empty: 'Add an order of your own to chart it here.',
       tickLabel: (day: string, isDone: boolean | null): string =>
         `${day}: ${isDone == null ? 'not counted' : isDone ? 'done' : 'not done'}`,
     },
@@ -80,21 +77,21 @@ export const progressCopy = {
       target: (duration: string): string => `Target ${duration}`,
       insight: (average: string, bestDay: string, best: string): string =>
         `Average ${average}. Longest: ${bestDay}, ${best}.`,
-      empty: "No sleep logged this week. Tap I'm up each morning and it fills in.",
+      empty: 'No sleep logged this week.',
     },
     water: {
       title: 'Water this week',
       target: (litres: string): string => `Goal ${litres} L`,
       insight: (average: string, atGoal: number, logged: number): string =>
         `Average ${average} L a day. Full goal on ${atGoal} of ${logged} days.`,
-      empty: 'No water logged this week yet.',
+      empty: 'No water logged this week.',
     },
     workout: {
       title: 'Workout this week',
       target: (minutes: number): string => `Goal ${minutes} min`,
       insight: (total: number, atGoal: number, logged: number): string =>
         `${total} min in all. Full goal on ${atGoal} of ${logged} days.`,
-      empty: 'No workouts logged this week yet.',
+      empty: 'No workouts logged this week.',
     },
     weight: {
       title: 'Body weight',
@@ -105,9 +102,8 @@ export const progressCopy = {
           : kg < 0
             ? `Down ${Math.abs(kg)} kg from last week`
             : `Up ${kg} kg from last week`,
-      firstWeek: 'Your first week of weigh-ins. The trend shows from next week.',
-      noneThisWeek: 'Nothing logged this week yet.',
-      empty: 'No weight logged yet. A weekly trend shows once you log a few days.',
+      noneThisWeek: 'Nothing logged this week.',
+      empty: 'No weight logged yet.',
       range: (low: string, high: string): string => (low === high ? `${low} kg` : `${low} to ${high} kg`),
       logToday: "Log today's weight",
       updateToday: "Update today's weight",
@@ -119,8 +115,7 @@ export const progressCopy = {
       lines: { weight: 'Weight', calories: 'Calories' },
       caloriesRange: (low: string, high: string): string =>
         low === high ? `${low} kcal` : `${low} to ${high} kcal`,
-      caloriesEmpty: 'Log calories from Today and they show here beside your weight.',
-      allHidden: 'Both lines are hidden. Tap one above to show it.',
+      allHidden: 'Both lines are hidden.',
       chartLabel: (weights: number, calories: number): string =>
         `Body chart, ${weights} weigh-ins and ${calories} days of calories`,
     },
@@ -167,9 +162,8 @@ export const progressCopy = {
 
   /** Shown until the first day is sealed. */
   emptyLine: {
-    philosopher: 'Proof is built one day at a time. Your calendar and selfies will gather here.',
-    centurion: 'No proof on record. Seal your first day and it starts here.',
-    roast:
-      'Proof so far: zero selfies and a screen time report that reads like a hostage note. Seal one day and this fills up.',
+    philosopher: 'Proof is built one day at a time. Seal your first.',
+    centurion: 'No proof on record. Seal your first day.',
+    roast: 'Proof so far: zero selfies and a screen time report like a hostage note. Seal one day.',
   } satisfies ToneLines,
 } as const;

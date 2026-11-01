@@ -35,7 +35,9 @@ export type LedgerReason =
   | FocusReason
   | ClaimReason
   /** A Truce bought on the spot to retreat from one focus session (-50); one per session. */
-  | `focus_retreat_${number}`;
+  | `focus_retreat_${number}`
+  /** A reel pass (12 more reels today, -20): reel_pass_1 to reel_pass_3, features/guard/reelPass.ts. */
+  | `reel_pass_${number}`;
 
 /**
  * A reward claimed by hand (docs/REWARDS.md): 'labour_<id>' or 'decoration_<id>', on the claim's

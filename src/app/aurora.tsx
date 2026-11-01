@@ -91,11 +91,6 @@ export default function AuroraScreen() {
               minutes={aurora.minutes}
               onChange={(minutes) => updateAurora({ minutes })}
             />
-            {wakeMinutes === aurora.minutes ? (
-              <Txt variant="caption" style={styles.note}>
-                {copy.followsWake}
-              </Txt>
-            ) : null}
           </Card>
 
           <SectionHeader title={copy.daysLabel} />

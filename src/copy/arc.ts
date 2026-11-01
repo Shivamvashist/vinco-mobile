@@ -10,10 +10,9 @@ export const arcCopy = {
 
   /** Shown until an arc has begun. */
   emptyLine: {
-    philosopher: 'The arc is long, and it is yours to walk. Your rank and progress will rise here.',
-    centurion: 'No campaign on record. Begin your arc and earn your first rank: Tiro.',
-    roast:
-      'Current rank: Professional Scroller, Third Class. Your thumb has a six-pack. Begin your arc and earn Tiro instead.',
+    philosopher: 'The arc is long, and it is yours to walk. Begin it.',
+    centurion: 'No campaign on record. Begin your arc and earn Tiro.',
+    roast: 'Current rank: Professional Scroller, Third Class. Begin your arc and earn Tiro instead.',
   } satisfies ToneLines,
 
   /** The arc's name by length, matching onboarding. */
@@ -94,19 +93,18 @@ export const arcCopy = {
   /** Moving between campaigns and free training. */
   choice: {
     ludusTitle: 'Ready for a campaign?',
-    ludusBody: 'Pick a length and it starts today. Your orders, wake-up time and oath come with you.',
+    ludusBody: 'Starts today. Your orders and oath come with you.',
     begin: 'Begin a campaign',
     finishedTitle: 'Campaign complete',
-    finishedBody: 'You finished what you started. What next?',
+    finishedBody: 'What next?',
     another: 'Begin another campaign',
     toLudus: 'Switch to free training',
     leaveForLudus: 'Switch to free training instead',
     sheetTitle: 'Begin a campaign',
-    sheetBody: 'It starts today, Day I. Your orders, wake-up time and oath come with you.',
+    sheetBody: 'Starts today, Day I.',
     start: (lengthRoman: string): string => `Begin ${lengthRoman} days`,
     ludusSheetTitle: 'Leave the campaign?',
-    ludusSheetBody:
-      'Your campaign ends today and you switch to free training: no streak, no fall. Your record stays in Past arcs. This is not a retreat: nothing is wiped.',
+    ludusSheetBody: 'Your campaign ends today: no streak, no fall. Nothing is wiped; it stays in Past arcs.',
     ludusConfirm: 'Switch to free training',
     cancel: 'Stay',
     failed: 'That did not save. Nothing changed. Try again.',
@@ -119,12 +117,12 @@ export const arcCopy = {
 
   /** How Truces are earned, under the reserve count. */
   truceInfo: (everyDays: number, max: number, price: number): string =>
-    `Earn one every ${everyDays} days of campaign (hold up to ${max}). Buy one ahead in the Forum for ${price} denarii, or at the moment a day falls.`,
+    `Earn one every ${everyDays} days of campaign (hold up to ${max}), or buy one for ${price} denarii.`,
 
   /** Resetting the journey. The typed word guards against a slip of the thumb. */
   retreat: {
     title: 'Sound the retreat?',
-    body: 'Your arc ends here. Every day, selfie, your oath, rank, denarii and Truce is wiped from this phone, and you stand at the Rubicon again. There is no undo.',
+    body: 'Your arc ends and everything is wiped from this phone: days, selfies, oath, rank, denarii and Truces. There is no undo.',
     word: 'RETREAT',
     fieldLabel: (word: string): string => `Type ${word} to confirm`,
     confirm: 'Retreat to the Rubicon',

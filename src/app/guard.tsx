@@ -13,20 +13,13 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { Stepper } from '@/components/Stepper';
 import { Txt } from '@/components/Txt';
 import { commonCopy, guardCopy } from '@/copy';
-import {
-  getReelAppLabels,
-  GUARD_LEVEL_SHIPS,
-  GUARD_LEVELS,
-  GUARD_RULES,
-  type GuardLevel,
-} from '@/features/guard';
+import { GUARD_LEVEL_SHIPS, GUARD_LEVELS, GUARD_RULES, type GuardLevel } from '@/features/guard';
 import { useGuardPermissions } from '@/hooks/useGuardPermissions';
 import { useReelCount } from '@/hooks/useReelCount';
 import { useGuardStore } from '@/stores';
 import { createStyles } from '@/theme';
 
 const copy = guardCopy.levels;
-const REEL_APP_NAMES = getReelAppLabels();
 const LEVEL_ICONS: Record<GuardLevel, IconName> = {
   pax: 'dove',
   vigil: 'eye',
@@ -58,17 +51,15 @@ export default function GuardScreen() {
       <View style={styles.nav}>
         <IconButton icon="back" accessibilityLabel={commonCopy.back} onPress={back} />
       </View>
-      <ScreenHeader eyebrow={copy.eyebrow} title={copy.title} caption={copy.intro} />
+      <ScreenHeader eyebrow={copy.eyebrow} title={copy.title} />
       {reels.canCount ? (
         <>
           <SectionHeader title={guardCopy.reels.section} />
           <ReelCountCard
             count={reels.today}
-            budget={reelBudget}
-            yesterday={reels.yesterday}
-            appNames={REEL_APP_NAMES}
+            allowance={reels.allowance}
             isServiceOn={permissions.granted?.accessibility ?? null}
-            onTurnOn={() => permissions.open('accessibility')}
+            onPress={() => router.push('/reels')}
           />
         </>
       ) : (

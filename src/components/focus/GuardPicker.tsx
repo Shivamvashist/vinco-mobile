@@ -3,7 +3,7 @@ import { useWindowDimensions, View } from 'react-native';
 import { PressableScale } from '@/components/PressableScale';
 import { Txt } from '@/components/Txt';
 import { focusCopy } from '@/copy';
-import { FOCUS_GUARDS, FOCUS_RULES, type FocusGuard } from '@/features/focus';
+import { FOCUS_GUARDS, type FocusGuard } from '@/features/focus';
 import { cardSurface, createStyles, useFeedback, useTheme } from '@/theme';
 
 import { Glow } from '../Glow';
@@ -18,8 +18,8 @@ const copy = focusCopy.setup;
 const AVATAR_SHARE = 0.13;
 
 /**
- * The focus guard: three cards in a row (emblem, level, Latin name and plain label), the chosen one
- * lit; its rules and pay rate show below the row.
+ * The focus guard: three cards in a row (emblem, level pips, plain label and Latin name), the
+ * chosen one lit; its one-line rule shows below the row. The level is spoken, the pips show it.
  */
 export function GuardPicker({ value, onChange }: GuardPickerProps) {
   const theme = useTheme();
@@ -63,9 +63,6 @@ export function GuardPicker({ value, onChange }: GuardPickerProps) {
                   />
                 ))}
               </View>
-              <Txt variant="micro" color={isSelected ? 'accent' : 'textMuted'} numberOfLines={1}>
-                {text.level}
-              </Txt>
               <Txt variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                 {text.plain}
               </Txt>
@@ -77,19 +74,9 @@ export function GuardPicker({ value, onChange }: GuardPickerProps) {
         })}
       </View>
 
-      <View style={styles.rules} accessibilityLiveRegion="polite">
-        {chosen.rules.map((rule) => (
-          <View key={rule} style={styles.ruleRow}>
-            <View style={styles.bullet} />
-            <Txt variant="caption" color="text" style={styles.ruleText}>
-              {rule}
-            </Txt>
-          </View>
-        ))}
-        <Txt variant="micro" color="currency" style={styles.rate}>
-          {copy.rate(Math.round(FOCUS_RULES.rates[value] * 10))}
-        </Txt>
-      </View>
+      <Txt variant="caption" color="text" align="center" accessibilityLiveRegion="polite">
+        {chosen.rule}
+      </Txt>
     </View>
   );
 }
@@ -119,21 +106,4 @@ const useStyles = createStyles((theme) => ({
   },
   pipOn: { backgroundColor: theme.colors.textMuted },
   pipLit: { backgroundColor: theme.colors.accent },
-  rules: {
-    gap: theme.space.xs,
-    padding: theme.space.md,
-    borderRadius: theme.radius.md,
-    borderCurve: 'continuous',
-    backgroundColor: theme.colors.surfaceSunk,
-  },
-  ruleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: theme.space.sm },
-  bullet: {
-    width: theme.space.xs + 1,
-    height: theme.space.xs + 1,
-    marginTop: theme.space.sm - 1,
-    borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.accent,
-  },
-  ruleText: { flex: 1 },
-  rate: { marginTop: theme.space.xxs },
 }));

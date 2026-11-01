@@ -184,17 +184,22 @@ The Vigil counts reels and shorts in the marked apps, per local day, in the same
 
 ### Levels as built
 
-| Level            | Counts | Badge | Milestone cards | Later                                       |
-| ---------------- | ------ | ----- | --------------- | ------------------------------------------- |
-| Pax              | yes    | no    | no              |                                             |
-| Vigil            | yes    | yes   | yes             |                                             |
-| Custos (`guard`) | yes    | yes   | yes             | the "why are you opening this?" check (1.1) |
-| Imperium         | yes    | yes   | yes             | blocking after the limit, Clementia (1.2)   |
+| Level            | Counts | Badge | Milestone cards | Past the allowance       | Later                                       |
+| ---------------- | ------ | ----- | --------------- | ------------------------ | ------------------------------------------- |
+| Pax              | yes    | no    | no              | nothing                  |                                             |
+| Vigil            | yes    | yes   | yes             | blocking card, closable  |                                             |
+| Custos (`guard`) | yes    | yes   | yes             | blocking card, no close  | the "why are you opening this?" check (1.1) |
+| Imperium         | yes    | yes   | yes             | blocking card, no close  | blocking the app itself, Clementia (1.2)    |
 
-- **Badge** (Vigil and up): a small dark pill at the top left ("12 reels", tabular digits) while a marked app is in front. It never takes a touch. Marble below 80% of the budget, gold from 80% up to the budget, porphyry past it. Hidden as soon as another app (or Vinco) comes to the front; keyboards and the status bar don't hide it.
-- **Milestone cards** (Vigil and up): when the count reaches the budget ("Budget reached") and at every 25 ("25 reels today"); the budget wins a tie. A card near the top with the tone's line and a "Close" button that wakes after 5 seconds. It goes when the user leaves the app, or after 60 seconds. This is the simplest form of PLAN.md section 7 (the quote, video and time-lost cards are not built).
-- **Not built yet:** the Tributum (the badge and cards use the plain budget), the badge's tap panel and dragging, the "under budget" 3 denarii, a picker for extra marked apps.
-- Rules live in `src/features/guard/reels.ts` (`getReelStepIn`, `getReelBadgeStage`, tested) and are mirrored in Kotlin `VigilReelPolicy.kt`: keep the two in step.
+**Allowance** = the daily budget plus 12 reels for each **reel pass** bought today.
+
+- **Badge** (Vigil and up, 1 Nov, `VigilBadge.kt`): a small pill ("12 reels", tabular digits) while a marked app is in front. Marble below 80% of the allowance, gold from 80% up to it, porphyry past it. **Draggable** (past an 8 dp touch slop; on release it glides to the nearer side) and **tappable** (a tap, not a drag, opens the panel). Its side and height are kept in prefs (`badgeStart`, `badgeY`) and clamped into the screen again on rotation or a size change. Hidden as soon as another app (or Vinco) comes to the front.
+- **Panel** (a tap on the badge, `VigilReelCards.kt`): one card on a scrim, like the focus panel: "REELS TODAY", a thin ring with the count, "18 of 30", the passes used if any, one gold "Reel pass +12 · 20 denarii", and a quiet Close. With the three passes used, or too few denarii, the button becomes one muted line. Scrim, Back and Close dismiss it.
+- **Budget and milestone cards** (Vigil and up): at the allowance ("Budget reached") and at every 25 **under** it; the allowance wins a tie. A notice card near the top with the tone's line and Close; it goes when the user leaves the app, or after 60 seconds.
+- **Blocking card** (Vigil and up): on **every** reel counted past the allowance. A full-screen scrim (the feed below can't scroll) with the count, the tone's line, gold "Leave" (home screen via `GLOBAL_ACTION_HOME`), a quiet "Reel pass +12 · 20 denarii" (hidden when the three are used or the denarii fall short) and, at Vigil only, a quiet "Close" (scrim and Back close it too). At Custos and Imperium there is no close: Back means Leave. One at a time: a new reel refreshes the card in place (a live region reads the new count). It supersedes the milestone cards past the allowance.
+- **Reel pass** (1 Nov): +12 reels over today's budget for **20 denarii**, at most **3 a day**, reset at midnight. Denarii only, never real money. Bought in Vinco only (the ledger has one writer): the panel and the blocking card open `vinco://reels?pass=1`, which opens /reels with the confirm sheet. The new allowance reaches the phone through `configure` (`passDay`, `passes`), and the blocking card goes as soon as the count is under it again.
+- **Not built yet:** the old Tributum rules in `guard.ts` (doubling price) are superseded by the pass and unused; the "under budget" 3 denarii; a picker for extra marked apps.
+- Rules live in `src/features/guard/reels.ts` (`getReelStepIn`, `getReelBadgeStage`) and `reelPass.ts` (price, limit, allowance, block mode), tested, and are mirrored in Kotlin `VigilReelPolicy.kt` and `VigilReelConfig`: keep the two in step.
 
 ### Detection
 
@@ -229,10 +234,13 @@ The default list is `REEL_APPS` in `src/features/guard/reels.ts`. The ids come f
 ### Counting and storage
 
 - **Native store:** SharedPreferences `vinco.vigil.reels` (`VigilReelStore.kt`), apart from `vinco.vigil` (which a focus ending clears). Today's count is a plain int (O(1) per reel); past days sit in a small JSON object, the last 60 kept. The day is the local `yyyy-MM-dd` at the moment of counting, so midnight starts at 0, and a clock or time zone change counts into the day it now is (a day seen before resumes). It survives Vinco being closed and reboots.
-- **Settings:** `configure` stores the level, budget, packages, and the overlay words and colours there too; nothing is counted until the app has sent them once. The service reloads them at once.
+- **Settings:** `configure` stores the level, budget, packages, the pass (`passDay`, `passes`, `denarii`, `passPrice`, `passReels`, `passMax`), and the overlay words and colours there too; nothing is counted until the app has sent them once. The service reloads them at once. Passes count only when `passDay` is the phone's today, so midnight resets them with the count.
+- **Which day:** reel counts and passes belong to the **reel day**, the phone's own date (`useReelDay()`), because the native counter keys by the phone's clock. With the dev clock ahead the app's day moves on but the reel day does not.
+- **Passes in the ledger:** one row per pass, reason `reel_pass_1` to `reel_pass_3`, amount -20, on the reel day; (day, reason) is unique, so a fourth can never be written. `buyReelPass` (`src/db/reels.ts`) is one transaction, idempotent (it takes the count the user confirmed against, so a double tap buys once) and never below zero. Every balance already sums the ledger, so nothing else changed. No migration.
 - **JavaScript:** `useReelWatch()` (mounted in the root layout) sends `configure` when the level, budget, tone or palette changes, and copies the native days into SQLite `reel_days` (migration `0014_reel_days`: `day` primary key, `count`, `updated_at`) on launch, on return to the front and on every `onReel`. Native stays the source of truth for today. `useReelCount()` reads today and yesterday from the table (live).
 - **Bridge:** `GuardBridge` gained `canCountReels` and `getReelDays()`, and `configure` takes optional `copy` and `colors` (`ReelWatchConfig`, `src/features/guard/reelBridge.ts`). A development build from before 1 Nov lacks the native functions: the bridge then keeps the stub's reel members.
-- **Guard screen:** with the module, "Reels today" shows "12 of 30" (coloured like the badge), yesterday, and the apps counted. With the service off it says what the counter reads and offers "Turn on the counter" (the prominent disclosure). In Expo Go the preview notice stays.
+- **Reels screen (`/reels`, 1 Nov):** from the Reels tile on Today and the guard screen's "Reels today" row. Today as one big number against the allowance with a thin bar, what is left, the passes; "Reel pass +12" once near or past the allowance (Vigil and up). The log: Day (a bar a day for a week) or Week (a bar a week for eight weeks), each bar muted within the allowance and porphyry past it, the budget as a dashed gold line (`PeriodBarChart` `reference`). Settings: the guard level (segmented, one line on what happens past the budget), the daily budget, the apps counted, and a link to all guard levels. With Expo Go, one quiet line; with the service off, one row that opens /permissions (the disclosure comes before the phone settings).
+- **Guard screen:** "Reels today" is a compact row ("12 of 30", coloured like the badge) that opens /reels. In Expo Go the preview notice stays.
 - **Service off:** counts stay, nothing new is counted, the guard screen says the counter is off.
 - **A focus at the same time:** both run. The badge sits top left, the focus bubble top right; Imperium and Silentium sending the user back to Vinco hide the badge.
 
@@ -247,7 +255,11 @@ The default list is `REEL_APPS` in `src/features/guard/reels.ts`. The ids come f
 1. New native code: build a new development build (`npx eas-cli@latest build -p android --profile development`), install it, `npx expo start`.
 2. Turn on "Vinco focus guard" in Accessibility (the guard screen's button). User menu, Guard: "Reels today" shows 0 of 30.
 3. **Pax:** in Instagram Reels, swipe 5 reels staying 2 s on each. Back in Vinco the count is 5 (6 if the first swipe started from a reel). No badge.
-4. **Vigil:** set the level and a budget of 5. Reopen Instagram Reels: the badge shows; it turns gold at 4, the "Budget reached" card shows at 5 (Close works after 5 s), porphyry from 6.
+4. **Vigil:** set the level and a budget of 5. Reopen Instagram Reels: the badge shows; it turns gold at 4, the "Budget reached" card shows at 5, porphyry from 6 and the blocking card on every reel from 6 (one card, the count refreshing). Close works; Leave goes home.
+4a. **Badge:** drag it to the other side and up: it glides to the edge; leave and reopen the app: it is where it was left. Rotate: it stays inside the screen. A tap (no drag) opens the panel; scrim, Back and Close dismiss it.
+4b. **Pass:** with 20 or more denarii (dev "Add denarii"), tap "Reel pass" on the panel or the blocking card: Vinco opens on /reels with the sheet; buy; back in the app the badge reads "of 17" and no card shows until reel 18. Buy three: the button is replaced by "All 3 passes used today". With under 20 denarii the pass is hidden on the blocking card and a muted line shows on the panel.
+4c. **Custos / Imperium:** the blocking card has no Close; Back and a scrim tap don't dismiss it (Back goes home).
+4d. **Light palette** (Marble) and a large font size: the panel and card read well; the card scrolls on a short landscape screen.
 5. Fling fast past 5 reels: only the one stayed on counts. Scroll back up 3: no count. Scroll down again over the same 3: no count.
 6. Repeat 3 to 5 in **YouTube Shorts**, **TikTok**, **Facebook Reels** and **Snapchat Spotlight**. Note per app: right, double counts, or none (then fix the rule table).
 7. Scroll the Instagram home feed and YouTube home for a minute: the count must not move.

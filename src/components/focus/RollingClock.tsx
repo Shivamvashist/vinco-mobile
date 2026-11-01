@@ -70,6 +70,8 @@ function RollingCharacter({ character, fontSize }: { character: string; fontSize
         variant="numeral"
         align="center"
         numberOfLines={1}
+        // Sized from the space it has (the ring), so the phone's font size must not grow it past it.
+        maxFontSizeMultiplier={1}
         style={{
           position: 'absolute',
           left: (cell - box) / 2,

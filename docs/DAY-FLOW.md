@@ -4,10 +4,10 @@ How a day feels in Vinco, screen by screen. The rules for orders and tasks are i
 
 ## 1. Dawn: "I'm up" (Today, before wake-up)
 
-Until wake-up is logged, Today opens on one card: the **dawn card**.
+Until wake-up is logged, the **dawn card** takes the hero's place on Today (1 Nov: same size as the Dies card, which replaces it once wake-up is logged).
 
-- Eyebrow "SURGO · I RISE", title "Good morning", the planned wake time ("Planned: 6:30 am"), and one big button **"I'm up"**.
-- Below it, the orders wait, dimmed and not tappable ("Your orders open once you're up"), so the day has one clear first step.
+- A pill with the planned wake time, the greeting, and one big button **"I'm up"**.
+- Below it, the orders wait, dimmed and not tappable, so the day has one clear first step.
 - **"I'm up" opens the wake sheet:**
   - **Woke up at:** now, prefilled. Tap to change it (native time picker).
   - **Went to sleep at:** prefilled with the last bedtime logged, or 11:00 pm the first time. Tap to change it.
@@ -17,14 +17,14 @@ Until wake-up is logged, Today opens on one card: the **dawn card**.
   - Sleep is wake time minus bedtime. A bedtime later than the wake time means the night before.
   - Anything under 1 hour or over 16 hours is refused with "Check the times".
   - A wake time in the future is refused.
-- **Feeling sick today** (a quiet button on the dawn card) opens a sheet: a sick-day Truce for today, and exactly what it costs (one from the reserve, or denarii, or not affordable). Calling it replaces the dawn card with a calm "Rest and recover" card. The orders stay open: log anything you manage. Hold every order and the Truce comes back at midnight. "I'm feeling better" takes it back the same day (the Truce, and any denarii paid, return). Neutral in every tone.
+- **Feeling sick today** (a quiet button on the dawn card) opens a sheet: a sick-day Truce for today, and exactly what it costs (one from the reserve, or denarii, or not affordable). Calling it shows the Dies card in its "Sick day" state, with "I'm feeling better" at its top right. The orders stay open: log anything you manage. Hold every order and the Truce comes back at midnight. "I'm feeling better" takes it back the same day (the Truce, and any denarii paid, return). Neutral in every tone.
 - **After waking:** the wake-up row shows "Up at 6:34 · 7 h 20 m sleep". Tapping it reopens the sheet to correct the times; a long press undoes wake-up (back to the dawn card).
 
 ## 2. The orders (Today)
 
-Today, top to bottom (13 Oct): the weekday with the **user button** (opens the menu: Settings, Orders and to-dos, Permissions, Guard, Aurora, the Forum, the oath), the chips (campaign, or the run in free training, and denarii), the **quick logs**, the orders, then the to-do list. No quote line, no progress ring.
+Today, top to bottom (1 Nov, night; full layout in [TODAY-AND-FOCUS.md](TODAY-AND-FOCUS.md) section 2): the shared header with the **user button** (opens the menu: Settings, Orders and to-dos, Permissions, Guard, Aurora, the Forum, the oath), the hero, the Reels and Focus tiles, then one **Orders | Tasks** switch. The orders are the Orders side.
 
-- Heading "Your orders" with "3 of 5 done". One quiet line under it while nothing is logged yet: "Tap to log. Press and hold to take one back."
+- No heading or hint lines: the rows speak for themselves (tap to log, press and hold to take one back).
 - **Done orders sink.** An order at its full goal slides to the bottom of the list with its mark; taking it back brings it up again.
 - **The VINCO stamp lands only when the day is conquered** (every order at its full goal). A day held at the minimum gets the "Line held" seal card instead, matching how the calendar records it. A day with no orders is never held.
 - **Extra amounts count.** Hitting the full goal is not a ceiling. Water, meals and workout can go past it (5 L on a 4 L goal), up to a sane cap (water 10 L, meals 8, workout 300 min). Over the goal reads "5 L · conquered, 1 over".
@@ -32,11 +32,11 @@ Today, top to bottom (13 Oct): the weekday with the **user button** (opens the m
 - **Workout:** the sheet offers Hold the line, Conquer, or **an exact time** (a stepper in 5-minute steps), so a 90-minute session logs as 90.
 - **Own orders** count up: a tap adds one unit ("3 of 12 glass"), up to 20 a day. Bigger goals (10000 steps) open a small sheet to type the amount. Long press takes one back.
 - **No orders yet** (free training started with none): the dawn card, then a "No orders yet" card suggesting water (one tap adds it).
-- **Free training:** a "3-day run" chip and a nudge, "Finish today's orders to keep your 3-day run going." No Truce banner, no loss screen.
+- **Free training:** the run is in the Today summary sheet (tap the hero). No Truce banner, no loss screen.
 
-## 3. Quick logs: selfie, weight, calories (Today)
+## 3. Daily logs: selfie, weight, calories (Today)
 
-Three round buttons under the chips. Each stands out (accent, label) until it's done today, then shrinks to a small ticked circle on the right, so the orders get the space.
+Three rows on the Tasks side of Today's switch (1 Nov, night; before, a floating log button). Each shows its value once done today.
 
 | Log          | Opens                                                         |
 | ------------ | ------------------------------------------------------------- |

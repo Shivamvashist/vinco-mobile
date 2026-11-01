@@ -1,9 +1,9 @@
-import type { FocusGuard, RetreatPayment } from '@/features/focus';
+import type { FocusGuard } from '@/features/focus';
 import type { Tone } from '@/features/tone';
 
 import type { ToneLines } from './toneLines';
 
-type GuardText = { name: string; plain: string; level: string; rules: readonly string[] };
+type GuardText = { name: string; plain: string; level: string; rule: string };
 
 const ROMAN_LEVELS = ['I', 'II', 'III'] as const;
 
@@ -28,9 +28,9 @@ function spokenDuration(minutes: number): string {
 }
 
 /**
- * Focus ("Acies", the battle line). The voice changes only where it matters (the setup line, the
- * empty log, the completion and its notification). Retreating, the stand-down and the costs stay
- * neutral in every tone: they say plainly what happens, and nothing more.
+ * Focus ("Acies", the battle line). One short line per element: the screens show, the words name.
+ * The voice changes only where it matters (the empty log, the completion and its notification).
+ * Retreating and the Truce it costs stay neutral in every tone.
  */
 export const focusCopy = {
   shortDuration,
@@ -49,13 +49,7 @@ export const focusCopy = {
   setup: {
     eyebrow: '"Acies" · Focus',
     title: 'Guard your time',
-    subtitle: {
-      philosopher: 'Choose the time and keep it. The mind follows where the hand stays.',
-      centurion: 'Set the time, pick the guard, hold the line to the end.',
-      roast: 'The feed will survive without you. Pick a time and prove it.',
-    } satisfies ToneLines,
     close: 'Close focus',
-    timeSection: 'Time',
     presetsLabel: 'Quick lengths',
     custom: 'Custom',
     customLabel: 'Custom length',
@@ -68,40 +62,28 @@ export const focusCopy = {
         name: '"Custos"',
         plain: 'Watch',
         level: 'Level I',
-        rules: [
-          'Opening an app outside your companions shows an alert.',
-          'A small floating timer stays on screen.',
-          'Every 3 minutes in such an app, a "back to the line" popup.',
-        ],
+        rule: 'Other apps get an alert and a floating timer.',
       },
       imperium: {
         name: '"Imperium"',
         plain: 'Limit',
         level: 'Level II',
-        rules: [
-          'Opening an app outside your companions shows an overlay and starts a 3-minute timer.',
-          'At 3 minutes Vinco closes the app and brings you back here.',
-          'That app rests for 3 minutes before it opens again.',
-        ],
+        rule: 'Other apps close after 3 minutes, then rest for 3.',
       },
       silentium: {
         name: '"Silentium"',
         plain: 'Lockdown',
         level: 'Level III',
-        rules: [
-          'Only Vinco, your companions and the Phone app.',
-          'No home screen, no notification shade, no recent apps.',
-          "Back can't leave the focus screen. Calls always come through.",
-        ],
+        rule: 'Only your companions and calls. This screen stays.',
       },
     } satisfies Record<FocusGuard, GuardText>,
-    rate: (perTenMinutes: number): string => `${perTenMinutes} denarii per 10 min`,
-    notYet: 'Blocking arrives with the Vinco build. The timer and the reward work now.',
-    reward: (denarii: number, gloria: number): string =>
-      `Hold to the end: +${denarii} denarii · +${gloria} glory points`,
-    rewardGloriaOnly: (gloria: number): string => `Hold to the end: +${gloria} glory points`,
-    rewardTooShort: 'Ten minutes or more earn denarii.',
-    rewardDailyLimit: 'Three focuses paid in denarii today. Glory points still count.',
+    notYet: 'Blocking needs the Vinco build. The timer still runs.',
+    reward: (denarii: number, gloria: number): string => `+${denarii} denarii · +${gloria} glory points`,
+    /** No denarii: under 10 minutes. */
+    rewardTooShort: (gloria: number): string => `+${gloria} glory points · denarii from 10 min`,
+    /** No denarii: three focuses already paid today. */
+    rewardDailyLimit: (gloria: number): string => `+${gloria} glory points · 3 paid today`,
+    rewardLabel: (line: string): string => `Hold to the end: ${line}`,
     begin: 'Slide to begin',
     beginHint: 'Slide the knob to the end to begin the focus.',
     busy: 'A focus is already running.',
@@ -118,8 +100,7 @@ export const focusCopy = {
   },
 
   comites: {
-    section: '"Comites" · your companions',
-    caption: 'Up to three apps allowed during every guard. The Phone app always is.',
+    section: '"Comites" · companions',
     phone: 'Phone',
     add: 'Add an app',
     remove: (label: string): string => `${label}, a companion. Double tap to remove.`,
@@ -153,12 +134,17 @@ export const focusCopy = {
       'If Android shows an accessibility shortcut bubble, you can turn it off in Settings > Accessibility > Vinco focus guard > Shortcut.',
   },
 
-  noTruce: {
-    title: 'No Truce',
-    body: (price: number, seconds: number): string =>
-      `Retreating early will cost ${price} denarii, or a ${seconds}-second stand-down if the purse is short.`,
-    getTruce: 'Get a Truce',
+  /** Buying a Truce from the focus screens (the Forum's item, price and limits). Neutral in every tone. */
+  truce: {
+    title: 'No Truce held',
+    retreatLine: 'Ending early spends a Truce.',
+    beginLine: "Without one, this focus can't end early.",
+    cannotAfford: (short: number): string => `Need ${short} more denarii for a Truce.`,
+    dailyLimit: "One Truce a day, and today's is bought.",
+    runsOn: 'The focus runs to its end.',
     beginAnyway: 'Begin anyway',
+    back: 'Back to the focus',
+    bought: 'Truce bought. Slide again to end.',
   },
 
   log: {
@@ -212,31 +198,27 @@ export const focusCopy = {
   },
 
   active: {
-    eyebrow: (guardName: string): string => `"Acies" · ${guardName}`,
     timeLeftLabel: (clock: string): string => `${clock} left`,
-    ends: 'Ends',
-    endsAt: (time: string): string => `Ends at ${time}`,
-    truces: 'Truces held',
-    rain: 'Rain',
+    /** The one small line under the clock: "Ends 7:40 pm · Limit". */
+    meta: (time: string, guard: string): string => (time ? `Ends ${time} · ${guard}` : guard),
+    progressLabel: (percent: number): string => `${percent}% of the focus done`,
+    truces: 'Truces',
+    trucesLabel: (count: number): string => (count === 1 ? '1 Truce held' : `${count} Truces held`),
+    buyTruce: 'No Truce held. Buy one',
+    buyTruceHint: 'Opens the Truce from the Forum.',
+    noTruceAlert: 'No Truce held. Buy one to end early.',
+    rainSoundOn: 'Rain sound',
+    rainSoundHint: 'Plays soft rain while the focus runs.',
     minimise: 'Minimise focus',
     locked: 'Lockdown: this screen stays until the focus ends.',
     retreat: 'Slide to retreat',
-    retreatHint: (payment: RetreatPayment, price: number, seconds: number): string => {
-      const lines: Record<RetreatPayment, string> = {
-        truce: 'Spends a Truce. Retreating pays nothing.',
-        denarii: `No Truce held: costs ${price} denarii. Retreating pays nothing.`,
-        standDown: `No Truce and too few denarii: a ${seconds}-second stand-down first. Retreating pays nothing.`,
-      };
-      return lines[payment];
-    },
-    standDownTitle: 'Standing down',
-    standDownLeft: (seconds: number): string => `Retreat in ${seconds}s`,
-    standDownCancel: 'Stay in the line',
+    retreatHint: 'Spends a Truce. Ending early pays nothing.',
+    retreatHintNoTruce: 'No Truce held: buy one first.',
     retreatFailed: 'The retreat could not be saved. Try again.',
     dock: 'Companions',
     phone: 'Phone',
     open: (label: string): string => `Open ${label}`,
-    addExplain: 'Companions are chosen on the setup screen, before a focus begins.',
+    addExplain: 'Companions are chosen before a focus begins.',
     launchFailed: 'That app could not be opened.',
     events: {
       nudge: 'Back to the line.',
@@ -263,7 +245,7 @@ export const focusCopy = {
       `Claim ${denarii} denarii and ${gloria} glory points`,
     claimed: 'Claimed',
     retreatTitle: 'Retreated',
-    retreatBody: 'This focus was given up. It pays nothing.',
+    retreatBody: 'A Truce spent. It pays nothing.',
     done: 'Done',
   },
 

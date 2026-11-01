@@ -20,6 +20,8 @@ export type BottomSheetProps = {
 
 /** How far the sheet travels when entering, before its real height is known. */
 const ENTER_OFFSET = 400;
+/** Longest a closing sheet may stay mounted, well past its exit animation. */
+const EXIT_DEADLINE_MS = 700;
 
 /**
  * A sheet that slides up over a scrim. Stays mounted until its exit animation ends,
@@ -45,6 +47,10 @@ export function BottomSheet({ visible, onClose, title, children }: BottomSheetPr
     progress.value = withTiming(0, exit, (finished) => {
       if (finished) scheduleOnRN(setIsMounted, false);
     });
+    // If the exit stalls or is cut short (the app went to the background mid-close), an invisible
+    // modal would stay up and swallow every tap: unmount from JS after a short deadline anyway.
+    const deadline = setTimeout(() => setIsMounted(false), EXIT_DEADLINE_MS);
+    return () => clearTimeout(deadline);
   }, [visible, reduceMotion, progress]);
 
   const scrimStyle = useAnimatedStyle(() => ({ opacity: progress.value }));

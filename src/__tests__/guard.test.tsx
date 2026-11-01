@@ -41,7 +41,7 @@ describe('Aurora', () => {
     renderRouter(APP_DIR, { initialUrl: '/aurora' });
     fireEvent(await screen.findByLabelText(guardCopy.aurora.on), 'valueChange', true);
     expect(useGuardStore.getState().aurora).toMatchObject({ isOn: true, minutes: 390 });
-    expect(await screen.findByText(guardCopy.aurora.followsWake)).toBeTruthy();
+    expect(await screen.findByText(guardCopy.aurora.daysLabel)).toBeTruthy();
 
     // Sunday off, then the sky mission.
     press('Sunday');

@@ -66,7 +66,6 @@ export const auroraCopy = {
     fullScreen: 'Full-screen alarm',
     fullScreenDetail: 'Shows the alarm over the lock screen.',
     notifications: 'Notifications',
-    notificationsDetail: 'The alarm shows as a notification you can open.',
     test: 'Test the alarm in 1 minute',
     testSet: 'Test set: Aurora rings in 1 minute. Lock the phone and wait.',
     testFailed: "The test couldn't be set.",

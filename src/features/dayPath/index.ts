@@ -21,3 +21,4 @@ export {
   placeOnPath,
   toPathMarks,
 } from './placement';
+export { minutesLeftInDay, SKY_HOURS, type SkyBody, skyBodyAt } from './sky';

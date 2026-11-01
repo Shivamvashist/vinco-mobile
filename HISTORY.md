@@ -4,7 +4,7 @@ The memory of this project. Any AI model or developer joining should read this, 
 
 ---
 
-## Snapshot (as of 31 Oct 2026)
+## Snapshot (as of 1 Nov 2026)
 
 **Version:** 1.1.0 in progress (Wave 3 and Wave 4); 1.0.0 is the baseline up to 12 Oct. Every change is logged in [docs/releases/](docs/releases/README.md).
 
@@ -143,7 +143,16 @@ Answer when convenient; work continues with the safe default shown.
 
 ### Noticed, not done
 
-- (1 Nov, later) Reel rule ids for Instagram and YouTube are unconfirmed on a phone; TikTok relies on the size fallback. Not built: the marked-app picker, the badge tap panel, the Tributum, the under-budget reward.
+- (1 Nov, night) **Fresh-install crash on Today, cause not found.** Reported: after a full reset and onboarding, the release app closed on Today and on every reopen. No phone log was available and the emulator route was dropped (the developer tests on the phone). Every path on Today's first open was read (worklets, native calls, Aurora, the wake watch, Hermes APIs) without a definite cause. Now: drawing errors show `CrashScreen` (root and tabs `ErrorBoundary`) and every uncaught error is kept in kv-store `vinco.lastCrash` (`lib/crashLog`). If it still closes, it is native: get `adb logcat -d -b crash`.
+- (1 Nov, night) Under Silentium with no Truce and too few denarii, a focus (up to 3 hours) can't be ended early (developer's rule; calls still come through). Revisit if testers feel trapped.
+- (1 Nov, night) A focus that starts before midnight and settles after writes its pay or retreat Truce on the day it began, which may already be sealed (the stored result is untouched). Decide if pay should go to the settle day.
+- (1 Nov, night) Unused now: `rewardsCopy.labours.items[*].line`, the `standDown` sound cue and file, the Tributum helpers in `features/guard/guard.ts` (`getTributumPrice`, `getReelAllowance`), copy keys `todayCopy.ringLabel`, `proofSection`, `statusWords`, `focusCopy.tile.readyCaption`, `rewardsCopy.labours.seeAll`/`seeAllLabel`, permission keys `blockingOff`/`shortcutTip` (PermissionList only). `copy/today.ts` is 308 lines.
+- (1 Nov, night) Reel overlay scrim is always Basalt-dark (reel colours carry no scheme). No picker for extra counted apps yet.
+- (1 Nov, night) Aurora: with exact alarms denied, the inexact fallback (`AuroraScheduler.kt:42`) can't start the ring service from the background on Android 12+, so the alarm stays silent (caught, no crash). The step counter permission is first asked at ring time. `clearJourney` doesn't clear `reel_days`.
+- (1 Nov, night) The rain loop is a 1 MB WAV (no ogg/m4a encoder here); levels are tuned by ear in `scripts/generate-rain.mjs`. `scripts/generate-sounds.mjs` has lint issues (undefined `Buffer`, `console.log`) it doesn't hit because lint skips it.
+- (1 Nov, night) Ignored files still tracked by git: 136 files under `modules/aurora/android/build/` and `modules/aurora/android/.gradle/`, committed before the ignore rules existed (`.gitignore` only stops untracked files). Fix once: `git rm -r --cached modules/aurora/android/build modules/aurora/android/.gradle`, then commit. `.env` and `.env.local` are not tracked.
+
+- (1 Nov, later) Reel rule ids for Instagram and YouTube are unconfirmed on a phone; TikTok relies on the size fallback. Not built: the marked-app picker, the under-budget reward (the badge panel and the reel pass came on 1 Nov, night; the pass replaced the Tributum).
 - (1 Nov, later) Silentium shows no overlay notice (Vinco comes straight back); overlays don't recolour on a palette change mid-focus.
 - (1 Nov, later) Each order save now also writes an `order_steps` row (core tick path, same transaction): watch it if ticking ever feels slow.
 - (1 Nov, later) `TodayOrders.heldAt` in useTodayOrders is unused. `WeekBarChart` could move onto the period toolkit.
@@ -200,6 +209,19 @@ Answer when convenient; work continues with the safe default shown.
 ---
 
 ## Milestone log
+
+### 1 Nov 2026 (night): a clean Today, the reel blocker, focus finished, permissions trimmed (still 1.1.0)
+
+- **Today** (`veni.tsx`): one hero slot (`DawnCard` same size as the card, or `DiesCard`), `ReelsTile` and `FocusTile`, `TodayNotices` (Truce offer, finished arc, save error), then `TodaySection` (an Orders | Tasks switch; Tasks holds to-dos and `DailyLogRows`). The Dies card shows the count for 6 s (`useHeroFace`), then cross-fades (`useCrossFade`, forced to its end after 900 ms and on return) to the sky: `SkyGlyph` (sun 6 am to 7 pm, else moon, `features/dayPath/sky.ts`) riding the path, and the time left. Tap: `TodaySummarySheet` (Today only; Vidi keeps `DaySummarySheet`). `useWakeLink` handles `?wake=1`. Removed from Today: the daily log button and sheet, `SealDayCard`, `SickDayCard`, `TodayTodo`, `TodayLabours` (Labours via the Forum).
+- **Reels** (`/reels`): `components/reels/*`, `useReelLog`, `features/guard/reelPass.ts` and `reelHistory.ts`; `PeriodBarChart` gained a `reference` line. Pass: ledger rows `reel_pass_1..3` (-20, unique by day and reason, idempotent). Reel day is the phone's date (`useReelDay`), not the dev clock. Native: `VigilReelWindows` (one wrapped main-thread helper for every window), `VigilReelCards`, `VigilReelOverlays`, `VigilReelWords`; `VigilBadge` rewritten (drag, snap, saved place, tap panel); the policy returns `block` on every reel past the allowance (budget + 12 per pass). The overlay buys nothing itself: it opens `vinco://reels?pass=1`.
+- **Focus:** `FocusHero` (draining ring, fitted time, one meta line), `TruceTile` (shake or flash, "+" to buy), `TruceSheet` (the Forum's Truce rules), `RainTile` + `useRainSound` (expo-audio loop, fades, stops in the background; plays with Sounds off, silent mode still mutes). Retreat = one Truce only (`features/focus/retreat.ts`); the native guard is told only after the Truce is spent. `NoTruceSheet` deleted. Asset `assets/sounds/ambient/rain.wav` from `npm run sounds:rain`.
+- **Permissions:** onboarding asks for reminders only; the rest when first used. app.json: no FOREGROUND_SERVICE entries (Aurora's manifest declares its own), expo-audio background playback off, storage and WRITE_SETTINGS blocked. Notification channels are created before the Android 13 request.
+- **Dev tools:** `src/dev/rewind.ts` (`planRewind`, `rewindJourney` in one transaction; refuses to go before the first arc) and `useDevRewind`; "Go back a day" and "Back to the real day".
+- **Crash safety:** root and tabs `ErrorBoundary` exports render `CrashScreen`; `installCrashRecorder` keeps the last uncaught error, shown in the dev tools (`src/dev/LastCrash.tsx`). From the review: `RollingNumber` no longer fades its first value in (only changes roll; `LayoutAnimationConfig` was undefined in route tests, so it's plain state), `BottomSheet` unmounts after 700 ms even if its exit stalls, `ReelsTile` needs the accessibility service on and uses the allowance.
+- **Noise pass** on Vidi, Vici, the user menu, Castra, the Forum, Labours, the guard, Aurora and the plan screens: subtitles, captions, intros and footnotes gone; eyebrows give only the plain label (Shop, Alarm). Copy keys removed: `progress.timelapse.unlocks`/`ready`, `logs.weight.firstWeek`, `logs.body.caloriesEmpty`; `rewards.gloria.line`, `labours.intro`/`groupNote`/`forumBody`/`wages`; `menu.account.detail`; `settings.rows.soundDetail`, `appearance.caption`; `notifications.settings.masterDetail`; `guard.levels.intro`, `aurora.followsWake`; `aurora.status.notificationsDetail`; `orders.screen.intro`/`introFree`; `tasks.intro`/`tomorrowHint`.
+- Check: 99 suites, 1088 tests green; `:vigil` and `:aurora` Kotlin compile. Not yet tried on a phone.
+- **Docs:** `docs/AVATAR-BRIEFS.md`, the pillars and their avatar briefs (a shared style prompt plus one line each).
+- `src/__tests__/focus.test.tsx` starts its fake clock at 8 am, so it no longer fails late at night.
 
 ### 1 Nov 2026 (later): focus finished, reel counter, activity timeline, history screens (still 1.1.0)
 

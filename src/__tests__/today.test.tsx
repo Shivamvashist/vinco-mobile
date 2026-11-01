@@ -1,13 +1,14 @@
 /**
  * Today (Wave 4): the minus, plus and check on order rows, denarii paid the moment the day holds
- * and taken back on undo, the Stipendium card, and the Orders charts in Vidi.
+ * and taken back on undo, today's summary and run pay from the hero, and the Orders charts in Vidi.
  */
-import { fireEvent, screen } from '@testing-library/react-native';
+import { act, fireEvent, screen } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
 
 import { FEATURES } from '@/config/features';
 import { progressCopy, rewardsCopy, todayCopy } from '@/copy';
 import { addCustomOrder, db, getActiveArc, getDenariiBalance, saveOrderAmount } from '@/db';
+import { HERO_COUNT_MS } from '@/hooks/useHeroFace';
 import { toDayKey } from '@/lib/dates';
 import { usePreferencesStore } from '@/stores';
 import { APP_DIR, markAwake, resetAppState, startArc } from '@/testing/routeKit';
@@ -78,12 +79,13 @@ describe('Denarii when the day holds', () => {
     expect(getDenariiBalance(db)).toBe(0);
   });
 
-  it('shows the run tile, and what the run pays from it', async () => {
+  it("shows the run in today's summary, and what the run pays from it", async () => {
     startArc();
     markAwake();
     renderRouter(APP_DIR, { initialUrl: '/veni' });
     const next = todayCopy.streak.next(3, 10, false);
-    fireEvent.press(await screen.findByLabelText(todayCopy.tiles.run.label(0, next)));
+    fireEvent.press(await screen.findByLabelText(/^Today, Open\./));
+    fireEvent.press(await screen.findByLabelText(todayCopy.summary.runLabel(0)));
     expect(await screen.findByText(todayCopy.runSheet.title)).toBeTruthy();
     expect(screen.getByText(next)).toBeTruthy();
   });
@@ -97,7 +99,33 @@ describe('Denarii when the day holds', () => {
       /^Today, Open\. 1 of 4 orders held\. 1 activity today, last at .+\. Opens today's summary\.$/,
     );
     fireEvent.press(hero);
-    expect(await screen.findByText(progressCopy.daySheet.ordersTitle)).toBeTruthy();
+    expect(await screen.findByLabelText(todayCopy.summary.ordersLabel(1, 4))).toBeTruthy();
+    // The day's timeline: wake-up is its one entry.
+    expect(screen.getByText(todayCopy.summary.kinds.wake)).toBeTruthy();
+    // Not held yet: no way to the day card.
+    expect(screen.queryByLabelText(todayCopy.summary.dayCard)).toBeNull();
+  });
+});
+
+describe('Tiles', () => {
+  it('opens the reel counter from the Reels tile, set up first where reels are not counted', async () => {
+    startArc();
+    markAwake();
+    const app = renderRouter(APP_DIR, { initialUrl: '/veni' });
+    // Tests run without the native Vigil, as in Expo Go.
+    fireEvent.press(await screen.findByLabelText(todayCopy.tiles.reels.setUpLabel));
+    act(() => jest.advanceTimersByTime(600));
+    expect(app.getPathname()).toBe('/reels');
+  });
+
+  it('keeps the hero card through its switch from the count to the sky', async () => {
+    startArc();
+    markAwake();
+    renderRouter(APP_DIR, { initialUrl: '/veni' });
+    await screen.findByLabelText(/^Today, Open\./);
+    act(() => jest.advanceTimersByTime(HERO_COUNT_MS + 1000));
+    expect(screen.getByText(todayCopy.hero.left, { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByLabelText(/^Today, Open\. 1 of 4 orders held\./)).toBeTruthy();
   });
 });
 

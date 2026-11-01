@@ -19,7 +19,6 @@ export const settingsCopy = {
     tone: 'Tone',
     colorMode: 'Appearance',
     sound: 'Sounds',
-    soundDetail: 'Off by default. The first selfie, your oath and the VINCO stamp always sound.',
     haptics: 'Vibration',
     outline: 'Selfie outline',
     outlineValue: (percent: number): string => (percent === 0 ? 'Off' : `${percent}%`),
@@ -35,7 +34,6 @@ export const settingsCopy = {
   /** The Appearance screen: the mode, then a palette for dark and one for light. */
   appearance: {
     title: 'Appearance',
-    caption: 'Pick a palette for dark and one for light. "Match phone" switches between them.',
     mode: 'Mode',
     darkSection: 'Dark palettes',
     lightSection: 'Light palettes',
@@ -68,12 +66,12 @@ export const settingsCopy = {
     colorMode: 'Appearance',
     outline: {
       title: 'Selfie outline',
-      body: "How strongly yesterday's selfie shows over the camera, so today's lines up. You can change it on the camera too.",
+      body: "How strongly yesterday's selfie shows over the camera.",
       label: "Yesterday's outline",
     },
     wakeTime: {
       title: 'Wake-up time',
-      body: 'Up by this time conquers the wake-up order. Changes count from your next "I\'m up".',
+      body: 'Up by this time conquers the wake-up order.',
       field: 'Up by',
       save: 'Save',
       saveFailed: 'Could not save the time. Try again.',

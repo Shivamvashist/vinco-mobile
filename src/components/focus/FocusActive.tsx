@@ -1,32 +1,34 @@
 import { useKeepAwake } from 'expo-keep-awake';
-import { useEffect } from 'react';
-import { useWindowDimensions, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { AccessibilityInfo, useWindowDimensions, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Icon } from '@/components/Icon';
 import { IconButton } from '@/components/IconButton';
-import { RollingNumber } from '@/components/RollingNumber';
-import { Txt } from '@/components/Txt';
 import { focusCopy } from '@/copy';
 import type { FocusSessionRow } from '@/db';
-import type { FocusComes, RetreatPayment } from '@/features/focus';
+import { canRetreat, type FocusComes, isFocusGuard } from '@/features/focus';
 import type { FocusRetreatResult } from '@/hooks/useFocus';
+import { useRainSound } from '@/hooks/useRainSound';
 import { useScreensaver } from '@/hooks/useScreensaver';
 import { formatClockTime } from '@/lib/dates';
-import { cardSurface, createStyles, themeTiming, useReduceMotion, useTheme } from '@/theme';
+import { useFocusUiStore } from '@/stores';
+import { createStyles, themeTiming, useFeedback, useReduceMotion, useTheme } from '@/theme';
 
 import { DriftingClock } from './DriftingClock';
-import { FocusClock } from './FocusClock';
 import { FocusDock } from './FocusDock';
-import { RainField } from './RainField';
+import { FocusHero } from './FocusHero';
+import { RainTile } from './RainTile';
 import { RetreatControl } from './RetreatControl';
+import { TruceSheet } from './TruceSheet';
+import { TruceTile } from './TruceTile';
 
 export type FocusActiveProps = {
   session: FocusSessionRow;
   remainingMs: number;
   truceReserve: number;
-  retreatPayment: RetreatPayment;
-  onRetreat: (options: { afterStandDown: boolean }) => FocusRetreatResult;
+  onRetreat: () => FocusRetreatResult;
   comites: readonly FocusComes[];
   dialerPackage: string | null;
   /** Silentium: the screen can't be left, so there is no minimise button. */
@@ -34,20 +36,22 @@ export type FocusActiveProps = {
   onMinimise: () => void;
 };
 
-/** The digits' size: a share of the window width, never taller than a share of its height. */
+/** The screensaver clock's size: a share of the window width, never taller than a share of its height. */
 const CLOCK_WIDTH_SHARE = 0.26;
 const CLOCK_HEIGHT_SHARE = 0.13;
 
 /**
- * The running focus: the time left, when it ends, the Truces held, a small rain field, "Slide to
- * retreat" and the dock. Kept awake; after 10 seconds without a touch the controls fade, the clock
- * drifts and the screen dims (useScreensaver). Any touch wakes it.
+ * The running focus, one composed screen: the time left in a draining ring (the hero, taking the
+ * height there is), one small line under it (when it ends, the guard), then a row of tiles (the
+ * Truces, the rain with its sound), the companions' dock and "Slide to retreat". Ending early
+ * spends a Truce; with none, the slide snaps back and the Truce tile shakes and offers one.
+ * Kept awake; after 10 seconds without a touch the controls fade, the clock drifts and the screen
+ * dims (useScreensaver). Any touch wakes it.
  */
 export function FocusActive({
   session,
   remainingMs,
   truceReserve,
-  retreatPayment,
   onRetreat,
   comites,
   dialerPackage,
@@ -57,15 +61,27 @@ export function FocusActive({
   useKeepAwake();
   const theme = useTheme();
   const styles = useStyles();
+  const play = useFeedback();
   const insets = useSafeAreaInsets();
   const window = useWindowDimensions();
   const reduceMotion = useReduceMotion();
   const screensaver = useScreensaver(true);
+  const isRainSoundOn = useFocusUiStore((state) => state.isRainSoundOn);
+  const setRainSound = useFocusUiStore((state) => state.setRainSound);
+  const [alertKey, setAlertKey] = useState(0);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const awake = useSharedValue(1);
-  const fontSize = Math.round(Math.min(window.width * CLOCK_WIDTH_SHARE, window.height * CLOCK_HEIGHT_SHARE));
-  const guardText = focusCopy.setup.guards[session.guard];
+  useRainSound(isRainSoundOn, true);
+
+  const driftSize = Math.round(
+    Math.min(window.width * CLOCK_WIDTH_SHARE, window.height * CLOCK_HEIGHT_SHARE),
+  );
+  const guard = isFocusGuard(session.guard) ? focusCopy.setup.guards[session.guard].plain : '';
   const endsAt = new Date(session.endsAt);
   const endsAtLabel = Number.isFinite(endsAt.getTime()) ? formatClockTime(endsAt) : '';
+  const totalMs = Date.parse(session.endsAt) - Date.parse(session.startedAt);
+  const share = totalMs > 0 ? Math.min(1, Math.max(0, remainingMs / totalMs)) : 0;
+  const hasTruce = canRetreat(truceReserve);
 
   useEffect(() => {
     const target = screensaver.isAsleep ? 0 : 1;
@@ -73,6 +89,12 @@ export function FocusActive({
   }, [screensaver.isAsleep, reduceMotion, awake]);
 
   const controlsStyle = useAnimatedStyle(() => ({ opacity: awake.get() }));
+
+  const handleRefused = () => {
+    play('denied');
+    setAlertKey((key) => key + 1);
+    AccessibilityInfo.announceForAccessibility(focusCopy.active.noTruceAlert);
+  };
 
   return (
     <View
@@ -87,7 +109,9 @@ export function FocusActive({
       >
         <View style={styles.header}>
           {isLocked ? (
-            <View style={styles.headerSpacer} />
+            <View style={styles.lock} accessible accessibilityLabel={focusCopy.active.locked}>
+              <Icon name="lock" color="textMuted" size={theme.layout.iconSizeSmall} />
+            </View>
           ) : (
             <IconButton
               icon="back"
@@ -96,52 +120,39 @@ export function FocusActive({
               color="textMuted"
             />
           )}
-          <Txt variant="eyebrow" numberOfLines={1} style={styles.eyebrow}>
-            {focusCopy.active.eyebrow(`${guardText.name} · ${guardText.plain}`)}
-          </Txt>
-          <View style={styles.headerSpacer} />
         </View>
 
-        <View style={styles.body}>
-          <FocusClock remainingMs={remainingMs} fontSize={fontSize} />
-          {isLocked ? (
-            <Txt variant="caption" align="center">
-              {focusCopy.active.locked}
-            </Txt>
-          ) : null}
+        <View style={styles.hero}>
+          <FocusHero
+            remainingMs={remainingMs}
+            remainingShare={share}
+            meta={focusCopy.active.meta(endsAtLabel, guard)}
+          />
+        </View>
 
+        <View style={styles.controls}>
           <View style={styles.tiles}>
-            <View style={styles.tile} accessible accessibilityLabel={focusCopy.active.endsAt(endsAtLabel)}>
-              <Txt variant="overline">{focusCopy.active.ends}</Txt>
-              <Txt variant="heading" numberOfLines={1}>
-                {endsAtLabel}
-              </Txt>
-            </View>
-            <View style={styles.tileRow}>
-              <View
-                style={[styles.tile, styles.half]}
-                accessible
-                accessibilityLabel={`${focusCopy.active.truces}, ${truceReserve}`}
-              >
-                <Txt variant="overline" numberOfLines={1}>
-                  {focusCopy.active.truces}
-                </Txt>
-                <RollingNumber value={String(truceReserve)} variant="heading" />
-              </View>
-              <View style={[styles.tile, styles.half, styles.rainTile]}>
-                <RainField isPaused={screensaver.isAsleep} />
-              </View>
-            </View>
+            <TruceTile count={truceReserve} alertKey={alertKey} onBuy={() => setIsSheetOpen(true)} />
+            <RainTile
+              isSoundOn={isRainSoundOn}
+              onToggleSound={() => setRainSound(!isRainSoundOn)}
+              isPaused={screensaver.isAsleep}
+            />
           </View>
-        </View>
-
-        <View style={styles.footer}>
-          <RetreatControl payment={retreatPayment} onRetreat={onRetreat} />
           <FocusDock comites={comites} dialerPackage={dialerPackage} />
+          <RetreatControl canRetreat={hasTruce} onRetreat={onRetreat} onRefused={handleRefused} />
         </View>
       </Animated.View>
 
-      {screensaver.isAsleep ? <DriftingClock remainingMs={remainingMs} fontSize={fontSize} /> : null}
+      {screensaver.isAsleep ? <DriftingClock remainingMs={remainingMs} fontSize={driftSize} /> : null}
+
+      <TruceSheet
+        // A Truce bought elsewhere meanwhile (the Forum) closes it: nothing left to buy for.
+        visible={isSheetOpen && !hasTruce}
+        mode="retreat"
+        onClose={() => setIsSheetOpen(false)}
+        onBought={() => setIsSheetOpen(false)}
+      />
     </View>
   );
 }
@@ -155,23 +166,34 @@ const useStyles = createStyles((theme) => ({
     paddingHorizontal: theme.space.sm,
     minHeight: theme.layout.minTouchTarget,
   },
-  eyebrow: { flex: 1, textAlign: 'center' },
-  headerSpacer: { width: theme.layout.minTouchTarget },
-  body: {
-    flex: 1,
+  lock: {
+    width: theme.layout.minTouchTarget,
+    height: theme.layout.minTouchTarget,
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: theme.space.xl,
+  },
+  // The free height is shared four to one: the hero's ring grows first, then the tiles (the rain
+  // gets taller on tall phones, up to a cap). The controls never shrink below their content, so
+  // every control stays in view on a small phone; the ring gives way instead.
+  hero: {
+    flexGrow: 4,
+    flexShrink: 1,
+    flexBasis: 0,
+    paddingHorizontal: theme.layout.flowGutter,
+    paddingBottom: theme.space.md,
+  },
+  controls: {
+    flexGrow: 1,
+    flexShrink: 0,
+    justifyContent: 'flex-end',
+    gap: theme.space.md,
     paddingHorizontal: theme.layout.flowGutter,
   },
-  tiles: { gap: theme.space.sm },
-  tileRow: { flexDirection: 'row', gap: theme.space.sm },
-  tile: {
-    gap: theme.space.xxs,
-    minHeight: theme.layout.minTouchTarget + theme.space.xl,
-    padding: theme.layout.cardPadding,
-    ...cardSurface(theme),
+  tiles: {
+    flexGrow: 1,
+    flexDirection: 'row',
+    gap: theme.space.sm,
+    minHeight: theme.layout.minTouchTarget * 2,
+    maxHeight: theme.layout.tileHeight + theme.space.huge,
   },
-  half: { flex: 1 },
-  rainTile: { padding: 0, overflow: 'hidden' },
-  footer: { gap: theme.space.md, paddingHorizontal: theme.layout.flowGutter },
 }));

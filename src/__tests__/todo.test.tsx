@@ -21,11 +21,15 @@ const press = (label: string | RegExp) => {
   fireEvent.press(screen.getByLabelText(label));
 };
 
+/** Today opens on its orders; the to-dos are on the Tasks side of the section. */
+const openTasks = async () => fireEvent.press(await screen.findByLabelText(todayCopy.section.tasks));
+
 describe('To-do on Today', () => {
   it('adds tasks by how often, ticks them, and edits one by holding it', async () => {
     startArc();
     markAwake();
     renderRouter(APP_DIR, { initialUrl: '/veni' });
+    await openTasks();
     expect(await screen.findByText(tasksCopy.today.empty)).toBeTruthy();
 
     press(tasksCopy.today.add);
@@ -61,6 +65,7 @@ describe('To-do on Today', () => {
     const today = toDayKey(new Date());
     for (const title of ['First', 'Second', 'Third']) addTask(db, title, 'today', today, addDays(today, 30));
     renderRouter(APP_DIR, { initialUrl: '/veni' });
+    await openTasks();
     const order = () =>
       screen.getAllByRole('checkbox').map((row) => String(row.props.accessibilityLabel).split(',')[0]);
     await screen.findByLabelText(tasksCopy.checkLabel('First', false));
@@ -80,6 +85,7 @@ describe('To-do on Today', () => {
     markAwake();
     addTask(db, 'Read', 'today', toDayKey(new Date()), addDays(toDayKey(new Date()), 30));
     renderRouter(APP_DIR, { initialUrl: '/veni' });
+    await openTasks();
     fireEvent(await screen.findByLabelText(tasksCopy.checkLabel('Read', false)), 'longPress');
     await screen.findByDisplayValue('Read');
     press(add.when.order);
@@ -92,6 +98,7 @@ describe('To-do on Today', () => {
     press(ordersCopy.add.save);
 
     await waitFor(() => expect(screen.queryByLabelText(tasksCopy.checkLabel('Read', false))).toBeNull());
+    fireEvent.press(screen.getByLabelText(todayCopy.section.orders));
     expect(await screen.findByLabelText(/^Read, /)).toBeTruthy();
     const arc = getActiveArc(db)!;
     expect(selectCustomOrdersOn(db, arc.id, toDayKey(new Date())).all()).toHaveLength(1);
@@ -103,6 +110,7 @@ describe('To-do on Today', () => {
     const today = toDayKey(new Date());
     addTask(db, 'Carry me', 'today', addDays(today, -1), addDays(today, 30));
     renderRouter(APP_DIR, { initialUrl: '/veni' });
+    await openTasks();
     expect(await screen.findByLabelText(tasksCopy.checkLabel('Carry me', false))).toBeTruthy();
     expect(screen.getByText(tasksCopy.carriedOver)).toBeTruthy();
     await waitFor(() =>
@@ -121,13 +129,13 @@ describe('Orders and to-dos', () => {
     expect(await screen.findByText(ordersCopy.screen.vincoSection)).toBeTruthy();
     expect(app.getPathname()).toBe('/plan');
     press(tasksCopy.plan.segments.todo);
-    expect(await screen.findByText(tasksCopy.intro)).toBeTruthy();
+    expect(await screen.findByText(tasksCopy.today.add)).toBeTruthy();
   });
 
   it('keeps old links working', async () => {
     startArc();
     const app = renderRouter(APP_DIR, { initialUrl: '/tasks' });
-    expect(await screen.findByText(tasksCopy.intro)).toBeTruthy();
+    expect(await screen.findByText(tasksCopy.today.add)).toBeTruthy();
     expect(app.getPathname()).toBe('/plan');
   });
 });
@@ -138,10 +146,13 @@ describe('Switched off', () => {
     jest.replaceProperty(FEATURES, 'customOrders', false);
     startArc();
     renderRouter(APP_DIR, { initialUrl: '/veni' });
-    await screen.findByText(todayCopy.ordersSection);
+    await screen.findByText(todayCopy.section.orders);
     expect(screen.queryByLabelText(todayCopy.addOrder)).toBeNull();
-    expect(screen.queryByText(tasksCopy.today.section)).toBeNull();
+    // The Tasks side keeps the daily logs, without the to-do.
+    await openTasks();
+    expect(screen.getByLabelText(todayCopy.quickLogs.selfie)).toBeTruthy();
+    expect(screen.queryByLabelText(tasksCopy.today.add)).toBeNull();
     act(() => router.push('/plan'));
-    expect(await screen.findByText(todayCopy.ordersSection)).toBeTruthy();
+    expect(await screen.findByText(todayCopy.section.orders)).toBeTruthy();
   });
 });

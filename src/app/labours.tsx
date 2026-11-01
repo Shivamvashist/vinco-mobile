@@ -38,9 +38,6 @@ export default function LaboursScreen() {
         <IconButton icon="back" accessibilityLabel={copy.back} onPress={back} />
       </View>
       <ScreenHeader eyebrow={copy.eyebrow} title={copy.title} accessory={<HudCounters />} />
-      <Txt variant="body" color="textMuted" style={styles.intro}>
-        {copy.intro}
-      </Txt>
       {problem ? (
         <Txt variant="caption" color="danger" accessibilityRole="alert" style={styles.intro}>
           {problem}
@@ -52,7 +49,7 @@ export default function LaboursScreen() {
             <View key={type}>
               <SectionHeader title={copy.groups[type]} />
               <Txt variant="micro" style={styles.groupNote}>
-                {`${copy.groupNote[type]} · ${copy.resets(type, daysUntilReset(type, labours.today))}`}
+                {copy.resets(type, daysUntilReset(type, labours.today))}
               </Txt>
               <Card bordered style={styles.list}>
                 {labours.board
@@ -73,10 +70,6 @@ export default function LaboursScreen() {
             </View>
           ))
         : null}
-
-      <Txt variant="micro" align="center" style={styles.wages}>
-        {copy.wages}
-      </Txt>
     </Screen>
   );
 }
@@ -86,5 +79,4 @@ const useStyles = createStyles((theme) => ({
   intro: { marginTop: theme.space.md },
   groupNote: { marginBottom: theme.space.sm },
   list: { gap: theme.space.xxs },
-  wages: { marginTop: theme.space.xxl },
 }));

@@ -48,6 +48,12 @@ describe('reel counter through the guard bridge', () => {
       level: 'imperium',
       reelBudget: 40,
       markedPackages: ['com.instagram.android'],
+      passDay: '',
+      passes: 0,
+      denarii: 0,
+      passPrice: 20,
+      passReels: 12,
+      passMax: 3,
       copy: { badge: '{count} reels' },
       colors: { over: '#D0697D' },
     });

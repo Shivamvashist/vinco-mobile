@@ -57,6 +57,10 @@ const ICON_PATHS = {
   plate:
     'M12 19a7 7 0 1 0 0-14a7 7 0 0 0 0 14zM12 15a3 3 0 1 0 0-6a3 3 0 0 0 0 6zM3 4v5M3 9v11M21 4c-1.5 1-2 3-2 5h2v11',
   key: 'M8 15a4 4 0 1 0 0-8a4 4 0 0 0 0 8zM11.5 11H21M18 11v3M15 11v2',
+  /** A speaker with sound waves (the focus rain on). */
+  sound: 'M4 9.5h3.5L12 5.5v13l-4.5-4H4zM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11',
+  /** A speaker, crossed (the focus rain off). */
+  soundOff: 'M4 9.5h3.5L12 5.5v13l-4.5-4H4zM16 9.5l5 5M21 9.5l-5 5',
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;
