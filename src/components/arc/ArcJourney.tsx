@@ -1,6 +1,8 @@
 import { View } from 'react-native';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 
 import { getArcMilestones } from '@/features/arc';
+import { useTabRegrow } from '@/hooks/useTabSettle';
 import { toRoman } from '@/lib/toRoman';
 import { createStyles } from '@/theme';
 
@@ -17,12 +19,19 @@ const MILESTONE_SIZE = 16;
 const MARKER_SIZE = 20;
 const TRACK_TOP = 10;
 
-/** The arc as a road: Roman milestones, the distance covered in gold, and a marker for today. */
+/**
+ * The arc as a road: Roman milestones, the distance covered in gold, and a marker for today.
+ * On each return to Vici the gold stretch grows out from Day I again (useTabRegrow).
+ */
 export function ArcJourney({ dayNumber, lengthDays, accessibilityLabel }: ArcJourneyProps) {
   const styles = useStyles();
   const span = Math.max(1, lengthDays - 1);
   const fraction = Math.min(1, Math.max(0, (dayNumber - 1) / span));
   const toPercent = (day: number) => `${((day - 1) / span) * 100}%` as const;
+  const regrow = useTabRegrow(0);
+  const growStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleX: Math.min(1, Math.max(0, regrow.get())) }],
+  }));
 
   return (
     <View
@@ -33,7 +42,7 @@ export function ArcJourney({ dayNumber, lengthDays, accessibilityLabel }: ArcJou
       accessibilityValue={{ min: 1, max: lengthDays, now: dayNumber }}
     >
       <View style={styles.track} />
-      <View style={[styles.track, styles.covered, { width: `${fraction * 100}%` }]} />
+      <Animated.View style={[styles.track, styles.covered, { width: `${fraction * 100}%` }, growStyle]} />
       {getArcMilestones(lengthDays).map((day) => {
         const isPassed = day <= dayNumber;
         return (
@@ -64,7 +73,7 @@ const useStyles = createStyles((theme) => ({
     borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.border,
   },
-  covered: { right: undefined, backgroundColor: theme.colors.accent },
+  covered: { right: undefined, backgroundColor: theme.colors.accent, transformOrigin: 'left' },
   milestoneSlot: {
     position: 'absolute',
     top: TRACK_TOP - MILESTONE_SIZE / 2 + 2,

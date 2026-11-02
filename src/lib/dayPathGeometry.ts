@@ -85,7 +85,11 @@ export function stretchPath(
 export function dotsPath(dots: readonly PathDot[], elapsed: number, popMs: number): string {
   'worklet';
   let data = '';
-  for (const dot of dots) {
+  // An index loop, never for...of: the build turns for...of into a helper function that doesn't
+  // exist on the UI thread ("undefined is not a function", which closed the app on Today).
+  for (let index = 0; index < dots.length; index += 1) {
+    const dot = dots[index];
+    if (!dot) continue;
     const scale = popScale((elapsed - dot.delay) / popMs);
     if (scale <= 0) continue;
     const r = Math.round(dot.r * scale * 100) / 100;

@@ -14,6 +14,7 @@ import { RecordGrid } from '@/components/arc/RecordGrid';
 import { TreasuryCard } from '@/components/arc/TreasuryCard';
 import { BottomSheet } from '@/components/BottomSheet';
 import { Screen } from '@/components/Screen';
+import { TabSettle } from '@/components/TabSettle';
 import { SectionHeader } from '@/components/SectionHeader';
 import { ToneLine } from '@/components/ToneLine';
 import { Txt } from '@/components/Txt';
@@ -130,9 +131,9 @@ export default function ViciScreen() {
             />
           </View>
         )}
-        <View style={styles.section}>
+        <TabSettle order={0} style={styles.section}>
           <RankCard rank={campaign.rank} />
-        </View>
+        </TabSettle>
 
         <SectionHeader title={arcCopy.stats.section} />
         <RecordGrid
@@ -145,17 +146,20 @@ export default function ViciScreen() {
           trucesUsed={campaign.records.filter((record) => record.result === 'truce').length}
           selfies={campaign.selfieDays}
           daysSoFar={dayNumber}
+          settleFrom={1}
         />
 
         <SectionHeader title={arcCopy.treasury.section} />
-        <TreasuryCard
-          denarii={forum.balance}
-          truces={campaign.truceReserve}
-          alarmPasses={forum.holdings.venia.held}
-          showTruces={!isLudus}
-          onOpenForum={() => router.push('/forum')}
-          onOpenTruces={() => setOpenSheet('truces')}
-        />
+        <TabSettle order={4}>
+          <TreasuryCard
+            denarii={forum.balance}
+            truces={campaign.truceReserve}
+            alarmPasses={forum.holdings.venia.held}
+            showTruces={!isLudus}
+            onOpenForum={() => router.push('/forum')}
+            onOpenTruces={() => setOpenSheet('truces')}
+          />
+        </TabSettle>
 
         <SectionHeader title={arcCopy.decorations.section} />
         <DecorationGrid

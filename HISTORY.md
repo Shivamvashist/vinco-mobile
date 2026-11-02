@@ -143,6 +143,11 @@ Answer when convenient; work continues with the safe default shown.
 
 ### Noticed, not done
 
+- (2 Nov) Notification taps call `router.navigate('/veni')`, which in Expo Router 57 can push a second tabs screen over /focus; the "Focus held" notification links to /veni, not /focus; a `getId` on the root focus screen would rule out a duplicate /focus.
+- (2 Nov) Gladius and March cues follow the Sounds setting (off by default); make them essential if the alarm missions should always sound. Full alarm volume is not yet checked under Do Not Disturb or on Samsung and Xiaomi.
+- (2 Nov) `src/theme/__tests__/themes.test.ts` `ALL_CUES` is partial (no whoosh, coin, shing, sheathe). docs/TODAY-AND-FOCUS.md doesn't describe the full-screen rain yet.
+- (2 Nov) The reel counter now also reads the page id on screen and the top app's package: re-check the Play accessibility declaration against GUARDIANS.md's privacy section.
+
 - (1 Nov, night) **Fresh-install crash on Today, cause not found.** Reported: after a full reset and onboarding, the release app closed on Today and on every reopen. No phone log was available and the emulator route was dropped (the developer tests on the phone). Every path on Today's first open was read (worklets, native calls, Aurora, the wake watch, Hermes APIs) without a definite cause. Now: drawing errors show `CrashScreen` (root and tabs `ErrorBoundary`) and every uncaught error is kept in kv-store `vinco.lastCrash` (`lib/crashLog`). If it still closes, it is native: get `adb logcat -d -b crash`.
 - (1 Nov, night) Under Silentium with no Truce and too few denarii, a focus (up to 3 hours) can't be ended early (developer's rule; calls still come through). Revisit if testers feel trapped.
 - (1 Nov, night) A focus that starts before midnight and settles after writes its pay or retreat Truce on the day it began, which may already be sealed (the stored result is untouched). Decide if pay should go to the settle day.
@@ -209,6 +214,15 @@ Answer when convenient; work continues with the safe default shown.
 ---
 
 ## Milestone log
+
+### 2 Nov 2026: the Today crash found, Aurora missions, reel detection, full-screen rain, tab motion (still 1.1.0)
+
+- **The crash after onboarding, found** (thanks to `CrashScreen`): `dotsPath` (lib/dayPathGeometry) used for...of inside a worklet; the build turns it into a helper missing on the UI thread. Fixed with an index loop; `themeEasing` no longer destructures. New guard: `scripts/check-worklets.mjs` in `npm run check` scans 'worklet' functions and animated or gesture callbacks for for...of, array destructuring and spread; the rule is in CONVENTIONS section 6. Second crash: `useRainSound` read `player.volume` after release (now guarded).
+- **Aurora:** `features/aurora/march.ts` (`tallySteps` ignores the start-up reading, never goes down), `gladius.ts` (`readSwing`: 1.6 g over gravity, re-arm under 0.6 g and after 280 ms), `missionRun.ts`; hooks `useGladius`, `useStepPermission`; `MissionDial` shared by both missions; the step permission is never asked at ring time. Native `AuroraVolume.kt` raises STREAM_ALARM to max and restores the saved level on every stop; `stopVibrating()` stops the buzz at the first count so per-step haptics are felt. Cues `shing`, `sheathe` (normal cues: with Sounds off only their haptics play).
+- **Reel counter:** `VigilReelRules` per-app settings; `VigilReelPages` (which page a resting pager shows), `VigilReelSettler` (groups a run of events, reads at most every 250 ms), `VigilReelProbe` (all reads of another app's screen: ids, sizes, positions, never text), `VigilReelFront` (the real front app from the window list; content-change events only while YouTube, TikTok, Facebook or Snapchat is in front). Badge forgets a removed window; re-shown after any window burst. Every service event is in a top-level try/catch.
+- **Focus:** `useFocusWake` (controls' opacity snaps on app state changes), `useFocusDim` (single owner of focus brightness), screensaver counts only in front, brightness calls serialised; the result is marked seen only on GO_BACK, POP or REPLACE. `RainFullScreen` overlay (brightness 0.12, status bar hidden, Back leaves full screen first, Silentium-safe), `RainSoundToggle`.
+- **Tab motion:** `hooks/useTabSettle.ts` (`useTabSettle` tiles: 8 dp rise and 0.98 scale, 40 ms stagger, transforms only; `useTabRegrow` graphs, with a 700 ms JS deadline), `components/TabSettle.tsx`; on Veni, Vidi and Vici; not on first open or with Reduce motion.
+- Check: 101 suites, 1111 tests green; worklet check clean; `:vigil` and `:aurora` compile. Not yet tried on a phone.
 
 ### 1 Nov 2026 (night): a clean Today, the reel blocker, focus finished, permissions trimmed (still 1.1.0)
 

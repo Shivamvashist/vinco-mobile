@@ -2,15 +2,15 @@ import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { BackHandler, View } from 'react-native';
 
+import { GladiusPanel } from '@/components/aurora/GladiusPanel';
 import { MarchPanel } from '@/components/aurora/MarchPanel';
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
 import { Txt } from '@/components/Txt';
 import { auroraCopy, guardCopy, pickTone } from '@/copy';
-import { isMissionBuilt } from '@/features/aurora';
+import { isMissionBuilt, missionToRun } from '@/features/aurora';
 import { TRUCES } from '@/features/campaign';
 import { useAuroraRing } from '@/hooks/useAuroraRing';
-import { useMarch } from '@/hooks/useMarch';
 import { formatClockTime } from '@/lib/dates';
 import { useGuardStore, usePreferencesStore } from '@/stores';
 import { createStyles, SchemeOverride, useFeedback } from '@/theme';
@@ -20,7 +20,7 @@ const CLOCK_TICK_MS = 10_000;
 
 /**
  * Aurora's ring screen, over the lock screen when the alarm rings. Always dark. It stops only
- * through the mission (the march), "I'm sick" (a sick-day Truce) or an alarm pass. The back
+ * through the mission (the march or "Gladius"), "I'm sick" (a sick-day Truce) or an alarm pass. The back
  * button does nothing until it has stopped. See docs/GUARDIANS.md.
  */
 export default function AlarmScreen() {
@@ -39,7 +39,6 @@ function AlarmContent() {
   const tone = usePreferencesStore((state) => state.tone);
   const mission = useGuardStore((state) => state.aurora.mission);
   const ring = useAuroraRing();
-  const march = useMarch();
   const [now, setNow] = useState(() => new Date());
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -59,14 +58,14 @@ function AlarmContent() {
     return () => subscription.remove();
   }, [outcome]);
 
-  const { finishMission } = ring;
-  useEffect(() => {
-    if (!march.isDone || hasFinished.current) return;
+  // The mission's panel plays its own final cue, then calls this once.
+  const onMissionDone = () => {
+    if (hasFinished.current) return;
     hasFinished.current = true;
-    const denarii = finishMission();
-    play('win');
+    const denarii = ring.finishMission();
+    setProblem(null);
     setOutcome({ kind: 'won', denarii });
-  }, [march.isDone, finishMission, play]);
+  };
 
   const stopWith = () => {
     hasFinished.current = true;
@@ -100,7 +99,9 @@ function AlarmContent() {
     }
   };
 
+  const running = missionToRun(mission);
   const soonNote = isMissionBuilt(mission) ? undefined : copy.soon(guardCopy.aurora.missions[mission].name);
+  const lineMission = running === 'gladius' ? 'gladius' : 'march';
 
   return (
     <Screen scroll={false} gutter="flow" edges={['top', 'bottom']} background="backgroundDeep">
@@ -112,7 +113,7 @@ function AlarmContent() {
           {formatClockTime(now)}
         </Txt>
         <Txt variant="bodyLarge" align="center" color="textMuted">
-          {outcome?.kind === 'won' ? pickTone(copy.won, tone) : pickTone(copy.line, tone)}
+          {outcome?.kind === 'won' ? pickTone(copy.won, tone) : pickTone(copy.line[lineMission], tone)}
         </Txt>
       </View>
 
@@ -128,7 +129,11 @@ function AlarmContent() {
       ) : (
         <>
           <View style={styles.middle}>
-            <MarchPanel march={march} note={soonNote} />
+            {running === 'gladius' ? (
+              <GladiusPanel onDone={onMissionDone} onUnderway={ring.quietBuzz} />
+            ) : (
+              <MarchPanel note={soonNote} onDone={onMissionDone} onUnderway={ring.quietBuzz} />
+            )}
           </View>
           <View style={styles.bottom}>
             {problem ? (

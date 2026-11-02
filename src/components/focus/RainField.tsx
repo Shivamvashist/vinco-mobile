@@ -19,16 +19,26 @@ import { createStyles, useReduceMotion, useTheme } from '@/theme';
 export type RainFieldProps = {
   /** Paused while the focus screen sleeps or anything else hides it. */
   isPaused?: boolean;
+  /** `tile`: a few quick drops in the rain tile. `full`: more, slower drops over the whole screen. */
+  variant?: 'tile' | 'full';
 };
 
-/** Pixels in the field, spread by a fixed pattern (no randomness during render). */
-const DROPS = Array.from({ length: 16 }, (_, index) => ({
-  key: index,
-  left: ((index * 37) % 97) / 100,
-  duration: 1400 + ((index * 53) % 9) * 160,
-  delay: ((index * 71) % 13) * 110,
-  isBright: index % 4 === 0,
-}));
+/**
+ * Pixels in the field, spread by a fixed pattern (no randomness during render). `pace` slows the
+ * fall for a taller field; `rest` is where a drop waits when nothing moves (reduce motion, paused).
+ */
+function makeDrops(count: number, pace: number) {
+  return Array.from({ length: count }, (_, index) => ({
+    key: index,
+    left: ((index * 37) % 97) / 100,
+    duration: Math.round((1400 + ((index * 53) % 9) * 160) * pace),
+    delay: Math.round(((index * 71) % 13) * 110 * pace),
+    rest: ((index * 29) % 89) / 100,
+    isBright: index % 4 === 0,
+  }));
+}
+
+const DROPS = { tile: makeDrops(16, 1), full: makeDrops(44, 2.4) } as const;
 
 /** Ripples alive at once: a fourth tap reuses the oldest. */
 const RIPPLE_SLOTS = [0, 1, 2] as const;
@@ -41,9 +51,10 @@ type Tap = { x: number; y: number; count: number };
 /**
  * A small field of falling pixels, calm company for the running focus. A tap drops a ripple where
  * the finger landed (two rings that spread and fade, on the UI thread). The drops stop when the
- * screen is hidden, asleep or in the background; with reduce motion nothing moves.
+ * screen is hidden, asleep or in the background; with reduce motion nothing moves (the drops rest,
+ * spread over the field).
  */
-export function RainField({ isPaused = false }: RainFieldProps) {
+export function RainField({ isPaused = false, variant = 'tile' }: RainFieldProps) {
   const styles = useStyles();
   const reduceMotion = useReduceMotion();
   const isFocused = useIsFocused();
@@ -74,12 +85,13 @@ export function RainField({ isPaused = false }: RainFieldProps) {
         importantForAccessibility="no-hide-descendants"
         accessibilityElementsHidden
       >
-        {DROPS.map((drop) => (
+        {DROPS[variant].map((drop) => (
           <Drop
             key={drop.key}
             left={drop.left}
             duration={drop.duration}
             delay={drop.delay}
+            rest={drop.rest}
             isBright={drop.isBright}
             height={height}
             isRunning={isRunning}
@@ -95,24 +107,28 @@ type DropProps = {
   left: number;
   duration: number;
   delay: number;
+  /** Where the drop waits, as a share of the height, while nothing moves. */
+  rest: number;
   isBright: boolean;
   height: number;
   isRunning: boolean;
 };
 
-function Drop({ left, duration, delay, isBright, height, isRunning }: DropProps) {
+function Drop({ left, duration, delay, rest, isBright, height, isRunning }: DropProps) {
   const styles = useStyles();
-  const fall = useSharedValue(0);
+  const fall = useSharedValue(rest);
 
   useEffect(() => {
     if (!isRunning) {
+      // Resting drops spread over the field (with reduce motion they never move from here).
       cancelAnimation(fall);
+      fall.set(rest);
       return;
     }
     fall.set(0);
     fall.set(withDelay(delay, withRepeat(withTiming(1, { duration, easing: Easing.linear }), -1)));
     return () => cancelAnimation(fall);
-  }, [isRunning, duration, delay, fall]);
+  }, [isRunning, duration, delay, rest, fall]);
 
   const style = useAnimatedStyle(() => ({
     opacity: isRunning ? Math.sin(Math.PI * fall.get()) : 0.35,

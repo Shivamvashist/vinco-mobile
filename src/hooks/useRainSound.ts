@@ -76,9 +76,14 @@ function stopFade(timer: { current: ReturnType<typeof setInterval> | null }) {
   timer.current = null;
 }
 
+/** The current volume, or the rain level if the player is gone (released on unmount). */
 function readVolume(player: AudioPlayer): number {
-  const volume = player.volume;
-  return typeof volume === 'number' && Number.isFinite(volume) ? volume : RAIN_VOLUME;
+  try {
+    const volume = player.volume;
+    return typeof volume === 'number' && Number.isFinite(volume) ? volume : RAIN_VOLUME;
+  } catch {
+    return RAIN_VOLUME;
+  }
 }
 
 /**

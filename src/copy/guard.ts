@@ -110,6 +110,7 @@ export const guardCopy = {
     missionLabel: 'The mission',
     missions: {
       march: { name: 'March', does: 'Walk 30 steps.' },
+      gladius: { name: 'Gladius', does: 'The sword: swing the phone 30 times.' },
       sky: { name: 'See the sky', does: 'Take a photo of daylight from a window.' },
       post: { name: 'Reach the post', does: 'Scan a code stuck in your bathroom.' },
     } satisfies Record<AuroraMission, { name: string; does: string }>,

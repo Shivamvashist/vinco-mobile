@@ -61,6 +61,10 @@ const ICON_PATHS = {
   sound: 'M4 9.5h3.5L12 5.5v13l-4.5-4H4zM15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11',
   /** A speaker, crossed (the focus rain off). */
   soundOff: 'M4 9.5h3.5L12 5.5v13l-4.5-4H4zM16 9.5l5 5M21 9.5l-5 5',
+  /** Four corners pointing out (full screen, the focus rain). */
+  expand: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5',
+  /** Four corners pointing in (leave full screen). */
+  collapse: 'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5',
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

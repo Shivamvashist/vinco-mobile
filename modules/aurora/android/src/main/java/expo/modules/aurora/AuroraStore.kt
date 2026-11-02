@@ -16,8 +16,8 @@ data class AuroraLabels(
 
 /**
  * Aurora's own small store on the phone (SharedPreferences): the next ring, the repeat rule (so
- * the next ring can be set after a ring or a reboot without the app), the notification labels, and
- * when the ringing started.
+ * the next ring can be set after a ring or a reboot without the app), the notification labels,
+ * when the ringing started, and the user's alarm volume while Aurora rings at full volume.
  */
 class AuroraStore(context: Context) {
   private val prefs: SharedPreferences =
@@ -42,6 +42,13 @@ class AuroraStore(context: Context) {
     get() = prefs.getLong(KEY_RINGING, 0L)
     set(value) {
       prefs.edit().putLong(KEY_RINGING, value).commit()
+    }
+
+  /** The alarm volume before Aurora raised it, or -1 when there is nothing to restore. */
+  var savedAlarmVolume: Int
+    get() = prefs.getInt(KEY_SAVED_VOLUME, -1)
+    set(value) {
+      prefs.edit().putInt(KEY_SAVED_VOLUME, value).commit()
     }
 
   var labels: AuroraLabels
@@ -83,6 +90,7 @@ class AuroraStore(context: Context) {
     private const val KEY_MINUTES = "repeatMinutes"
     private const val KEY_DAYS = "repeatDays"
     private const val KEY_RINGING = "ringingSince"
+    private const val KEY_SAVED_VOLUME = "savedAlarmVolume"
     private const val KEY_CHANNEL = "labelChannel"
     private const val KEY_TITLE = "labelTitle"
     private const val KEY_BODY = "labelBody"

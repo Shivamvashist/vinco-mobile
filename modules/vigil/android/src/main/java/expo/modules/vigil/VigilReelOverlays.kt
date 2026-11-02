@@ -21,6 +21,9 @@ class VigilReelOverlays(private val service: AccessibilityService) {
   private val windows = VigilReelWindows(service)
   private val badge = VigilBadge(service, windows)
 
+  /** Whether the badge's window is on screen (false once the system or a hide removed it). */
+  val isBadgeShown: Boolean get() = badge.isShown
+
   /** The badge with today's count (a marked app came to the front, or the settings changed). */
   fun showBadge(count: Int, config: VigilReelConfig) {
     val allowance = config.allowance()

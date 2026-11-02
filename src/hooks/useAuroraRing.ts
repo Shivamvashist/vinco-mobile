@@ -24,6 +24,8 @@ export type AuroraRing = {
   callSick: () => SickResult;
   /** Spends an alarm pass and stops. False (still ringing) if none could be spent. */
   spendPass: () => boolean;
+  /** The mission is under way: stop the buzz (the sound keeps ringing) so its haptics are felt. */
+  quietBuzz: () => void;
 };
 
 function stopRinging(): void {
@@ -76,6 +78,11 @@ export function useAuroraRing(): AuroraRing {
       }
       stopRinging();
       return 'stopped';
+    },
+    quietBuzz: () => {
+      auroraBridge.stopVibrating().catch((error: unknown) => {
+        if (__DEV__) console.warn('[aurora] Could not stop the buzz.', error);
+      });
     },
     spendPass: () => {
       try {

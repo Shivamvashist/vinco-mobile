@@ -4,6 +4,7 @@ import { AppState, PermissionsAndroid, Platform, View } from 'react-native';
 import { auroraCopy, commonCopy } from '@/copy';
 import { type AuroraSettings, auroraBridge, planAuroraRing } from '@/features/aurora';
 import { auroraNotice } from '@/hooks/useAuroraSchedule';
+import type { StepPermission } from '@/hooks/useStepPermission';
 import { formatClockTime, toDayKey } from '@/lib/dates';
 import { IS_DEV_MODE_AVAILABLE, usePreferencesStore } from '@/stores';
 import { createStyles } from '@/theme';
@@ -21,8 +22,14 @@ const ANDROID_VERSION = Platform.OS === 'android' ? Number(Platform.Version) : 0
 
 type Status = { exact: boolean; fullScreen: boolean; notifications: boolean; nextRing: Date | null };
 
+type AuroraStatusProps = {
+  settings: AuroraSettings;
+  /** The step counter's permission, shown while March is the mission. */
+  steps: StepPermission;
+};
+
 /** Live state of the alarm on this phone (Vinco build only): next ring, permissions, a dev test. */
-export function AuroraStatus({ settings }: { settings: AuroraSettings }) {
+export function AuroraStatus({ settings, steps }: AuroraStatusProps) {
   const styles = useStyles();
   const tone = usePreferencesStore((state) => state.tone);
   const [status, setStatus] = useState<Status | null>(null);
@@ -112,6 +119,15 @@ export function AuroraStatus({ settings }: { settings: AuroraSettings }) {
           value={yesOr(status?.notifications)}
           onPress={status?.notifications === false ? () => void allowNotifications() : undefined}
         />
+        {settings.mission === 'march' && steps.state !== 'unavailable' ? (
+          <SettingsRow
+            label={copy.stepCounter}
+            value={steps.state === 'unknown' ? '' : steps.state === 'granted' ? copy.allowed : copy.allow}
+            onPress={
+              steps.state === 'denied' || steps.state === 'blocked' ? () => void steps.request() : undefined
+            }
+          />
+        ) : null}
       </SettingsGroup>
       {IS_DEV_MODE_AVAILABLE ? (
         <View style={styles.test}>

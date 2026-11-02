@@ -342,6 +342,38 @@ const RECIPES = {
       noise({ length: 0.012, volume: 0.05, curve: 2, seed: 41 }),
     ],
   },
+  // Aurora's "Gladius": one swing of the phone. A quick draw of air, then a bright metal ring
+  // (inharmonic partials, like struck steel), short so 30 in a row never blur.
+  shing: {
+    level: 'moment',
+    duration: 0.42,
+    layers: [
+      whoosh({ length: 0.08, volume: 0.7, from: 1800, to: 6500, q: 1.4, seed: 53 }),
+      noise({ at: 0.045, length: 0.012, volume: 0.12, curve: 2, seed: 59 }),
+      tone({
+        at: 0.045,
+        frequency: 2350,
+        sweepTo: 2489,
+        sweepTime: 0.04,
+        volume: 0.12,
+        attack: 0.003,
+        length: 0.34,
+      }),
+      tone({ at: 0.045, frequency: 3734, volume: 0.07, attack: 0.003, length: 0.26 }),
+      tone({ at: 0.045, frequency: 5277, volume: 0.05, attack: 0.003, length: 0.18 }),
+      tone({ at: 0.045, frequency: 6646, volume: 0.03, attack: 0.003, length: 0.12 }),
+    ],
+  },
+  // Gladius done: the blade slides home and lands with a solid knock.
+  sheathe: {
+    level: 'moment',
+    duration: 0.75,
+    layers: [
+      whoosh({ length: 0.18, volume: 0.6, from: 5200, to: 1300, q: 1.3, seed: 61 }),
+      tone({ at: 0.17, frequency: 150, sweepTo: 60, sweepTime: 0.12, volume: 0.4, attack: 0, length: 0.25 }),
+      tone({ at: 0.17, frequency: 1318.51, volume: 0.05, attack: 0.003, length: 0.45 }),
+    ],
+  },
 };
 
 function renderCue({ duration, layers }) {

@@ -4,11 +4,11 @@ import {
   earnsFirstTry,
   isMissionBuilt,
   isSamePlan,
-  marchLeft,
   missionToRun,
   planAuroraRing,
   toDaysMask,
 } from '../schedule';
+import { marchLeft } from '../march';
 
 // Wednesday 14 October 2026.
 const at = (hours: number, minutes = 0, day = 14) => new Date(2026, 9, day, hours, minutes);
@@ -59,6 +59,8 @@ describe('missions', () => {
     expect(missionToRun('sky')).toBe('march');
     expect(missionToRun('post')).toBe('march');
     expect(missionToRun('march')).toBe('march');
+    expect(isMissionBuilt('gladius')).toBe(true);
+    expect(missionToRun('gladius')).toBe('gladius');
   });
 
   it('counts the march down to zero and never below', () => {

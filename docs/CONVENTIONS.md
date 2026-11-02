@@ -211,6 +211,13 @@ Run through this for every change. Write a test for each case that lives in pure
 
 **Motion:** read `useReduceMotion()` from `@/theme` (never Reanimated's hook) and jump to the end state when it is true. Never animate on first render unless the design calls for an entrance.
 
+**UI-thread code (release builds close on these; Expo Go and the tests don't show them):**
+
+- Every function called inside `useAnimatedStyle`, `useAnimatedProps`, `useDerivedValue`, `useAnimatedReaction`, gesture callbacks or animation callbacks must itself be a `'worklet'`, or reach JS through `scheduleOnRN`.
+- Inside that code: no `for...of`, no array destructuring, no spread. The build turns them into helper functions that don't exist on the UI thread ("undefined is not a function"). Use index loops and plain property access. `npm run check:worklets` enforces this.
+- Never start content at opacity 0 waiting for an animation to finish: it can stall while the app is in the background and leave the screen blank (`useEntrance`, `useCrossFade`).
+- expo-audio: a player can already be released in an effect cleanup; wrap every read or write there in try/catch.
+
 ---
 
 ## 7. Building UI: plan, then build

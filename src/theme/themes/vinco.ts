@@ -64,6 +64,8 @@ export const vincoTheme: ThemeDefinition = {
       retreat: require('@/assets/sounds/vinco/retreat.wav'),
       standDown: require('@/assets/sounds/vinco/standDown.wav'),
       coin: require('@/assets/sounds/vinco/coin.wav'),
+      shing: require('@/assets/sounds/vinco/shing.wav'),
+      sheathe: require('@/assets/sounds/vinco/sheathe.wav'),
       // Notices only buzz: a sound on every notice would be noise.
       notice: null,
       noticeAlert: null,
@@ -92,6 +94,8 @@ export const vincoTheme: ThemeDefinition = {
       retreat: 'warning',
       standDown: 'selection',
       coin: 'light',
+      shing: 'medium',
+      sheathe: 'heavy',
       notice: 'light',
       noticeAlert: 'warning',
     },

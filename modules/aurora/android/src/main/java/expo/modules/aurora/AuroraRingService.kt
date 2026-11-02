@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.VibrationAttributes
 import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -27,7 +28,8 @@ object AuroraEvents {
 
 /**
  * The ringing itself, as a foreground service so Android keeps it alive: the alarm sound looping
- * on the alarm stream, vibration, and the full-screen notification. It stops when the app calls
+ * on the alarm stream at full volume (the user's level comes back when it stops, AuroraVolume),
+ * vibration, and the full-screen notification. It stops when the app calls
  * stopRinging (after the mission, a sick day or an alarm pass) or by itself after 10 minutes, so
  * the phone never rings forever.
  */
@@ -60,6 +62,7 @@ class AuroraRingService : Service() {
     instance = this
     AuroraStore(this).ringingSince = System.currentTimeMillis()
     acquireWakeLock()
+    AuroraVolume.raise(this)
     playSound()
     vibrate()
     handler.removeCallbacks(timeout)
@@ -72,6 +75,7 @@ class AuroraRingService : Service() {
     isActive = false
     handler.removeCallbacks(timeout)
     releaseSound()
+    AuroraVolume.restore(this)
     vibrator?.cancel()
     vibrator = null
     wakeLock?.let { if (it.isHeld) it.release() }
@@ -88,6 +92,7 @@ class AuroraRingService : Service() {
   override fun onDestroy() {
     handler.removeCallbacks(timeout)
     releaseSound()
+    AuroraVolume.restore(this)
     vibrator?.cancel()
     wakeLock?.let { if (it.isHeld) it.release() }
     if (instance === this) instance = null
@@ -152,8 +157,17 @@ class AuroraRingService : Service() {
     }
     if (!device.hasVibrator()) return
     val pattern = longArrayOf(0L, 800L, 600L)
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      device.vibrate(VibrationEffect.createWaveform(pattern, 1))
+    // Marked as an alarm, so Do Not Disturb's alarm rule lets it through and the mission's short
+    // taps of haptic feedback don't cancel it.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      device.vibrate(
+        VibrationEffect.createWaveform(pattern, 1),
+        VibrationAttributes.createForUsage(VibrationAttributes.USAGE_ALARM)
+      )
+    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      val attributes = AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).build()
+      @Suppress("DEPRECATION")
+      device.vibrate(VibrationEffect.createWaveform(pattern, 1), attributes)
     } else {
       @Suppress("DEPRECATION")
       device.vibrate(pattern, 1)
@@ -176,6 +190,18 @@ class AuroraRingService : Service() {
       ContextCompat.startForegroundService(context, intent)
     }
 
+    /**
+     * Stops the buzz only, once the mission is under way: the phone is in the user's hand, the
+     * sound keeps ringing, and the mission's own haptics (one per step or swing) can be felt.
+     */
+    fun stopVibrating() {
+      val running = instance ?: return
+      running.handler.post {
+        running.vibrator?.cancel()
+        running.vibrator = null
+      }
+    }
+
     /** Stops the ringing. Works whether or not the service is still alive. */
     fun stop(context: Context) {
       val running = instance
@@ -184,6 +210,7 @@ class AuroraRingService : Service() {
         return
       }
       AuroraStore(context).ringingSince = 0L
+      AuroraVolume.restore(context)
       AuroraLockScreen.sync(false)
       AuroraNotifications.cancelAll(context)
     }

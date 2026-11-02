@@ -13,6 +13,9 @@ export type ReelApp = { packageName: string; label: string };
 export const REEL_APPS: readonly ReelApp[] = [
   { packageName: 'com.instagram.android', label: 'Instagram' },
   { packageName: 'com.google.android.youtube', label: 'YouTube' },
+  // YouTube's common rebuilds (ReVanced): same Shorts layout, other package names.
+  { packageName: 'app.revanced.android.youtube', label: 'YouTube' },
+  { packageName: 'app.rvx.android.youtube', label: 'YouTube' },
   { packageName: 'com.zhiliaoapp.musically', label: 'TikTok' },
   { packageName: 'com.ss.android.ugc.trill', label: 'TikTok' },
   { packageName: 'com.facebook.katana', label: 'Facebook' },

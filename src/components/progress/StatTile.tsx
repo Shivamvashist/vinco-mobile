@@ -2,6 +2,7 @@ import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { useTabReturn } from '@/hooks/useTabReturn';
+import { useTabSettle } from '@/hooks/useTabSettle';
 import { cardSurface, type ColorRole, createStyles, motion, useReduceMotion } from '@/theme';
 
 import { Txt } from '../Txt';
@@ -11,6 +12,8 @@ export type StatTileProps = {
   label: string;
   /** Colour of the value: accent for the headline stat. */
   color?: ColorRole;
+  /** Place in the screen's return stagger (useTabSettle), top left first. Default 0. */
+  settleOrder?: number;
 };
 
 /** On coming back to the tab, the number rolls up into place on the settle spring. */
@@ -21,16 +24,17 @@ const ROLL_IN = FadeInDown.springify()
 
 /**
  * A big number over its label, as in Vidi's stat row. Read as one item by screen readers.
- * Each time the user comes back to the tab the number rolls in again (not on first open, and
+ * Each time the user comes back to the tab the tile settles and the number rolls in again (not on first open, and
  * never with reduce motion on).
  */
-export function StatTile({ value, label, color = 'text' }: StatTileProps) {
+export function StatTile({ value, label, color = 'text', settleOrder = 0 }: StatTileProps) {
   const styles = useStyles();
   const reduceMotion = useReduceMotion();
   const returns = useTabReturn();
+  const settleStyle = useTabSettle(settleOrder);
 
   return (
-    <View style={styles.tile} accessible accessibilityLabel={`${value} ${label}`}>
+    <Animated.View style={[styles.tile, settleStyle]} accessible accessibilityLabel={`${value} ${label}`}>
       <View style={styles.window}>
         <Animated.View key={returns} entering={returns > 0 && !reduceMotion ? ROLL_IN : undefined}>
           <Txt variant="heading" color={color} numberOfLines={1}>
@@ -41,7 +45,7 @@ export function StatTile({ value, label, color = 'text' }: StatTileProps) {
       <Txt variant="micro" numberOfLines={2} style={styles.label}>
         {label}
       </Txt>
-    </View>
+    </Animated.View>
   );
 }
 

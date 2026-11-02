@@ -8,8 +8,10 @@ import { motion, type MotionDuration, type MotionEasing, type MotionSpring } fro
 /** A Reanimated easing curve from the theme's motion tokens. */
 export function themeEasing(name: MotionEasing = 'standard'): EasingFunctionFactory {
   'worklet';
-  const [x1, y1, x2, y2] = motion.easing[name];
-  return Easing.bezier(x1, y1, x2, y2);
+  // Index access, not array destructuring: the build can turn destructuring into a helper that
+  // doesn't exist on the UI thread.
+  const curve = motion.easing[name];
+  return Easing.bezier(curve[0], curve[1], curve[2], curve[3]);
 }
 
 /** Timing config for withTiming(): a theme duration plus a theme easing. */

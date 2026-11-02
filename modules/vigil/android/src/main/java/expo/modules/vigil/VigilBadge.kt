@@ -70,6 +70,20 @@ class VigilBadge(private val context: Context, private val windows: VigilReelWin
     place(layout, view.measuredWidth, view.measuredHeight)
     attachDrag(view, layout)
     view.onConfigChanged = { reposition() }
+    // Its window removed by anyone but hide() (the system, a permission change): forget it, so the
+    // next show() adds a new one instead of styling a view that is no longer on screen.
+    view.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+      override fun onViewAttachedToWindow(v: View) = Unit
+
+      override fun onViewDetachedFromWindow(v: View) {
+        if (root !== v) return
+        snap?.cancel()
+        snap = null
+        root = null
+        pill = null
+        params = null
+      }
+    })
     if (!windows.add(view, layout)) return
     root = view
     pill = text

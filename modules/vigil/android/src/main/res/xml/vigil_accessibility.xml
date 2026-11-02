@@ -1,19 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  The Vigil hears two things:
+  The Vigil hears:
   - window state changes: which app is in front (the focus guard, the reel badge);
-  - view scrolls: the reel counter. Only scrolls in the apps the user marked are looked at.
+  - window list changes (typeWindowsChanged, flagRetrieveInteractiveWindows): which app window is
+    really on top, so the reel badge comes back after Home, Recents or a lock even when an app
+    sends no state change. Only the top app window's package name is read;
+  - view scrolls: the reel counter. Only scrolls in the apps the user marked are looked at;
+  - content changes: not listed here. The service turns them on at run time only while a marked
+    app whose rule needs them (YouTube, Snapchat, Facebook, TikTok) is in front, and off again.
 
-  canRetrieveWindowContent and flagReportViewIds: for a scroll in a marked app, the reel counter
-  reads the scrolling view itself (its resource id, its size on screen and its scroll positions)
-  to tell the reels pager from a normal feed. It never reads text, descriptions, usernames,
-  captions or what the video shows, and stores only the day's count (docs/GUARDIANS.md
-  "The reel counter"). This is what the Play accessibility declaration must describe.
+  canRetrieveWindowContent and flagReportViewIds: for a list in a marked app, the reel counter
+  reads the list itself (its resource id, its size on screen, its scroll positions, and which item
+  of it is on screen) to tell the reels pager from a normal feed. It never reads text,
+  descriptions, usernames, captions or what the video shows, and stores only the day's count
+  (docs/GUARDIANS.md "The reel counter"). This is what the Play accessibility declaration must
+  describe.
 -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-  android:accessibilityEventTypes="typeWindowStateChanged|typeViewScrolled"
+  android:accessibilityEventTypes="typeWindowStateChanged|typeWindowsChanged|typeViewScrolled"
   android:accessibilityFeedbackType="feedbackGeneric"
-  android:accessibilityFlags="flagDefault|flagReportViewIds"
+  android:accessibilityFlags="flagDefault|flagReportViewIds|flagRetrieveInteractiveWindows"
   android:canRetrieveWindowContent="true"
   android:description="@string/vigil_service_description"
   android:notificationTimeout="100"

@@ -15,6 +15,7 @@ import { WeightSheet } from '@/components/proof/WeightSheet';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Screen } from '@/components/Screen';
 import { SegmentedControl } from '@/components/SegmentedControl';
+import { TabSettle } from '@/components/TabSettle';
 import { ToneLine } from '@/components/ToneLine';
 import { Txt } from '@/components/Txt';
 import { pickTone, progressCopy } from '@/copy';
@@ -85,8 +86,16 @@ export default function VidiScreen() {
                 label={progressCopy.stats.daysTrained}
                 color="accent"
               />
-              <StatTile value={`${conqueredDays}/${daysSoFar}`} label={progressCopy.stats.fullGoalDays} />
-              <StatTile value={String(campaign.selfieDays)} label={progressCopy.stats.selfies} />
+              <StatTile
+                value={`${conqueredDays}/${daysSoFar}`}
+                label={progressCopy.stats.fullGoalDays}
+                settleOrder={1}
+              />
+              <StatTile
+                value={String(campaign.selfieDays)}
+                label={progressCopy.stats.selfies}
+                settleOrder={2}
+              />
             </>
           ) : (
             <>
@@ -95,12 +104,16 @@ export default function VidiScreen() {
                 label={progressCopy.stats.campaign}
                 color="accent"
               />
-              <StatTile value={`${conqueredDays}/${daysSoFar}`} label={progressCopy.stats.fullGoalDays} />
-              <StatTile value={String(daysToGo)} label={progressCopy.stats.daysToGo} />
+              <StatTile
+                value={`${conqueredDays}/${daysSoFar}`}
+                label={progressCopy.stats.fullGoalDays}
+                settleOrder={1}
+              />
+              <StatTile value={String(daysToGo)} label={progressCopy.stats.daysToGo} settleOrder={2} />
             </>
           )}
         </View>
-        <View style={styles.section}>
+        <TabSettle order={3} style={styles.section}>
           <GloriaCard
             total={gloria.total}
             thisWeek={gloria.thisWeek}
@@ -108,13 +121,13 @@ export default function VidiScreen() {
             today={today}
             onOpenHistory={() => router.push('/gloria')}
           />
-        </View>
+        </TabSettle>
         <View style={styles.segments}>
           <SegmentedControl options={SEGMENTS} value={segment} onChange={setSegment} />
         </View>
         {segment === 'calendar' ? (
           <>
-            <View style={styles.section}>
+            <TabSettle order={4} style={styles.section}>
               <ArcCalendar
                 arc={arc}
                 today={today}
@@ -126,7 +139,7 @@ export default function VidiScreen() {
                 onOpenDay={(day, status) => setOpenDay({ day, status })}
                 gloriaByDay={gloria.byDay}
               />
-            </View>
+            </TabSettle>
             <View style={styles.section}>
               <TimelapseCard selfies={campaign.selfieDays} />
             </View>

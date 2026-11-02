@@ -1,7 +1,7 @@
 import { useKeepAwake } from 'expo-keep-awake';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { AccessibilityInfo, useWindowDimensions, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
@@ -10,15 +10,18 @@ import { focusCopy } from '@/copy';
 import type { FocusSessionRow } from '@/db';
 import { canRetreat, type FocusComes, isFocusGuard } from '@/features/focus';
 import type { FocusRetreatResult } from '@/hooks/useFocus';
+import { FOCUS_DIM, useFocusDim } from '@/hooks/useFocusDim';
+import { useFocusWake } from '@/hooks/useFocusWake';
 import { useRainSound } from '@/hooks/useRainSound';
 import { useScreensaver } from '@/hooks/useScreensaver';
 import { formatClockTime } from '@/lib/dates';
 import { useFocusUiStore } from '@/stores';
-import { createStyles, themeTiming, useFeedback, useReduceMotion, useTheme } from '@/theme';
+import { createStyles, useFeedback, useTheme } from '@/theme';
 
 import { DriftingClock } from './DriftingClock';
 import { FocusDock } from './FocusDock';
 import { FocusHero } from './FocusHero';
+import { RainFullScreen } from './RainFullScreen';
 import { RainTile } from './RainTile';
 import { RetreatControl } from './RetreatControl';
 import { TruceSheet } from './TruceSheet';
@@ -46,7 +49,8 @@ const CLOCK_HEIGHT_SHARE = 0.13;
  * Truces, the rain with its sound), the companions' dock and "Slide to retreat". Ending early
  * spends a Truce; with none, the slide snaps back and the Truce tile shakes and offers one.
  * Kept awake; after 10 seconds without a touch the controls fade, the clock drifts and the screen
- * dims (useScreensaver). Any touch wakes it.
+ * dims (useScreensaver, useFocusDim). Any touch wakes it. The rain tile's corners open the
+ * full-screen rain (RainFullScreen), dimmed, over this screen while the focus runs on.
  */
 export function FocusActive({
   session,
@@ -64,14 +68,17 @@ export function FocusActive({
   const play = useFeedback();
   const insets = useSafeAreaInsets();
   const window = useWindowDimensions();
-  const reduceMotion = useReduceMotion();
-  const screensaver = useScreensaver(true);
+  const [isRainFull, setIsRainFull] = useState(false);
+  // The full-screen rain is the calm view already: no screensaver over it.
+  const screensaver = useScreensaver(!isRainFull);
+  const awake = useFocusWake(screensaver.isAsleep);
+  useFocusDim(isRainFull ? FOCUS_DIM.rain : screensaver.isAsleep ? FOCUS_DIM.asleep : null);
   const isRainSoundOn = useFocusUiStore((state) => state.isRainSoundOn);
   const setRainSound = useFocusUiStore((state) => state.setRainSound);
   const [alertKey, setAlertKey] = useState(0);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const awake = useSharedValue(1);
   useRainSound(isRainSoundOn, true);
+  const isControlsHidden = screensaver.isAsleep || isRainFull;
 
   const driftSize = Math.round(
     Math.min(window.width * CLOCK_WIDTH_SHARE, window.height * CLOCK_HEIGHT_SHARE),
@@ -82,11 +89,6 @@ export function FocusActive({
   const totalMs = Date.parse(session.endsAt) - Date.parse(session.startedAt);
   const share = totalMs > 0 ? Math.min(1, Math.max(0, remainingMs / totalMs)) : 0;
   const hasTruce = canRetreat(truceReserve);
-
-  useEffect(() => {
-    const target = screensaver.isAsleep ? 0 : 1;
-    awake.set(reduceMotion ? target : withTiming(target, themeTiming('slower')));
-  }, [screensaver.isAsleep, reduceMotion, awake]);
 
   const controlsStyle = useAnimatedStyle(() => ({ opacity: awake.get() }));
 
@@ -105,7 +107,7 @@ export function FocusActive({
       <Animated.View
         style={[styles.fill, controlsStyle]}
         pointerEvents={screensaver.isAsleep ? 'none' : 'auto'}
-        importantForAccessibility={screensaver.isAsleep ? 'no-hide-descendants' : 'auto'}
+        importantForAccessibility={isControlsHidden ? 'no-hide-descendants' : 'auto'}
       >
         <View style={styles.header}>
           {isLocked ? (
@@ -136,7 +138,8 @@ export function FocusActive({
             <RainTile
               isSoundOn={isRainSoundOn}
               onToggleSound={() => setRainSound(!isRainSoundOn)}
-              isPaused={screensaver.isAsleep}
+              isPaused={isControlsHidden}
+              onExpand={() => setIsRainFull(true)}
             />
           </View>
           <FocusDock comites={comites} dialerPackage={dialerPackage} />
@@ -145,6 +148,15 @@ export function FocusActive({
       </Animated.View>
 
       {screensaver.isAsleep ? <DriftingClock remainingMs={remainingMs} fontSize={driftSize} /> : null}
+
+      {isRainFull ? (
+        <RainFullScreen
+          remainingMs={remainingMs}
+          isSoundOn={isRainSoundOn}
+          onToggleSound={() => setRainSound(!isRainSoundOn)}
+          onExit={() => setIsRainFull(false)}
+        />
+      ) : null}
 
       <TruceSheet
         // A Truce bought elsewhere meanwhile (the Forum) closes it: nothing left to buy for.

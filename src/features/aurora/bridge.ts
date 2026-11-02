@@ -38,6 +38,8 @@ export type AuroraBridge = {
   isRinging: () => Promise<boolean>;
   /** Stops the sound and clears the notification. Only the ring screen calls this. */
   stopRinging: () => Promise<void>;
+  /** Stops only the buzz, once the mission is under way, so its haptics can be felt. */
+  stopVibrating: () => Promise<void>;
   /** Called when Aurora starts ringing while the app is running. Returns the unsubscribe. */
   onRing: (listener: () => void) => () => void;
 };
@@ -55,6 +57,7 @@ export const unsupportedAuroraBridge: AuroraBridge = {
   getNextRing: async () => null,
   isRinging: async () => false,
   stopRinging: async () => undefined,
+  stopVibrating: async () => undefined,
   onRing: () => () => undefined,
 };
 
@@ -81,6 +84,9 @@ export function createNativeAuroraBridge(native: AuroraNativeModule): AuroraBrid
     },
     isRinging: () => native.isRinging(),
     stopRinging: () => native.stopRinging(),
+    stopVibrating: async () => {
+      await native.stopVibrating?.();
+    },
     onRing: (listener) => {
       const subscription = native.addListener('onRing', () => listener());
       return () => subscription.remove();

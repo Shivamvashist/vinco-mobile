@@ -2,9 +2,9 @@
  * Aurora, the alarm: rings at the wake-up time on chosen days and stops only after a mission.
  * Ringing needs the native Aurora module (docs/GUARDIANS.md); the rules and timing live here.
  */
-export type AuroraMission = 'sky' | 'post' | 'march';
+export type AuroraMission = 'sky' | 'post' | 'march' | 'gladius';
 
-export const AURORA_MISSIONS: readonly AuroraMission[] = ['march', 'sky', 'post'];
+export const AURORA_MISSIONS: readonly AuroraMission[] = ['march', 'gladius', 'sky', 'post'];
 
 /** 0 = Monday ... 6 = Sunday, matching the rest of the app's weeks. */
 export type Weekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -22,6 +22,8 @@ export type AuroraSettings = {
 export const AURORA_RULES = {
   /** March: steps to stop the alarm. */
   marchSteps: 30,
+  /** Gladius: swings of the phone to stop the alarm. */
+  gladiusSwings: 30,
   /** Beating it on the first try pays this many denarii. */
   firstTryDenarii: 2,
 } as const;

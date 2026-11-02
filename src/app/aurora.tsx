@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { View } from 'react-native';
 
 import { AuroraStatus } from '@/components/aurora/AuroraStatus';
+import { StepPermissionNote } from '@/components/aurora/StepPermissionNote';
 import { Card } from '@/components/Card';
 import { ChoiceChip } from '@/components/ChoiceChip';
 import { PreviewNotice } from '@/components/guard/PreviewNotice';
@@ -20,11 +21,13 @@ import {
   AURORA_MISSIONS,
   auroraBridge,
   getNextRing,
+  type AuroraMission,
   isMissionBuilt,
   type Weekday,
 } from '@/features/aurora';
 import { useActiveArc } from '@/hooks/useActiveArc';
 import { useForum } from '@/hooks/useForum';
+import { useStepPermission } from '@/hooks/useStepPermission';
 import { formatClockTime, parseClockMinutes, toDayKey } from '@/lib/dates';
 import { useGuardStore } from '@/stores';
 import { createStyles } from '@/theme';
@@ -41,6 +44,7 @@ export default function AuroraScreen() {
   const updateAurora = useGuardStore((state) => state.updateAurora);
   const { arc } = useActiveArc();
   const forum = useForum();
+  const steps = useStepPermission();
   const now = new Date();
   const nextRing = getNextRing(aurora, now);
   const wakeMinutes = arc ? parseClockMinutes(arc.wakeTime) : null;
@@ -48,6 +52,25 @@ export default function AuroraScreen() {
   const back = () => {
     if (router.canGoBack()) router.back();
     else router.replace('/settings');
+  };
+
+  // Turning Aurora on with the march, or picking the march, asks for the step counter now, so
+  // ring time never has to (over the lock screen the dialog can't be answered).
+  const askStepsFor = (mission: AuroraMission) => {
+    if (mission === 'march' && (steps.state === 'denied' || steps.state === 'unknown')) {
+      void steps.request();
+    }
+  };
+
+  const pickMission = (mission: AuroraMission) => {
+    updateAurora({ mission });
+    askStepsFor(mission);
+  };
+
+  const turn = (isOn: boolean) => {
+    // Turning it on for the first time starts from the arc's wake-up time.
+    updateAurora(isOn && wakeMinutes != null ? { isOn, minutes: wakeMinutes } : { isOn });
+    if (isOn) askStepsFor(aurora.mission);
   };
 
   const toggleDay = (day: Weekday) => {
@@ -64,7 +87,7 @@ export default function AuroraScreen() {
       </View>
       <ScreenHeader eyebrow={copy.eyebrow} title={copy.title} caption={copy.intro} />
       {auroraBridge.isSupported ? (
-        <AuroraStatus settings={aurora} />
+        <AuroraStatus settings={aurora} steps={steps} />
       ) : (
         <View style={styles.block}>
           <PreviewNotice />
@@ -76,9 +99,7 @@ export default function AuroraScreen() {
           label={copy.on}
           toggle={{
             value: aurora.isOn,
-            // Turning it on for the first time starts from the arc's wake-up time.
-            onChange: (isOn) =>
-              updateAurora(isOn && wakeMinutes != null ? { isOn, minutes: wakeMinutes } : { isOn }),
+            onChange: turn,
           }}
         />
       </SettingsGroup>
@@ -126,10 +147,11 @@ export default function AuroraScreen() {
                     : `${copy.missions[mission].does} ${auroraCopy.status.soon}`
                 }
                 selected={aurora.mission === mission}
-                onPress={() => updateAurora({ mission })}
+                onPress={() => pickMission(mission)}
               />
             ))}
           </View>
+          {aurora.mission === 'march' ? <StepPermissionNote permission={steps} /> : null}
           <Txt variant="caption" color="currency" style={styles.note}>
             {copy.passes(forum.holdings.venia.held)}
           </Txt>

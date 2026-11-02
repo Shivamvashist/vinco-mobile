@@ -153,6 +153,10 @@ export type FeedbackCue =
   | 'retreat'
   | 'standDown'
   | 'coin'
+  /** Aurora's "Gladius": one swing of the phone counted. */
+  | 'shing'
+  /** Aurora's "Gladius": the last swing, the blade home. */
+  | 'sheathe'
   /** An in-app notice arriving: a haptic only, never a sound. */
   | 'notice'
   /** A warning or error notice arriving: a firmer haptic only. */

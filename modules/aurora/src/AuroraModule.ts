@@ -29,6 +29,8 @@ export type AuroraNativeModule = {
   getNextRing(): Promise<number | null>;
   isRinging(): Promise<boolean>;
   stopRinging(): Promise<void>;
+  /** Stops the buzz but keeps the sound (the mission is under way). Missing in builds before 2 Nov. */
+  stopVibrating?(): Promise<void>;
   addListener(eventName: 'onRing', listener: (event: { at: number }) => void): Subscription;
 };
 

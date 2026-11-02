@@ -22,7 +22,7 @@ Rules (all levels):
 
 ## Aurora (the alarm)
 
-- An alarm at the planned wake-up time on chosen days. It stops only after a **mission**: **see the sky** (a photo of daylight, checked on the phone), **reach the post** (scan a QR code stuck in the bathroom), or **march** (30 steps).
+- An alarm at the planned wake-up time on chosen days. It stops only after a **mission**: **march** (30 steps), **"Gladius"** (the sword: swing the phone 30 times), **see the sky** (a photo of daylight, checked on the phone) or **reach the post** (scan a QR code stuck in the bathroom).
 - **"I'm sick"** stops it and calls the sick-day Truce (the same rules as the dawn card).
 - **Alarm pass** ("Venia", bought in the Forum): stops it once without the mission.
 - Beating it on the first try pays 2 denarii and logs wake-up automatically ("I'm up" is then already done).
@@ -62,21 +62,26 @@ All three need a **development build** (they can't run in Expo Go). Set up once:
 - **Exact alarms:** `AlarmManager.setAlarmClock` (shows in the status bar, survives Doze). Needs `SCHEDULE_EXACT_ALARM` / `USE_EXACT_ALARM` (an alarm app may declare `USE_EXACT_ALARM`).
 - **Full-screen alarm:** a notification with a full-screen intent (`USE_FULL_SCREEN_INTENT`) opening Vinco's alarm screen over the lock screen; looping sound on the alarm audio stream.
 - **Reboots:** re-schedule on `BOOT_COMPLETED`.
-- **Missions:** sky (camera plus a brightness and colour check on the phone), post (barcode scanning with `expo-camera`), march (step counter via `expo-sensors` Pedometer).
+- **Missions:** sky (camera plus a brightness and colour check on the phone), post (barcode scanning with `expo-camera`), march (step counter via `expo-sensors` Pedometer), Gladius (accelerometer via `expo-sensors`).
 - `AuroraBridge` (`src/features/aurora/bridge.ts`) is the contract: `schedule`, `cancel`, `canScheduleExact`, `openExactAlarmSettings`.
 
 ### Aurora as built (31 Oct)
 
 - **Native module:** `modules/aurora` (Kotlin), behind `auroraBridge` (the stub stays for Expo Go and Jest).
 - **Permission:** `SCHEDULE_EXACT_ALARM`, with an inexact fallback if refused.
-- **The ring:** a foreground service loops the alarm sound on the alarm stream, and a full-screen notification on the `aurora` channel opens `vinco://alarm`. There is no snooze. It stops itself after 10 minutes.
+- **The ring:** a foreground service loops the alarm sound on the alarm stream (`USAGE_ALARM`), and a full-screen notification on the `aurora` channel opens `vinco://alarm`. There is no snooze. It stops itself after 10 minutes.
+- **Full volume (2 Nov):** when it starts ringing, `AuroraVolume.raise` saves the alarm stream's level (in `AuroraStore.savedAlarmVolume`, so a ring cut short by Android is still put right) and sets the stream to its maximum; every way it stops (mission, sick day, pass, the 10-minute stop, the service dying) restores the saved level. The alarm stream needs no permission; a phone that refuses (a Do Not Disturb policy, a work profile, a maker's rule) is caught and logged, and Aurora rings at the user's level.
+- **The buzz:** the vibration is marked as an alarm (`VibrationAttributes.USAGE_ALARM` on Android 13+, `AudioAttributes` before), so Do Not Disturb's alarm rule lets it through. At the mission's first step, swing or tap the ring screen calls `stopVibrating()`: the phone is in hand, the sound keeps ringing, and the mission's own haptics can be felt (Android ignores short haptics while a repeating alarm buzz runs).
 - **The phone keeps the rule:** the repeat rule lives on the phone (SharedPreferences), so the next ring is set after a ring, a reboot, an update or a clock change, without opening the app.
 - **Ring screen `/alarm`:**
-  - **March:** 30 steps, or 30 taps without a step counter.
+  - **One dial for every mission** (`MissionDial`): a big count inside a ring (gold for the march, steel for the sword), one line of instruction, a cue and a small pulse per step or swing, the mission's final cue, and the tap button when the sensor can't count. The hooks (`useMarch`, `useGladius`) return the same `MissionRun` shape (`src/features/aurora/missionRun.ts`).
+  - **March:** 30 steps from the step counter. The "Physical activity" permission is asked **ahead** (turning Aurora on with the march, picking the march, the "Step counter" row in "On this phone", or the note under the missions), never at ring time: over the lock screen Android's dialog opens behind the lock and the march used to wait forever on it. At ring time the permission is only read. Taps take over with no step counter, no permission, no answer within 4 s, or no step for 20 s (steps still add); after a minute "Can't walk right now? Tap instead" is offered. The step tally (`tallySteps`) drops the counter's start-up reading (it used to count 1 step with nobody moving) and only moves up (batched steps, the repeat after a return from the background).
+  - **"Gladius" (2 Nov):** 30 swings, read from the accelerometer at 50 readings a second, no permission. A swing counts when the reading's size passes 1.6 g over gravity (about 2.6 g in all), then the reading must settle under 0.6 g over gravity and 280 ms must pass before the next (a swing's throw and stop are two peaks 100 to 200 ms apart). Constants in `GLADIUS_RULES`, the detector `readSwing` (`src/features/aurora/gladius.ts`, tested). Each swing plays `shing` (a metal ring, medium haptic); the last plays `sheathe` (heavy haptic). No accelerometer: taps at once. After a minute: "Can't swing? Tap instead".
   - **"I'm sick":** the sick-day Truce; if it can't be paid, the alarm keeps ringing.
   - **"Use an alarm pass".**
   - **First try:** logs wake-up and pays 2 denarii.
 - **Not built yet:** "See the sky" and "Reach the post" are marked as coming; they ring with the march until built.
+- **UI sounds and the ring:** `shing` and `sheathe` are ordinary cues, so with Sounds off (the default) only their haptics play; the alarm's own sound is loud anyway.
 
 ## Focus ("Acies") and the guard (31 Oct)
 
@@ -184,16 +189,16 @@ The Vigil counts reels and shorts in the marked apps, per local day, in the same
 
 ### Levels as built
 
-| Level            | Counts | Badge | Milestone cards | Past the allowance       | Later                                       |
-| ---------------- | ------ | ----- | --------------- | ------------------------ | ------------------------------------------- |
-| Pax              | yes    | no    | no              | nothing                  |                                             |
-| Vigil            | yes    | yes   | yes             | blocking card, closable  |                                             |
-| Custos (`guard`) | yes    | yes   | yes             | blocking card, no close  | the "why are you opening this?" check (1.1) |
-| Imperium         | yes    | yes   | yes             | blocking card, no close  | blocking the app itself, Clementia (1.2)    |
+| Level            | Counts | Badge | Milestone cards | Past the allowance      | Later                                       |
+| ---------------- | ------ | ----- | --------------- | ----------------------- | ------------------------------------------- |
+| Pax              | yes    | no    | no              | nothing                 |                                             |
+| Vigil            | yes    | yes   | yes             | blocking card, closable |                                             |
+| Custos (`guard`) | yes    | yes   | yes             | blocking card, no close | the "why are you opening this?" check (1.1) |
+| Imperium         | yes    | yes   | yes             | blocking card, no close | blocking the app itself, Clementia (1.2)    |
 
 **Allowance** = the daily budget plus 12 reels for each **reel pass** bought today.
 
-- **Badge** (Vigil and up, 1 Nov, `VigilBadge.kt`): a small pill ("12 reels", tabular digits) while a marked app is in front. Marble below 80% of the allowance, gold from 80% up to it, porphyry past it. **Draggable** (past an 8 dp touch slop; on release it glides to the nearer side) and **tappable** (a tap, not a drag, opens the panel). Its side and height are kept in prefs (`badgeStart`, `badgeY`) and clamped into the screen again on rotation or a size change. Hidden as soon as another app (or Vinco) comes to the front.
+- **Badge** (Vigil and up, 1 Nov, `VigilBadge.kt`): a small pill ("12 reels", tabular digits) while a marked app is in front, every time it comes back (after Home, Recents, a lock, or a blocking card left on screen; see "Which app is in front" below). Marble below 80% of the allowance, gold from 80% up to it, porphyry past it. **Draggable** (past an 8 dp touch slop; on release it glides to the nearer side) and **tappable** (a tap, not a drag, opens the panel). Its side and height are kept in prefs (`badgeStart`, `badgeY`) and clamped into the screen again on rotation or a size change. Hidden as soon as another app (or Vinco) comes to the front.
 - **Panel** (a tap on the badge, `VigilReelCards.kt`): one card on a scrim, like the focus panel: "REELS TODAY", a thin ring with the count, "18 of 30", the passes used if any, one gold "Reel pass +12 · 20 denarii", and a quiet Close. With the three passes used, or too few denarii, the button becomes one muted line. Scrim, Back and Close dismiss it.
 - **Budget and milestone cards** (Vigil and up): at the allowance ("Budget reached") and at every 25 **under** it; the allowance wins a tie. A notice card near the top with the tone's line and Close; it goes when the user leaves the app, or after 60 seconds.
 - **Blocking card** (Vigil and up): on **every** reel counted past the allowance. A full-screen scrim (the feed below can't scroll) with the count, the tone's line, gold "Leave" (home screen via `GLOBAL_ACTION_HOME`), a quiet "Reel pass +12 · 20 denarii" (hidden when the three are used or the denarii fall short) and, at Vigil only, a quiet "Close" (scrim and Back close it too). At Custos and Imperium there is no close: Back means Leave. One at a time: a new reel refreshes the card in place (a live region reads the new count). It supersedes the milestone cards past the allowance.
@@ -203,21 +208,24 @@ The Vigil counts reels and shorts in the marked apps, per local day, in the same
 
 ### Detection
 
-- **Signal:** `TYPE_VIEW_SCROLLED` from a marked package (any other package is dropped on the first line, O(1)). The event gives the list's first and last visible item (`fromIndex`, `toIndex`), the item count and, on Android 9+, the scroll deltas.
-- **A reels pager** is a vertical list that settles on one item (`fromIndex == toIndex`) and either has a known resource id (the rule table) or fills most of the screen (at least 90% of the width and 75% of the height). Sideways scrolls (tabs, the stories tray) are ignored.
-- **A reel counts** when the user settles on an item further down than any counted before in that pager and stays on it **1.2 seconds** (one delayed check, no polling). So flinging past reels counts only the ones stayed on; scrolling back up never counts again (the highest counted item is remembered for the last 8 pagers, so going from the feed to Reels and back doesn't start over); leaving the app inside the 1.2 s cancels it.
-- **First reel:** when a pager is first seen because the user swiped down from a reel, that reel counts at once. A reel opened and left without any swipe is not counted (there is no scroll event to see).
-- **No positions:** for a list that reports none, and only where the rule says `byDistance` (TikTok), a full-screen vertical scroll of 60% of the list's height past the furthest point counted is one reel. Android 9+ only.
+- **Signals:** `TYPE_VIEW_SCROLLED` from a marked package (any other package is dropped on the first line, O(1)). The event gives the list's first and last visible item (`fromIndex`, `toIndex`), the item count and, on Android 9+, the scroll deltas. Since 2 Nov also `TYPE_WINDOW_CONTENT_CHANGED` (subtree changes of a list or pager), turned on at run time **only while a marked app whose rule asks for it is in front** (`setServiceInfo`), for pagers that page without scroll events.
+- **Two paths, one count** (`VigilReelDetector.kt`):
+  1. **Positions** (Instagram, and any list that reports them): a reels pager settles on one item (`fromIndex == toIndex`) and either has a known resource id or fills most of the screen (at least 90% of the width and 75% of the height). Sideways scrolls (tabs, the stories tray) are ignored.
+  2. **At rest** (2 Nov, `VigilReelSettler.kt`, `VigilReelPages.kt`): any other swipe (or run of content changes) in a list of a marked app is read once, **300 ms after its last event** (a run of content changes at the latest every 1.5 s). The page covering the pager's centre must fill at least 90% of it (one item at a time: a feed never counts), and the pager must not be sideways. Its place is, in order: the page's own position in the list (`rowIndex`, which RecyclerView and ViewPager2 report per item even when the scroll event has none); a new page view (Snapchat, `byPageIdentity`); the distance swiped in pager heights (`byDistance`: under half a height is a nudge, a fling of three heights is three places). Each gesture is judged on its own, so a lost scroll event never drifts the count. A gesture whose scrolls reported positions is never counted by distance or view (no double count); a pager counted by position on both paths shares one track.
+- **A reel counts** when the user settles on a place further down than any counted before in that pager and stays on it **1.2 seconds** (one delayed check, no polling). So flinging past reels counts only the ones stayed on; scrolling back up never counts again (the highest counted place is remembered for the last 8 pagers, so going from the feed to Reels and back doesn't start over); leaving the app, or a new swipe in the same list, inside the 1.2 s cancels it. Idle playback never counts: the same page at rest is the same place.
+- **First reel:** when a pager is first seen on a forward swipe, the reel swiped from counts at once. A pager first seen at rest (YouTube or Snapchat opened on a reel) counts that reel after its dwell. On the positions path a reel opened and left without any swipe is not counted.
 - **Rule table:** `VigilReelRules.kt`, one line per app, easy to update when an app changes:
 
-| App       | Package(s)                                             | Rule                                                              |
-| --------- | ------------------------------------------------------ | ----------------------------------------------------------------- |
-| Instagram | `com.instagram.android`                                | id `clips_viewer_view_pager`, then the full-screen pager fallback |
-| YouTube   | `com.google.android.youtube`                           | ids `reel_recycler`, `reel_player_page_container`, then fallback  |
-| TikTok    | `com.zhiliaoapp.musically`, `com.ss.android.ugc.trill` | full-screen pager fallback, plus by distance                      |
-| Facebook  | `com.facebook.katana`                                  | full-screen pager fallback                                        |
-| Snapchat  | `com.snapchat.android`                                 | full-screen pager fallback                                        |
-| Any other | passed to `configure` (no picker in the UI yet)        | full-screen pager fallback                                        |
+| App       | Package(s)                                                                                       | Rule                                                                                                                 |
+| --------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| Instagram | `com.instagram.android`                                                                          | id `clips_viewer_view_pager`, then fallback; positions path only (its home feed is never read at rest)               |
+| YouTube   | `com.google.android.youtube`; ReVanced `app.revanced.android.youtube`, `app.rvx.android.youtube` | pager id `reel_recycler`, page id `reel_player_page_container`, then fallback; at rest, by distance, content changes |
+| TikTok    | `com.zhiliaoapp.musically`, `com.ss.android.ugc.trill`                                           | fallback; at rest, by distance, content changes                                                                      |
+| Facebook  | `com.facebook.katana`                                                                            | fallback; at rest, by distance, content changes                                                                      |
+| Snapchat  | `com.snapchat.android`                                                                           | fallback; at rest, by page view, by distance, content changes (any view class)                                       |
+| Any other | passed to `configure` (no picker in the UI yet)                                                  | fallback; at rest by position only                                                                                   |
+
+**Why YouTube Shorts and Snapchat counted nothing before 2 Nov:** the old detector needed `fromIndex == toIndex` on a scroll event, and only TikTok could fall back to distance. Shorts' pager and Snapchat's custom views send scrolls without item positions (or none at all), so every swipe was dropped. The at-rest path reads the page's position, view or distance instead.
 
 The default list is `REEL_APPS` in `src/features/guard/reels.ts`. The ids come from public knowledge of these apps and **must be confirmed on a phone** (Android Studio's Layout Inspector or `adb shell uiautomator dump`); the fallback keeps counting if they change.
 
@@ -226,7 +234,8 @@ The default list is `REEL_APPS` in `src/features/guard/reels.ts`. The ids come f
 - **Instagram:** the home feed is also a vertical list; it counts only if it settles on a single post filling most of the screen (rare). If a new version's Reels viewer stops sending scroll events, nothing counts until the rule changes.
 - **YouTube:** Shorts opened from the home shelf use the same player. The regular watch page is not a pager.
 - **TikTok:** ids change with every release, so it relies on the fallback and, without positions, on distance. The comments sheet is not full screen, so it doesn't count.
-- **Facebook and Snapchat:** custom views that may not report positions. If nothing counts, add an id or `byDistance` after testing.
+- **Facebook and Snapchat:** custom views that may not report positions. Snapchat by page view is a fair guess: pagers reuse 3 to 5 views, so without a scroll delta a view seen two places back reads as new (a back swipe of two may count once). If nothing counts, find the pager's id with `uiautomator dump` and add it to the table.
+- **Content changes:** while YouTube, TikTok, Facebook or Snapchat is in front the service hears content changes (dropped unless a list's or pager's subtree changed); everywhere else they stay off. At most one look at the screen every 250 ms, usually one per swipe.
 - **Split screen:** only apps matched by id count (a half-screen pager fails the size check). **Picture-in-picture** plays no new reels. **Landscape** works (the screen size is read at each check).
 - **Screen locked inside the 1.2 s:** that reel still counts (no event tells the lock apart).
 - **Renamed packages:** a renamed package is simply not counted until the list changes.
@@ -242,11 +251,13 @@ The default list is `REEL_APPS` in `src/features/guard/reels.ts`. The ids come f
 - **Reels screen (`/reels`, 1 Nov):** from the Reels tile on Today and the guard screen's "Reels today" row. Today as one big number against the allowance with a thin bar, what is left, the passes; "Reel pass +12" once near or past the allowance (Vigil and up). The log: Day (a bar a day for a week) or Week (a bar a week for eight weeks), each bar muted within the allowance and porphyry past it, the budget as a dashed gold line (`PeriodBarChart` `reference`). Settings: the guard level (segmented, one line on what happens past the budget), the daily budget, the apps counted, and a link to all guard levels. With Expo Go, one quiet line; with the service off, one row that opens /permissions (the disclosure comes before the phone settings).
 - **Guard screen:** "Reels today" is a compact row ("12 of 30", coloured like the badge) that opens /reels. In Expo Go the preview notice stays.
 - **Service off:** counts stay, nothing new is counted, the guard screen says the counter is off.
+- **Which app is in front** (2 Nov, `VigilReelFront.kt`): window state events first; then, after any window list change (`TYPE_WINDOWS_CHANGED`, once per 250 ms burst) or an event from a marked app that isn't the one in front, the top application window's package is read from the window list (`flagRetrieveInteractiveWindows`) and wins. This fixed the badge not coming back: the blocking card is a focusable window over everything, so leaving with it on screen (Home, Recents) could leave the app in front stale, and some phones send no state event when an app returns from Recents. The badge also forgets its view when the system removes its window, so the next show adds a new one instead of styling a view that is gone.
+- **Errors:** every event is handled inside a try/catch in `VigilService` (the service runs in Vinco's process: an exception would close the app), and a reel error never keeps the focus guard from hearing a window. Every WindowManager call is on the main thread and wrapped.
 - **A focus at the same time:** both run. The badge sits top left, the focus bubble top right; Imperium and Silentium sending the user back to Vinco hide the badge.
 
 ### Privacy and the Play declaration
 
-- `vigil_accessibility.xml`: `typeWindowStateChanged|typeViewScrolled`, `flagReportViewIds`, `canRetrieveWindowContent` **true**. Why: to tell the reels pager from a normal feed, the counter reads, for a scroll in a marked app only, the scrolling view's **resource id, its bounds and its scroll positions** (`event.getSource()`, released at once). It never reads text, content descriptions, usernames, captions, messages or video, never walks the view tree, and logs nothing. Only the number of reels a day is stored.
+- `vigil_accessibility.xml`: `typeWindowStateChanged|typeWindowsChanged|typeViewScrolled` (content changes added at run time, in the marked apps that need them), `flagReportViewIds|flagRetrieveInteractiveWindows`, `canRetrieveWindowContent` **true**. Why: to tell the reels pager from a normal feed, the counter reads, in a marked app only, the list's **resource id, bounds and scroll positions, and the bounds, id and list position of the page on its centre** (at most 6 children; for YouTube, a search of the app's own views by the rule's ids). The window list gives only the top app's package name. It never reads text, content descriptions, usernames, captions, messages or video, and logs nothing; nodes are released at once. Only the number of reels a day is stored.
 - **Declaration text (Play Console):** "Vinco uses the Accessibility API to count short-form videos (reels) the user watches in apps they choose, and to guard focus sessions the user starts. For reels it detects when a new full-screen video scrolls into view, using only the scrolling list's id, size and position. No screen content is read, stored or transmitted." The video shows the guard screen's disclosure, turning the service on, a few reels counted in Instagram, and the badge.
 - **Disclosure copy updated:** `guardCopy.reels.offBody` (the guard screen), `focusCopy.permission.watches` and `stays` (the focus setup), `permissionsCopy.items.overlay.why`, and the service description (`vigil_strings.xml`).
 
@@ -256,12 +267,15 @@ The default list is `REEL_APPS` in `src/features/guard/reels.ts`. The ids come f
 2. Turn on "Vinco focus guard" in Accessibility (the guard screen's button). User menu, Guard: "Reels today" shows 0 of 30.
 3. **Pax:** in Instagram Reels, swipe 5 reels staying 2 s on each. Back in Vinco the count is 5 (6 if the first swipe started from a reel). No badge.
 4. **Vigil:** set the level and a budget of 5. Reopen Instagram Reels: the badge shows; it turns gold at 4, the "Budget reached" card shows at 5, porphyry from 6 and the blocking card on every reel from 6 (one card, the count refreshing). Close works; Leave goes home.
-4a. **Badge:** drag it to the other side and up: it glides to the edge; leave and reopen the app: it is where it was left. Rotate: it stays inside the screen. A tap (no drag) opens the panel; scrim, Back and Close dismiss it.
-4b. **Pass:** with 20 or more denarii (dev "Add denarii"), tap "Reel pass" on the panel or the blocking card: Vinco opens on /reels with the sheet; buy; back in the app the badge reads "of 17" and no card shows until reel 18. Buy three: the button is replaced by "All 3 passes used today". With under 20 denarii the pass is hidden on the blocking card and a muted line shows on the panel.
-4c. **Custos / Imperium:** the blocking card has no Close; Back and a scrim tap don't dismiss it (Back goes home).
-4d. **Light palette** (Marble) and a large font size: the panel and card read well; the card scrolls on a short landscape screen.
+   4a. **Badge:** drag it to the other side and up: it glides to the edge; leave and reopen the app: it is where it was left. Rotate: it stays inside the screen. A tap (no drag) opens the panel; scrim, Back and Close dismiss it.
+   4b. **Pass:** with 20 or more denarii (dev "Add denarii"), tap "Reel pass" on the panel or the blocking card: Vinco opens on /reels with the sheet; buy; back in the app the badge reads "of 17" and no card shows until reel 18. Buy three: the button is replaced by "All 3 passes used today". With under 20 denarii the pass is hidden on the blocking card and a muted line shows on the panel.
+   4c. **Custos / Imperium:** the blocking card has no Close; Back and a scrim tap don't dismiss it (Back goes home).
+   4d. **Light palette** (Marble) and a large font size: the panel and card read well; the card scrolls on a short landscape screen.
 5. Fling fast past 5 reels: only the one stayed on counts. Scroll back up 3: no count. Scroll down again over the same 3: no count.
-6. Repeat 3 to 5 in **YouTube Shorts**, **TikTok**, **Facebook Reels** and **Snapchat Spotlight**. Note per app: right, double counts, or none (then fix the rule table).
+6. Repeat 3 to 5 in **YouTube Shorts**, **TikTok**, **Facebook Reels** and **Snapchat Spotlight**. Note per app: right, double counts, or none (then fix the rule table). Expected since 2 Nov: one per reel stayed on; opening Shorts on a short and staying 2 s counts it; one short looping for a minute adds nothing; a small drag that springs back adds nothing; up 2 and down 2 adds nothing.
+   6a. **Snapchat Stories** (sideways) and the **Shorts shelf** on YouTube home (sideways): nothing counts. YouTube home feed scrolled for a minute: nothing.
+   6b. **Badge comes back** (Vigil, budget 1, so the blocking card shows): with the card on screen press Home, then open Instagram from its icon: the badge is back with the count. Repeat leaving by Recents (then pick Instagram there), by Back at Custos, by locking the screen (unlock straight into Instagram), and by "Leave". Repeat in Shorts and Spotlight.
+   6c. With the badge showing, pull down the notification shade and open the keyboard in Instagram search: the badge stays.
 7. Scroll the Instagram home feed and YouTube home for a minute: the count must not move.
 8. Split screen (Instagram plus another app), Shorts in landscape, a picture-in-picture video.
 9. Kill Vinco, watch 3 reels, reopen: the count includes them. Reboot: the count is kept. After midnight: a new day at 0, and yesterday shows.
@@ -284,7 +298,7 @@ When the user unlocks the phone between **03:00 and 12:00** (local time) and tod
 1. Build once (cloud): `npx eas-cli@latest build -p android --profile development`. Install the APK from the link.
 2. On the PC: `npx expo start`. On the phone: open Vinco (the development build) and pick the PC's server.
 3. User menu, Aurora: turn it on. Allow exact alarms, full-screen alarm (Android 14+) and notifications in the "On this phone" card.
-4. "Test the alarm in 1 minute", then lock the phone. It rings over the lock screen; the back button does nothing; 30 steps (or taps) stop it and pay the first-try denarii.
+4. "Test the alarm in 1 minute", then lock the phone. It rings over the lock screen at full alarm volume; the back button does nothing; 30 steps (or 30 swings with Gladius, or taps) stop it and pay the first-try denarii; the alarm volume is back to where it was.
 5. Try "I'm sick" (with and without a Truce) and an alarm pass from the Forum.
 6. Reboot: "Next ring" is still set.
 

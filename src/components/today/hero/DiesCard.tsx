@@ -5,6 +5,7 @@ import { commonCopy, todayCopy } from '@/copy';
 import type { PathPoint, PathSpan, SkyBody } from '@/features/dayPath';
 import { useCrossFade } from '@/hooks/useCrossFade';
 import { useHeroFace } from '@/hooks/useHeroFace';
+import { useTabSettle } from '@/hooks/useTabSettle';
 import { cardSurface, createStyles, useTheme } from '@/theme';
 
 import { Button } from '../../Button';
@@ -77,10 +78,12 @@ export function DiesCard({
   const sky = useCrossFade(face === 'sky');
   const countStyle = useAnimatedStyle(() => ({ opacity: 1 - sky.get() }));
   const skyStyle = useAnimatedStyle(() => ({ opacity: sky.get() }));
+  // First in Veni's return stagger: the hero settles, then the tiles under it.
+  const settleStyle = useTabSettle(0);
   const isHeld = state === 'held' || state === 'conquered';
 
   return (
-    <View>
+    <Animated.View style={settleStyle}>
       <PressableScale
         scaleTo="card"
         onPress={onPress}
@@ -142,7 +145,7 @@ export function DiesCard({
           />
         </View>
       ) : null}
-    </View>
+    </Animated.View>
   );
 }
 

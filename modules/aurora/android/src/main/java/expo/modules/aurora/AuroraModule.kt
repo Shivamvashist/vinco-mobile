@@ -96,6 +96,8 @@ class AuroraModule : Module() {
     AsyncFunction("isRinging") { AuroraStore(context).isRinging() }
 
     AsyncFunction("stopRinging") { AuroraRingService.stop(context) }
+
+    AsyncFunction("stopVibrating") { AuroraRingService.stopVibrating() }
   }
 
   private fun openSettings(intent: Intent) {

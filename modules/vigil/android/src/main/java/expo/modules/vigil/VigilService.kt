@@ -10,9 +10,9 @@ import android.view.accessibility.AccessibilityEvent
 
 /**
  * The Vigil's accessibility service. It listens for window state changes (which app is in front,
- * for the focus guard) and for scrolls (the reel counter, marked apps only). For a scroll in a
- * marked app it reads the scrolling view's id, size and positions, never text or what is on screen
- * (VigilReels). The system starts it when the user turns it on and again after a reboot; on
+ * for the focus guard), window list changes, and scrolls (the reel counter, marked apps only; plus
+ * content changes while a marked app whose rule needs them is in front). For a list in a marked
+ * app it reads the list's id, size and positions, never text or what is on screen (VigilReels). The system starts it when the user turns it on and again after a reboot; on
  * connecting it reads any running focus from the store and carries on guarding.
  */
 class VigilService : AccessibilityService() {
@@ -26,25 +26,38 @@ class VigilService : AccessibilityService() {
     guard = created
     running = this
     created.reload()
-    reels = VigilReels(this).also { it.reload() }
+    reels = VigilReels(this).also { safely { it.reload() } }
     // Unlocks can only be heard by a running component since Android 8: the "Are you up?" prompt.
     if (unlockReceiver == null) unlockReceiver = VigilWake.register(this)
   }
 
   override fun onAccessibilityEvent(event: AccessibilityEvent?) {
     if (event == null) return
-    // The reel counter (VigilReels): scrolls in the marked apps. Every other scroll is dropped there.
-    if (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
-      reels?.onScrolled(event)
-      return
+    // The service runs in Vinco's process: an error here would close the app. Nothing gets out.
+    try {
+      handle(event)
+    } catch (_: Exception) {
+      // This one event is skipped; the next one is handled as usual.
     }
-    if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
-    val packageName = event.packageName?.toString() ?: return
-    val className = event.className?.toString()
-    // Vinco's own overlay windows must not count as Vinco being in front: only its activities do.
-    if (packageName == this.packageName && !isOwnActivity(className)) return
-    reels?.onWindow(packageName)
-    guard?.onWindow(packageName, className)
+  }
+
+  private fun handle(event: AccessibilityEvent) {
+    when (event.eventType) {
+      // The reel counter (VigilReels): scrolls and content changes in the marked apps only (every
+      // other package is dropped there), and window list changes (which app is really in front).
+      AccessibilityEvent.TYPE_VIEW_SCROLLED -> reels?.onScrolled(event)
+      AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> reels?.onContentChanged(event)
+      AccessibilityEvent.TYPE_WINDOWS_CHANGED -> reels?.onWindowsChanged()
+      AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+        val packageName = event.packageName?.toString() ?: return
+        val className = event.className?.toString()
+        // Vinco's own overlay windows must not count as Vinco being in front: only its activities do.
+        if (packageName == this.packageName && !isOwnActivity(className)) return
+        // Apart, so a reel error never keeps the focus guard from hearing the window.
+        safely { reels?.onWindow(packageName) }
+        guard?.onWindow(packageName, className)
+      }
+    }
   }
 
   override fun onInterrupt() = Unit
@@ -64,6 +77,14 @@ class VigilService : AccessibilityService() {
     reels = null
     if (running === this) running = null
     super.onDestroy()
+  }
+
+  private inline fun safely(block: () -> Unit) {
+    try {
+      block()
+    } catch (_: Exception) {
+      // The reel watch skips this one; the service and the app carry on.
+    }
   }
 
   private fun isOwnActivity(className: String?): Boolean {
@@ -88,7 +109,7 @@ class VigilService : AccessibilityService() {
     /** Tells the running service (if any) that the reel watch's settings changed. Safe from any thread. */
     fun refreshReels() {
       val service = running ?: return
-      service.mainExecutorCompat().execute { service.reels?.reload() }
+      service.mainExecutorCompat().execute { service.safely { service.reels?.reload() } }
     }
 
     /** Whether the user has turned the service on in the phone's accessibility settings. */

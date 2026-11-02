@@ -23,6 +23,8 @@ import { createStyles, useFeedback } from '@/theme';
 
 /** How far a new stage (setup, active, complete) rises as it springs in. */
 const STAGE_RISE = 24;
+/** The ways the user leaves this screen: Back, the swipe, Done (back, or Today when first). */
+const LEFT_BY_USER: ReadonlySet<string> = new Set(['GO_BACK', 'POP', 'REPLACE']);
 
 /**
  * Focus ("Acies"): the setup, the running focus and its result, opened from the Focus tile on
@@ -49,15 +51,15 @@ export default function FocusScreen() {
   const settledId = focus.settled?.id ?? null;
   useFocusLock(isLocked);
 
-  // A result shown here is seen once the screen goes (Done, Back, or the app moving on). Marked as
-  // the screen starts to leave, so the Focus tile on Today never opens the same result again.
+  // A result shown here is seen once the user leaves it (Done, Back, the swipe). Marked as the
+  // screen starts to leave, so the Focus tile on Today never opens the same result again. Removed
+  // by a navigation from elsewhere (a notification tap landing while the app comes back), it is
+  // not marked: the Focus tile then opens the result, so a return never skips it.
   useEffect(() => {
     if (settledId == null) return;
-    const unsubscribe = navigation.addListener('beforeRemove', () => markSeen(settledId));
-    return () => {
-      unsubscribe();
-      markSeen(settledId);
-    };
+    return navigation.addListener('beforeRemove', (event) => {
+      if (LEFT_BY_USER.has(event.data.action.type)) markSeen(settledId);
+    });
   }, [settledId, markSeen, navigation]);
 
   const close = () => {

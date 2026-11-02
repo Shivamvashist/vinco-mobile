@@ -6,6 +6,7 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native';
 import * as Brightness from 'expo-brightness';
 import { renderRouter } from 'expo-router/testing-library';
+import { AppState, type AppStateStatus } from 'react-native';
 
 import { focusCopy, forumCopy, rewardsCopy } from '@/copy';
 import {
@@ -224,6 +225,73 @@ describe('Screensaver', () => {
     // Tests run as iOS: the saved brightness comes back (Android hands back to the system).
     await waitFor(() => expect(Brightness.setBrightnessAsync).toHaveBeenLastCalledWith(0.5));
     expect(screen.queryByHintText(focusCopy.active.wake)).toBeNull();
+  });
+
+  it('comes back awake and bright after the app was away, and only sleeps 10 seconds later', async () => {
+    // AppState is a jest mock here: listen in, then put its own implementation back.
+    const addListener = jest.mocked(AppState.addEventListener);
+    const original = addListener.getMockImplementation();
+    const listeners = new Set<(state: AppStateStatus) => void>();
+    addListener.mockImplementation((_type, handler) => {
+      listeners.add(handler);
+      return { remove: () => listeners.delete(handler) };
+    });
+    const emit = (state: AppStateStatus) => act(() => listeners.forEach((listener) => listener(state)));
+    try {
+      holdTruce();
+      await openSetup();
+      slide(focusCopy.setup.begin);
+      expect(await screen.findByLabelText(focusCopy.active.retreat)).toBeTruthy();
+      act(() => jest.advanceTimersByTime(10_500));
+      await waitFor(() => expect(Brightness.setBrightnessAsync).toHaveBeenLastCalledWith(0.06));
+      // Away (the guard's alert opened over another app), long past the 10 seconds.
+      emit('background');
+      act(() => jest.advanceTimersByTime(30_000));
+      emit('active');
+      // Back to focus: the controls show, the brightness is the phone's.
+      expect(screen.queryByHintText(focusCopy.active.wake)).toBeNull();
+      expect(screen.getByLabelText(focusCopy.active.retreat)).toBeTruthy();
+      await waitFor(() => expect(Brightness.setBrightnessAsync).toHaveBeenLastCalledWith(0.5));
+      act(() => jest.advanceTimersByTime(10_500));
+      expect(screen.getByHintText(focusCopy.active.wake)).toBeTruthy();
+    } finally {
+      if (original) addListener.mockImplementation(original);
+    }
+  });
+});
+
+describe('Full-screen rain', () => {
+  it('fills the screen dimmed while the timer runs on, and the corners bring the focus screen back', async () => {
+    holdTruce();
+    await openSetup();
+    slide(focusCopy.setup.begin);
+    expect(await screen.findByLabelText(focusCopy.active.retreat)).toBeTruthy();
+    fireEvent.press(screen.getByLabelText(focusCopy.active.rainFull));
+    expect(screen.getByLabelText(focusCopy.active.rainExit)).toBeTruthy();
+    await waitFor(() => expect(Brightness.setBrightnessAsync).toHaveBeenLastCalledWith(0.12));
+    act(() => jest.advanceTimersByTime(15_000));
+    // The time keeps running in full screen, and no screensaver falls over it.
+    expect(screen.getAllByLabelText(focusCopy.active.timeLeftLabel('0:24:45')).length).toBeGreaterThan(0);
+    expect(screen.queryByHintText(focusCopy.active.wake)).toBeNull();
+    // The rain sound's switch is in reach in full screen.
+    const toggles = screen.getAllByLabelText(focusCopy.active.rainSoundOn);
+    fireEvent.press(toggles[toggles.length - 1]!);
+    expect(useFocusUiStore.getState().isRainSoundOn).toBe(true);
+    fireEvent.press(screen.getByLabelText(focusCopy.active.rainExit));
+    expect(screen.queryByLabelText(focusCopy.active.rainExit)).toBeNull();
+    await waitFor(() => expect(Brightness.setBrightnessAsync).toHaveBeenLastCalledWith(0.5));
+  });
+
+  it('ends into the result while in full screen', async () => {
+    holdTruce();
+    await openSetup();
+    slide(focusCopy.setup.begin);
+    expect(await screen.findByLabelText(focusCopy.active.retreat)).toBeTruthy();
+    fireEvent.press(screen.getByLabelText(focusCopy.active.rainFull));
+    act(() => jest.advanceTimersByTime(25 * MINUTE + 1000));
+    expect(await screen.findByText(focusCopy.complete.title)).toBeTruthy();
+    expect(screen.queryByLabelText(focusCopy.active.rainExit)).toBeNull();
+    await waitFor(() => expect(Brightness.setBrightnessAsync).toHaveBeenLastCalledWith(0.5));
   });
 });
 

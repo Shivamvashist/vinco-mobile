@@ -209,6 +209,8 @@ export const focusCopy = {
     noTruceAlert: 'No Truce held. Buy one to end early.',
     rainSoundOn: 'Rain sound',
     rainSoundHint: 'Plays soft rain while the focus runs.',
+    rainFull: 'Full screen rain',
+    rainExit: 'Leave full screen rain',
     minimise: 'Minimise focus',
     locked: 'Lockdown: this screen stays until the focus ends.',
     retreat: 'Slide to retreat',

@@ -16,6 +16,8 @@ export type RecordGridProps = {
   selfies: number;
   /** Days from Day I to today (the Ludus shows it in place of Truces). */
   daysSoFar: number;
+  /** Where the grid starts in Vici's return stagger; each tile follows diagonally. Default 0. */
+  settleFrom?: number;
 };
 
 const copy = arcCopy.stats;
@@ -23,6 +25,7 @@ const copy = arcCopy.stats;
 /** Vici's record in two rows: six numbers for a campaign, five in the Ludus (days trained, not a campaign). */
 export function RecordGrid(props: RecordGridProps) {
   const styles = useStyles();
+  const settleFrom = props.settleFrom ?? 0;
   const first = props.isLudus
     ? [
         { value: props.completedDays, label: copy.trained, isHeadline: true },
@@ -47,11 +50,12 @@ export function RecordGrid(props: RecordGridProps) {
 
   return (
     <View style={styles.grid}>
-      {[first, second].map((row, index) => (
-        <View key={index} style={styles.row}>
-          {row.map((stat) => (
+      {[first, second].map((row, rowIndex) => (
+        <View key={rowIndex} style={styles.row}>
+          {row.map((stat, column) => (
             <StatTile
               key={stat.label}
+              settleOrder={settleFrom + rowIndex + column}
               value={String(stat.value)}
               label={stat.label}
               color={'isHeadline' in stat && stat.isHeadline ? 'accent' : 'text'}
