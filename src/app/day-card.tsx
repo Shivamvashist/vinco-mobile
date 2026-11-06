@@ -168,7 +168,7 @@ export default function DayCardScreen() {
             label={dayCardCopy.moreStyles}
             variant="ghost"
             size="compact"
-            onPress={() => router.push('/forum')}
+            onPress={() => router.push('/shop')}
           />
         ) : null}
       </ScrollView>

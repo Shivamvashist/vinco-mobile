@@ -1,8 +1,8 @@
-/** Labours, claimable Decorations, Gloria and the HUD counters (docs/REWARDS.md). */
+/** Quests, claimable Decorations, Gloria and the HUD counters (docs/REWARDS.md). */
 import { fireEvent, screen } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
 
-import { arcCopy, forumCopy, rewardsCopy } from '@/copy';
+import { arcCopy, shopCopy, rewardsCopy } from '@/copy';
 import { db, getDenariiBalance, getTruceReserve, selectClaims, updateDayLog } from '@/db';
 import { DECORATION_REWARDS, LABOUR_RULES, resolveClaimPay } from '@/features/labours';
 import { toDayKey } from '@/lib/dates';
@@ -10,18 +10,18 @@ import { APP_DIR, markAwake, resetAppState, startArc, startHeldArc } from '@/tes
 
 beforeEach(resetAppState);
 
-const labours = rewardsCopy.labours;
+const quests = rewardsCopy.quests;
 const describeReward = (reward: { denarii: number; gloria: number; truces?: number }, reserve = 0) =>
   rewardsCopy.rewards.describe(resolveClaimPay(reward, reserve));
 
-describe('Labours', () => {
-  it('claims a labour from its board into the purse', async () => {
+describe('Quests', () => {
+  it('claims a quest in Earn into the purse', async () => {
     startArc();
     markAwake();
     updateDayLog(db, toDayKey(new Date()), { selfiePath: 'file:///selfie.jpg' });
-    renderRouter(APP_DIR, { initialUrl: '/labours' });
+    renderRouter(APP_DIR, { initialUrl: '/shop?tab=earn' });
     const claim = await screen.findByLabelText(
-      labours.claimLabel(labours.items.selfie.title, describeReward(LABOUR_RULES.selfie.reward, 1)),
+      quests.claimLabel(quests.items.selfie.title, describeReward(LABOUR_RULES.selfie.reward, 1)),
     );
     const before = getDenariiBalance(db);
     fireEvent.press(claim);
@@ -32,15 +32,14 @@ describe('Labours', () => {
     ).toBeTruthy();
   });
 
-  it('lists every labour on its board, grouped, with when it resets', async () => {
+  it('lists every quest in Earn, grouped, with when it resets', async () => {
     startArc();
-    const app = renderRouter(APP_DIR, { initialUrl: '/forum' });
-    fireEvent.press(await screen.findByLabelText(forumCopy.segments.earn));
-    fireEvent.press(await screen.findByLabelText(labours.forumAction));
-    expect(await screen.findByText(labours.items.wakeWeek.title)).toBeTruthy();
-    expect(app.getPathname()).toBe('/labours');
-    expect(screen.getByText(labours.groups.daily)).toBeTruthy();
-    expect(screen.getByText(labours.groups.weekly)).toBeTruthy();
+    renderRouter(APP_DIR, { initialUrl: '/shop' });
+    fireEvent.press(await screen.findByLabelText(shopCopy.segments.earn));
+    expect(await screen.findByText(quests.items.wakeWeek.title)).toBeTruthy();
+    expect(screen.getByText(quests.groups.daily)).toBeTruthy();
+    expect(screen.getByText(quests.groups.weekly)).toBeTruthy();
+    expect(screen.getByText(quests.resets('daily', 1))).toBeTruthy();
   });
 });
 

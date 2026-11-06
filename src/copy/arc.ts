@@ -58,7 +58,7 @@ export const arcCopy = {
     denarii: (amount: number): string => `${amount} denarii`,
     truces: (count: number): string => `${count} ${count === 1 ? 'Truce' : 'Truces'}`,
     passes: (count: number): string => `${count} alarm ${count === 1 ? 'pass' : 'passes'}`,
-    visit: 'Visit the Forum',
+    visit: 'Visit the Shop',
     trucesHint: 'How Truces work',
   },
 

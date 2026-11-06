@@ -5,7 +5,8 @@ import { createStyles, useFeedback } from '@/theme';
 import { Txt } from './Txt';
 
 export type SegmentedControlProps<Value extends string> = {
-  options: readonly { value: Value; label: string }[];
+  /** `badge`: a small count beside the label (quests ready to claim), with its spoken words. */
+  options: readonly { value: Value; label: string; badge?: { count: number; label: string } }[];
   value: Value;
   onChange: (value: Value) => void;
 };
@@ -25,12 +26,14 @@ export function SegmentedControl<Value extends string>({
     <View style={styles.track} accessibilityRole="tablist">
       {options.map((option) => {
         const isSelected = option.value === value;
+        const badge = option.badge && option.badge.count > 0 ? option.badge : null;
         return (
           <Pressable
             key={option.value}
             accessibilityRole="tab"
             accessibilityState={{ selected: isSelected }}
             accessibilityLabel={option.label}
+            accessibilityValue={badge ? { text: badge.label } : undefined}
             onPress={() => {
               if (isSelected) return;
               play('toggle');
@@ -41,6 +44,13 @@ export function SegmentedControl<Value extends string>({
             <Txt variant="label" color={isSelected ? 'onInverse' : 'textMuted'} numberOfLines={1}>
               {option.label}
             </Txt>
+            {badge ? (
+              <View style={styles.badge}>
+                <Txt variant="micro" color="onAccent" numberOfLines={1}>
+                  {badge.count}
+                </Txt>
+              </View>
+            ) : null}
           </Pressable>
         );
       })}
@@ -58,10 +68,19 @@ const useStyles = createStyles((theme) => ({
   },
   segment: {
     flex: 1,
+    flexDirection: 'row',
+    gap: theme.space.xs,
     minHeight: theme.layout.minTouchTarget,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: theme.radius.sm,
   },
   selected: { backgroundColor: theme.colors.inverse },
+  badge: {
+    minWidth: theme.layout.iconSizeSmall + theme.space.xxs,
+    paddingHorizontal: theme.space.xs,
+    borderRadius: theme.radius.pill,
+    alignItems: 'center',
+    backgroundColor: theme.colors.accent,
+  },
 }));

@@ -9,4 +9,6 @@ export const FEATURES = {
   customOrders: true,
   /** The to-do list: daily and day tasks. On since Wave 2 (10 Oct). */
   tasks: true,
+  /** The tone step in onboarding. Off since 2 Nov: new users start in Roast me and can change it in Settings. */
+  onboardingTone: false,
 };

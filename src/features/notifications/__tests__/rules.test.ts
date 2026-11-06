@@ -43,7 +43,9 @@ describe('clampEveningMinutes', () => {
 describe('toNotificationPath', () => {
   it('accepts in-app paths and the vinco:// form', () => {
     expect(toNotificationPath('/veni')).toBe('/veni');
-    expect(toNotificationPath('vinco://forum')).toBe('/forum');
+    expect(toNotificationPath('vinco://shop')).toBe('/shop');
+    // The Shop was the Forum until 2 Nov: old links still land on it.
+    expect(toNotificationPath('vinco://forum')).toBe('/shop');
     expect(toNotificationPath('vinco:///settings/')).toBe('/settings');
     expect(toNotificationPath('/vidi?week=2')).toBe('/vidi');
   });

@@ -388,10 +388,17 @@ describe('Onboarding', () => {
   });
 
   it('resumes at the last step reached', async () => {
+    useOnboardingStore.getState().setLastStep('oath');
+    const app = renderRouter(APP_DIR, { initialUrl: '/' });
+    expect(await screen.findByText(onboardingCopy.oath.title)).toBeTruthy();
+    expect(app.getPathname()).toBe('/onboarding/oath');
+  });
+
+  it('goes on past the tone step, which is off for now', async () => {
     useOnboardingStore.getState().setLastStep('tone');
     const app = renderRouter(APP_DIR, { initialUrl: '/' });
-    expect(await screen.findByText(onboardingCopy.tone.title)).toBeTruthy();
-    expect(app.getPathname()).toBe('/onboarding/tone');
+    expect(await screen.findByText(onboardingCopy.permissions.title)).toBeTruthy();
+    expect(app.getPathname()).toBe('/onboarding/permissions');
   });
 
   it('skips onboarding when an arc is active', async () => {
@@ -422,10 +429,7 @@ describe('Onboarding', () => {
       nativeEvent: { actionName: 'increment' },
     });
     press(onboardingCopy.orders.accept);
-    // Tone: Roast me.
-    await screen.findByText(onboardingCopy.tone.title);
-    press(/^Roast me/);
-    press(onboardingCopy.continue);
+    // No tone step for now: Roast me is the default.
     // Permissions: all allowed already (the fakes), so Continue goes on.
     await screen.findByText(onboardingCopy.permissions.title);
     press(onboardingCopy.continue);
@@ -437,7 +441,6 @@ describe('Onboarding', () => {
     press(onboardingCopy.selfie.skip);
 
     expect(await screen.findByText(todayCopy.arcEyebrow('I', 'XXX'))).toBeTruthy();
-    expect(usePreferencesStore.getState().tone).toBe('roast');
     const arc = getActiveArc(db);
     expect(arc?.lengthDays).toBe(30);
     expect(toOrderTargets(selectArcOrders(db, arc?.id ?? -1).all()).water?.full).toBe(4.5);
@@ -456,7 +459,7 @@ describe('Onboarding', () => {
 
     fireEvent.press(await screen.findByLabelText(new RegExp(`^${onboardingCopy.rubicon.cross}`)));
     await screen.findByText(plan.title);
-    expect(screen.getByLabelText(onboardingCopy.stepAccessibilityLabel(1, 5))).toBeTruthy();
+    expect(screen.getByLabelText(onboardingCopy.stepAccessibilityLabel(1, 4))).toBeTruthy();
     press(new RegExp(`^${plan.water.name},`));
     press(plan.addOwn);
     fireEvent.changeText(await screen.findByLabelText(ordersCopy.add.nameLabel), 'Read');
@@ -465,8 +468,6 @@ describe('Onboarding', () => {
     press(ordersCopy.add.save);
     expect(await screen.findByText(plan.ownLine(10, 'pages'))).toBeTruthy();
     press(plan.continue(2));
-    await screen.findByText(onboardingCopy.tone.title);
-    press(onboardingCopy.continue);
     await screen.findByText(onboardingCopy.permissions.title);
     press(onboardingCopy.continue);
     await screen.findByText(onboardingCopy.oath.title);

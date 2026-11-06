@@ -7,6 +7,10 @@
  * useAnimatedStyle, useAnimatedProps, useDerivedValue, useAnimatedReaction and gesture handlers
  * (.onBegin, .onStart, .onUpdate, .onChange, .onEnd, .onFinalize, .onTouches*).
  *
+ * Also fails if a top-level 'worklet' function uses a top-level name declared below it in the same
+ * file. The worklet build turns each worklet declaration into a const that captures what it uses at
+ * that line, so a later name is captured as undefined (dotsPath calling popScale, 2 Nov).
+ *
  * Usage: node scripts/check-worklets.mjs
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -59,14 +63,40 @@ function bodyFor(text, match, isDirective) {
   return blockAfter(text, open);
 }
 
+function stripComments(code) {
+  return code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+}
+
+const TOP_LEVEL = /^(?:export\s+)?(?:async\s+)?(?:function\s+|const\s+|let\s+|class\s+)([A-Za-z_$][\w$]*)/gm;
+
+/** Top-level worklet functions that use a top-level name declared further down the file. */
+function lateCaptures(text, file) {
+  const declared = [...text.matchAll(TOP_LEVEL)].map((match) => ({ name: match[1], index: match.index }));
+  const found = [];
+  for (const { name, index } of declared) {
+    if (!/^(?:export\s+)?function\s/.test(text.slice(index, index + 40))) continue;
+    const body = stripComments(blockAfter(text, index));
+    if (!body.includes("'worklet'")) continue;
+    for (const later of declared) {
+      if (later.index <= index || later.name === name) continue;
+      if (new RegExp(`(?<![\\w$.])${later.name.replace(/\$/g, '\\$')}(?![\\w$])`).test(body)) {
+        const line = text.slice(0, index).split('\n').length;
+        found.push(`${relative(ROOT, file)}:${line}: worklet ${name} uses ${later.name}, declared below it`);
+      }
+    }
+  }
+  return found;
+}
+
 const problems = [];
 for (const file of collectFiles(SRC)) {
   const text = readFileSync(file, 'utf8');
+  problems.push(...lateCaptures(text, file));
   STARTS.forEach((start, startIndex) => {
     for (const match of text.matchAll(start)) {
       const body = bodyFor(text, match, startIndex === 0);
       // Strip comments so explanations of the rule don't trip it.
-      const code = body.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+      const code = stripComments(body);
       for (const { pattern, name } of BANNED) {
         if (pattern.test(code)) {
           const line = text.slice(0, match.index).split('\n').length;

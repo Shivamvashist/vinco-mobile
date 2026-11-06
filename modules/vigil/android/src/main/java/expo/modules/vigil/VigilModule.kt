@@ -160,6 +160,16 @@ class VigilModule : Module() {
     AsyncFunction("getTodayCount") { VigilReelStore.todayCount(context) }
 
     AsyncFunction("getReelDays") { reelDaysForJs(VigilReelStore.days(context)) }
+
+    // Last night's rest from screen on and off times (VigilNight), or null. Epoch milliseconds.
+    AsyncFunction("getNightRest") {
+      val rest = try {
+        VigilNight.read(context)
+      } catch (_: Exception) {
+        null
+      }
+      rest?.let { mapOf("sleptAt" to it.first.toDouble(), "wokeAt" to it.second.toDouble()) }
+    }
   }
 
   private fun openSettings(intent: Intent) {

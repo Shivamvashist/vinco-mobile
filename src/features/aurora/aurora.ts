@@ -83,3 +83,24 @@ export function getNextRing(settings: AuroraSettings, now: Date): Date | null {
   }
   return null;
 }
+
+/** The days with `day` added, or taken out when it is already there, Monday first. */
+export function toggleWeekday(days: readonly Weekday[], day: Weekday): Weekday[] {
+  const next = days.includes(day) ? days.filter((value) => value !== day) : [...days, day];
+  return next.sort((a, b) => a - b);
+}
+
+/** What the setup flow chooses: everything but on or off. */
+export type AuroraChoice = Pick<AuroraSettings, 'minutes' | 'days' | 'mission'>;
+
+/**
+ * Whether Today invites the user to set up Aurora: only where it can ring (the Vinco build), while
+ * it is off, and until the invite is closed for good (dismissed, or Aurora turned on once).
+ */
+export function shouldInviteAurora(input: {
+  isSupported: boolean;
+  isOn: boolean;
+  isClosed: boolean;
+}): boolean {
+  return input.isSupported && !input.isOn && !input.isClosed;
+}

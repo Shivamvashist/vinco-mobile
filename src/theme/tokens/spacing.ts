@@ -42,6 +42,8 @@ export const layout = {
   barHeightThin: 3,
   barHeightRegular: 5,
   barHeightThick: 6,
+  /** The quest bars in Earn: chunky, game-like. */
+  barHeightBold: 10,
   sheetPadding: 20,
   stampBorderWidth: 4,
   stampBorderWidthLarge: 5,

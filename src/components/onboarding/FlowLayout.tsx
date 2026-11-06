@@ -16,6 +16,8 @@ export type FlowLayoutProps = {
   totalSteps: number;
   /** Where Back goes when there is no history (the app was reopened mid-onboarding). */
   backHref: Href;
+  /** Replaces the default Back (history, then backHref): a flow with steps inside one route. */
+  onBack?: () => void;
   title: string;
   subtitle?: string;
   children: ReactNode;
@@ -33,6 +35,7 @@ export function FlowLayout({
   step,
   totalSteps,
   backHref,
+  onBack,
   title,
   subtitle,
   children,
@@ -55,7 +58,8 @@ export function FlowLayout({
   );
 
   const handleBack = () => {
-    if (router.canGoBack()) router.back();
+    if (onBack) onBack();
+    else if (router.canGoBack()) router.back();
     else router.replace(backHref);
   };
 

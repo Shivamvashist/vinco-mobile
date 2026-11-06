@@ -18,6 +18,8 @@ export type WakeSheetProps = {
   /** Starting values, in minutes after midnight. */
   initialWakeMinutes: number;
   initialBedtimeMinutes: number;
+  /** The starting bedtime came from the phone's screen going dark: a small line says so. */
+  isBedtimeFromPhone?: boolean;
   /** The clock now, or null when today isn't the real day (dev clock): no future check then. */
   nowMinutes: number | null;
   /** Saves both times. Only called with times that pass validation. */
@@ -36,6 +38,7 @@ export function WakeSheet({
   isEditing,
   initialWakeMinutes,
   initialBedtimeMinutes,
+  isBedtimeFromPhone = false,
   nowMinutes,
   onSave,
 }: WakeSheetProps) {
@@ -71,6 +74,11 @@ export function WakeSheet({
           onChange={setBedtimeMinutes}
           accessibilityHint={copy.pickerHint}
         />
+        {isBedtimeFromPhone && bedtimeMinutes === initialBedtimeMinutes ? (
+          <Txt variant="caption" color="textMuted">
+            {copy.fromPhone}
+          </Txt>
+        ) : null}
       </View>
       <Txt
         variant="body"

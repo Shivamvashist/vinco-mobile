@@ -24,7 +24,7 @@ Rules (all levels):
 
 - An alarm at the planned wake-up time on chosen days. It stops only after a **mission**: **march** (30 steps), **"Gladius"** (the sword: swing the phone 30 times), **see the sky** (a photo of daylight, checked on the phone) or **reach the post** (scan a QR code stuck in the bathroom).
 - **"I'm sick"** stops it and calls the sick-day Truce (the same rules as the dawn card).
-- **Alarm pass** ("Venia", bought in the Forum): stops it once without the mission.
+- **Alarm pass** ("Venia", bought in the Shop): stops it once without the mission.
 - Beating it on the first try pays 2 denarii and logs wake-up automatically ("I'm up" is then already done).
 
 ## What's built now (10 Oct 2026, menu since 13 Oct)
@@ -82,6 +82,12 @@ All three need a **development build** (they can't run in Expo Go). Set up once:
   - **First try:** logs wake-up and pays 2 denarii.
 - **Not built yet:** "See the sky" and "Reach the post" are marked as coming; they ring with the march until built.
 - **UI sounds and the ring:** `shing` and `sheathe` are ordinary cues, so with Sounds off (the default) only their haptics play; the alarm's own sound is loud anyway.
+
+### Setting up Aurora (guided flow, 2 Nov)
+
+- **The invite:** under Today's Dies card, a slim strip (the alarm glyph, one line in the user's tone, "Set up" in gold, a cross for "Not now"). It shows only in the Vinco build (Expo Go can't ring, so it stays quiet there), while Aurora is off, and never at dawn, on a sick day or once the arc is complete. "Not now" closes it for good; so does turning Aurora on or off anywhere (the user knows it then). Kept in `useAuroraInviteStore` (`vinco.auroraInvite`); the rule is `shouldInviteAurora` (`src/features/aurora/aurora.ts`, tested). The dev "reset everything" shows it again.
+- **The flow `/aurora-setup`:** four steps in the onboarding frame (`FlowLayout`, each step slides in from the side it comes from): what Aurora is (three lines), when it rings (`AuroraWhen`: time from the arc's wake-up, days, next ring), the mission (`AuroraMissionPicker`, built missions only: March and Gladius; picking or keeping March asks "Physical activity" once, there), and what Android must allow (notifications, exact alarms, full-screen alarm as `PermissionRow`s from `useAppPermissions`, ticked live on return; in Expo Go only notifications, with the build note). Nothing is saved until "Turn on Aurora": it saves through `useAuroraSettings().setUp` (the same store write as the Aurora screen), plays `rise`, and shows "Aurora is set" with the first ring. Back, on screen or the phone's, goes one step back, then leaves; leaving midway saves nothing.
+- **Shared with the Aurora screen:** `useAuroraSettings` (turn, days, mission, the step counter ask), `AuroraWhen` and `AuroraMissionPicker`.
 
 ## Focus ("Acies") and the guard (31 Oct)
 
@@ -293,13 +299,24 @@ When the user unlocks the phone between **03:00 and 12:00** (local time) and tod
 - **Notification:** channel `vinco.wake` ("Wake-up check"), default importance, no full-screen, auto-cancels on tap, same small icon as Aurora. It may post during a focus.
 - Copy: `notificationsCopy.wakePrompt` (three tones).
 
+### Night rest (bedtime from the screen, 2 Nov)
+
+Vinco can't know when the user fell asleep, but the phone knows when its screen went dark for the night. `VigilNight.kt` keeps that, so the wake sheet and the alarm's wake-up log get a bedtime (DAY-FLOW.md section 1).
+
+- **Needs the guard service**, like the wake prompt: `ACTION_SCREEN_ON` / `ACTION_SCREEN_OFF` are never delivered to the manifest, so the service registers the receiver in `onServiceConnected` and drops it in `onUnbind` / `onDestroy` (a dark stretch still open then is dropped, never guessed). With the service off nothing is learned; the app falls back to the last logged bedtime.
+- **The rule:** a "piece" is a screen-off stretch of at least **30 min** (shorter ones are ignored: a notification, a glance at the time). Pieces join one chain when the screen was on for at most **15 min** between them (checking the phone at 3 am doesn't split the night). The night starts at the first piece in the chain that began between **19:00 and 06:00**, and is saved (`sleptAt`, `wokeAt`) once it spans **3 to 16 hours**, again each time it grows, so the morning's last screen-on ends it. Reading it while the screen is on finishes a stretch whose broadcast hasn't landed yet (the alarm screen opening).
+- **The app checks it** (`getUsableBedtime`): used only when it began before the wake-up and gives 1 to 16 hours of sleep, so an old night is never used.
+- **Limits:** a dark screen is not sleep (phone down for TV, then bed, reads as the earlier time; reading in bed with the screen on reads as later). Night shifts with bedtimes outside 19:00 to 06:00 get no estimate. The user can always edit the time.
+- **Stored:** only timestamps, in its own prefs file `vinco.vigil.night` (`offAt`, `chainEnd`, `nightStart`, `sleptAt`, `wokeAt`). Never sent anywhere. **Play declaration:** add to the description that the service also keeps the screen's on and off times on the phone to suggest a bedtime; nothing on screen is read for it.
+- Every receiver call is in a try/catch (the service runs in Vinco's process). Bridge: `guardBridge.getNightRest()` (null in Expo Go, iOS, tests and builds from before 2 Nov).
+
 ### Testing Aurora on the phone
 
 1. Build once (cloud): `npx eas-cli@latest build -p android --profile development`. Install the APK from the link.
 2. On the PC: `npx expo start`. On the phone: open Vinco (the development build) and pick the PC's server.
 3. User menu, Aurora: turn it on. Allow exact alarms, full-screen alarm (Android 14+) and notifications in the "On this phone" card.
 4. "Test the alarm in 1 minute", then lock the phone. It rings over the lock screen at full alarm volume; the back button does nothing; 30 steps (or 30 swings with Gladius, or taps) stop it and pay the first-try denarii; the alarm volume is back to where it was.
-5. Try "I'm sick" (with and without a Truce) and an alarm pass from the Forum.
+5. Try "I'm sick" (with and without a Truce) and an alarm pass from the Shop.
 6. Reboot: "Next ring" is still set.
 
 A `preview` build (`--profile preview`) is the same app without the PC, for living with it day to day.
@@ -310,4 +327,4 @@ A `preview` build (`--profile preview`) is the same app without the PC, for livi
 2. Aurora: scheduling, the alarm screen and the march mission (the simplest), then sky and post.
 3. The Vigil: counting in Pax, then the badge (Vigil level), milestone cards (built 1 Nov; next: the marked-app picker, the tap panel, the Tributum).
 4. Guard dialogues (1.1), Imperium (1.2).
-5. App icon switching (the Forum's icons) can ride on the same development build: `expo-alternate-app-icons` or a small module with activity aliases.
+5. App icon switching (the Shop's icons) can ride on the same development build: `expo-alternate-app-icons` or a small module with activity aliases.

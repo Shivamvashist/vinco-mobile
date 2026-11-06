@@ -242,6 +242,8 @@ export const todayCopy = {
     wokeLabel: 'Woke up at',
     sleptLabel: 'Went to sleep at',
     pickerHint: 'Opens the clock',
+    /** Under the bedtime when it came from the phone (the screen going dark last night). */
+    fromPhone: 'Bedtime from when your screen went dark.',
     sleepLine: (duration: string): string => `${duration} of sleep`,
     errors: {
       inFuture: "That wake time hasn't happened yet.",

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+import { FEATURES } from '@/config/features';
 import { type ArcKind, type ArcLength, DEFAULT_ARC_LENGTH, isArcKind, isArcLength } from '@/features/arc';
 import {
   type CustomOrderDraft,
@@ -26,15 +27,23 @@ export const ONBOARDING_STEPS = ['plan', 'arc', 'orders', 'tone', 'permissions',
 
 export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
 
-/** Steps taken on each path, in order. */
-const PATH_STEPS: Record<ArcKind, readonly OnboardingStep[]> = {
-  ludus: ['plan', 'tone', 'permissions', 'oath', 'selfie'],
-  campaign: ['plan', 'arc', 'orders', 'tone', 'permissions', 'oath', 'selfie'],
-};
+/** Steps taken on each path, in order. The tone step only while FEATURES.onboardingTone is on. */
+function pathSteps(kind: ArcKind): readonly OnboardingStep[] {
+  const steps: readonly OnboardingStep[] =
+    kind === 'ludus'
+      ? ['plan', 'tone', 'permissions', 'oath', 'selfie']
+      : ['plan', 'arc', 'orders', 'tone', 'permissions', 'oath', 'selfie'];
+  return FEATURES.onboardingTone ? steps : steps.filter((step) => step !== 'tone');
+}
 
-/** Where a step sits on the user's path: "II of V" without a campaign, "II of VII" with one. */
+/** The step after the user's orders: the tone, or the permissions while the tone step is off. */
+export function stepAfterOrders(): '/onboarding/tone' | '/onboarding/permissions' {
+  return FEATURES.onboardingTone ? '/onboarding/tone' : '/onboarding/permissions';
+}
+
+/** Where a step sits on the user's path: "II of IV" without a campaign, "II of VI" with one. */
 export function getStepPosition(step: OnboardingStep, kind: ArcKind): { step: number; total: number } {
-  const steps = PATH_STEPS[kind];
+  const steps = pathSteps(kind);
   return { step: Math.max(1, steps.indexOf(step) + 1), total: steps.length };
 }
 

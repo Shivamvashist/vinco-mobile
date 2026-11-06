@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react';
 import { awardAuroraFirstTry, db, spendAlarmPass } from '@/db';
 import { AURORA_FIRST_TRY_DENARII } from '@/features/campaign';
 import { auroraBridge, earnsFirstTry } from '@/features/aurora';
+import { getUsableBedtime } from '@/features/sleep';
 
 import { useActiveArc } from './useActiveArc';
 import { useForum } from './useForum';
+import { useNightRest } from './useNightRest';
 import { useSickDay } from './useSickDay';
 import { useTodayOrders } from './useTodayOrders';
 
@@ -42,6 +44,8 @@ export function useAuroraRing(): AuroraRing {
   const sickDay = useSickDay(today);
   const forum = useForum();
   const isLudus = arc?.kind === 'ludus';
+  // The screen's dark stretch last night, if the guard service saw it: the bedtime for the log.
+  const { rest } = useNightRest();
   // Read once when the screen opens: was it still ringing (not after the 10-minute safety stop)?
   const [wasRinging, setWasRinging] = useState(false);
 
@@ -62,7 +66,10 @@ export function useAuroraRing(): AuroraRing {
     isLudus,
     finishMission: () => {
       stopRinging();
-      if (!orders.wokeAt) orders.logWakeUp(new Date(), null);
+      if (!orders.wokeAt) {
+        const wokeAt = new Date();
+        orders.logWakeUp(wokeAt, getUsableBedtime(rest, wokeAt));
+      }
       if (!earnsFirstTry('mission', wasRinging)) return 0;
       try {
         return awardAuroraFirstTry(db, today) ? AURORA_FIRST_TRY_DENARII : 0;

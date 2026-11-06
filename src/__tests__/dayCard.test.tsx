@@ -2,7 +2,7 @@
 import { fireEvent, screen } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
 
-import { dayCardCopy, forumCopy } from '@/copy';
+import { dayCardCopy, shopCopy } from '@/copy';
 import { buyItem, db, nowIso } from '@/db';
 import { ledger } from '@/db/schema';
 import { toDayKey } from '@/lib/dates';
@@ -58,10 +58,10 @@ describe('Day card designs', () => {
     expect(screen.queryByLabelText(designChip('stamp'))).toBeNull();
   });
 
-  it('lists the designs in the Forum', async () => {
+  it('lists the designs in the Shop', async () => {
     startArc();
-    renderRouter(APP_DIR, { initialUrl: '/forum' });
-    expect(await screen.findByLabelText(new RegExp(`^${forumCopy.items.designStamp.name},`))).toBeTruthy();
-    expect(screen.getByLabelText(new RegExp(`^${forumCopy.items.designMemento.name},`))).toBeTruthy();
+    renderRouter(APP_DIR, { initialUrl: '/shop' });
+    expect(await screen.findByLabelText(new RegExp(`^${shopCopy.items.designStamp.name},`))).toBeTruthy();
+    expect(screen.getByLabelText(new RegExp(`^${shopCopy.items.designMemento.name},`))).toBeTruthy();
   });
 });

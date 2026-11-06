@@ -211,6 +211,6 @@ describe('Dev mode', () => {
     expect(app.getPathname()).toBe('/onboarding');
     expect(getActiveArc(db)).toBeUndefined();
     expect(useDevStore.getState().dayOffset).toBe(0);
-    expect(usePreferencesStore.getState().tone).toBe('centurion');
+    expect(usePreferencesStore.getState().tone).toBe('roast');
   });
 });

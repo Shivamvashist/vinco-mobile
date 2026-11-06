@@ -39,7 +39,7 @@ describe('Onboarding permissions step', () => {
     const app = renderRouter(APP_DIR, { initialUrl: '/onboarding/permissions' });
     expect(await screen.findByText(onboardingCopy.permissions.title)).toBeTruthy();
     expect(app.getPathname()).toBe('/onboarding/permissions');
-    expect(screen.getByLabelText(onboardingCopy.stepAccessibilityLabel(3, 5))).toBeTruthy();
+    expect(screen.getByLabelText(onboardingCopy.stepAccessibilityLabel(2, 4))).toBeTruthy();
     expect(screen.getByText(copy.items.notifications.label)).toBeTruthy();
     // The camera, the microphone, the alarm and the guard wait until they are used.
     expect(screen.queryByText(copy.items.camera.label)).toBeNull();

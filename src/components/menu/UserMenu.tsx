@@ -28,7 +28,7 @@ const ITEMS: readonly Item[] = [
   { key: 'permissions', icon: 'key', href: '/permissions' },
   { key: 'guard', icon: 'shield', href: '/guard' },
   { key: 'aurora', icon: 'alarm', href: '/aurora' },
-  { key: 'forum', icon: 'coin', href: '/forum' },
+  { key: 'forum', icon: 'coin', href: '/shop' },
 ];
 
 /**

@@ -1,21 +1,33 @@
 import type { ForumCategory, ForumItemId } from '@/features/forum';
 
-/** The Forum (shop), the Aerarium (ways to earn) and the treasury's history. */
-export const forumCopy = {
-  eyebrow: 'Shop',
-  title: 'The Forum',
+/**
+ * The Shop (route /shop; "the Forum" in code), its Earn tab and the history of every denarius.
+ * Plain names first: the Roman ones confused people (2 Nov).
+ */
+export const shopCopy = {
+  eyebrow: 'Spend and earn',
+  title: 'Shop',
   back: 'Back',
   balance: (amount: number): string => `${amount} ${amount === 1 ? 'denarius' : 'denarii'}`,
-  balanceLabel: 'In your purse',
-  earnedThisWeek: (amount: number): string => `${amount} earned this week`,
+  balanceLabel: 'Your denarii',
+  earnedThisWeek: (amount: number): string => `+${amount} this week`,
+  earnedThisWeekLabel: (amount: number): string => `${amount} earned in the last 7 days`,
+  earnMore: 'Earn more',
   rule: 'Denarii are earned, never sold for real money.',
 
   segments: { shop: 'Shop', earn: 'Earn', history: 'History' },
+  /** Spoken with the Earn tab when quests wait: "2 ready to claim". */
+  readyBadge: (count: number): string => `${count} ready to claim`,
 
   categories: {
-    supplies: 'Supplies',
+    supplies: 'Essentials',
     cards: 'Day cards',
     insignia: 'App icons',
+  } satisfies Record<ForumCategory, string>,
+  categoryNotes: {
+    supplies: 'Used up when they save you.',
+    cards: 'Pick one on your day card.',
+    insignia: 'A new look on your home screen.',
   } satisfies Record<ForumCategory, string>,
 
   items: {
@@ -73,6 +85,9 @@ export const forumCopy = {
   },
 
   sheet: {
+    price: 'Price',
+    inPurse: 'In your purse',
+    leftAfter: 'Left after',
     balanceAfter: (amount: number): string => `Leaves ${amount} in your purse`,
     buy: (price: number): string => `Buy for ${price}`,
     needMore: (short: number): string => `Need ${short} more`,
@@ -88,8 +103,8 @@ export const forumCopy = {
   },
 
   earn: {
-    title: 'The Aerarium',
-    subtitle: 'The treasury',
+    title: 'More ways to earn',
+    subtitle: 'These pay on their own as you go.',
     ways: {
       dayHeld: 'Hold the line for a day',
       dayConquered: 'Conquer a day',

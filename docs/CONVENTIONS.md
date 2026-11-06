@@ -87,7 +87,7 @@ src/
     _layout.tsx        fonts, splash, store-fed ThemeProvider, status bar
     index.tsx          entry redirect
     (tabs)/            Veni, Vidi, Vici and their custom tab bar layout
-    settings.tsx       stack screens opened from the user menu (also permissions, plan, guard, aurora, forum)
+    settings.tsx       stack screens opened from the user menu (also permissions, plan, guard, aurora, shop)
     onboarding/        Rubicon, plan (your daily orders), arc, orders, tone, oath, selfie
     dev/               dev-only screens (theme lab: long-press the Vici tab)
   components/          shared UI, one component per file, no barrel
@@ -215,6 +215,7 @@ Run through this for every change. Write a test for each case that lives in pure
 
 - Every function called inside `useAnimatedStyle`, `useAnimatedProps`, `useDerivedValue`, `useAnimatedReaction`, gesture callbacks or animation callbacks must itself be a `'worklet'`, or reach JS through `scheduleOnRN`.
 - Inside that code: no `for...of`, no array destructuring, no spread. The build turns them into helper functions that don't exist on the UI thread ("undefined is not a function"). Use index loops and plain property access. `npm run check:worklets` enforces this.
+- Worklets that call each other in one file are declared callee first. The build turns each `'worklet'` function into a `const` at its line, capturing what it uses there, so a callee declared below is captured as undefined. `npm run check:worklets` enforces this too.
 - Never start content at opacity 0 waiting for an animation to finish: it can stall while the app is in the background and leave the screen blank (`useEntrance`, `useCrossFade`).
 - expo-audio: a player can already be released in an effect cleanup; wrap every read or write there in try/catch.
 

@@ -12,6 +12,7 @@ import {
   toPathMarks,
 } from '@/features/dayPath';
 import { formatClockMinutes, formatClockTime } from '@/lib/dates';
+import { useAuroraInvite } from '@/hooks/useAuroraInvite';
 import type { Campaign } from '@/hooks/useCampaign';
 import { useDayActivity } from '@/hooks/useDayActivity';
 import { useMinuteClock } from '@/hooks/useMinuteClock';
@@ -20,7 +21,9 @@ import { createStyles } from '@/theme';
 
 import { DawnCard } from '../DawnCard';
 import { RunPaySheet } from '../RunPaySheet';
+import { TabSettle } from '../../TabSettle';
 import { TodaySummarySheet } from '../TodaySummarySheet';
+import { AuroraInvite } from './AuroraInvite';
 import { DayTiles } from './DayTiles';
 import { type DiesState, DiesCard } from './DiesCard';
 
@@ -41,7 +44,8 @@ export type TodayHeroProps = {
 
 /**
  * The top of Today: one hero slot (the dawn card until wake-up is logged, then the Dies card),
- * then the Reels and Focus tiles. Owns today's summary sheet and the run pay sheet behind it.
+ * then the Reels and Focus tiles. Under the Dies card, while Aurora (the alarm) was never set up,
+ * a slim invite to its setup flow. Owns today's summary sheet and the run pay sheet behind it.
  */
 export function TodayHero({
   orders,
@@ -66,6 +70,10 @@ export function TodayHero({
   );
   const state: DiesState = isFinished ? 'finished' : orders.isSickDay ? 'sick' : campaign.todayStatus;
   const close = () => setSheet(null);
+  const auroraInvite = useAuroraInvite();
+  // Not at dawn ("I'm up" is the one thing to do), on a sick day or once the arc is complete.
+  const isInviting =
+    auroraInvite.isShown && !isDawn && (state === 'open' || state === 'held' || state === 'conquered');
 
   return (
     <View style={styles.block}>
@@ -93,6 +101,11 @@ export function TodayHero({
           onFeelingBetter={orders.isSickDay ? onFeelingBetter : undefined}
         />
       )}
+      {isInviting ? (
+        <TabSettle order={1}>
+          <AuroraInvite onOpen={() => router.push('/aurora-setup')} onDismiss={auroraInvite.dismiss} />
+        </TabSettle>
+      ) : null}
       <DayTiles />
 
       <TodaySummarySheet

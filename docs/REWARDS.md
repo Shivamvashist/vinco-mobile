@@ -1,16 +1,18 @@
-# Rewards: Labours, Decorations, Gloria and the reward flight (31 Oct 2026)
+# Rewards: Quests, Decorations, Gloria and the reward flight (31 Oct 2026, names 2 Nov)
 
 Wave 5, step D ([TASKS-2026-10-31-wave5.md](TASKS-2026-10-31-wave5.md), section 4). Everything here runs on the phone.
 
-**Wages and bounties.** Held and conquered days, run pay (Stipendium) and focus pay are wages: they land on their own and keep their live-pay and undo rules ([ORDERS-AND-TASKS.md](ORDERS-AND-TASKS.md), [TODAY-AND-FOCUS.md](TODAY-AND-FOCUS.md)). Labours and Decorations are bounties: done first, then claimed by hand, once.
+**Names (2 Nov):** plain words first, because the Roman ones confused people. The Forum is now the **Shop** (route `/shop`), the Aerarium is gone (its list is "More ways to earn" in the Shop's **Earn** tab), and Labours are **Quests**. In code the old names stay: `features/forum`, `useForum`, `features/labours`, `useLabours`, `LabourId`, claim kind `labour` and ledger reasons `labour_<id>` (stored data, never renamed). Copy: `shopCopy` (`copy/shop.ts`) and `rewardsCopy.quests`.
+
+**Wages and bounties.** Held and conquered days, run pay (Stipendium) and focus pay are wages: they land on their own and keep their live-pay and undo rules ([ORDERS-AND-TASKS.md](ORDERS-AND-TASKS.md), [TODAY-AND-FOCUS.md](TODAY-AND-FOCUS.md)). Quests and Decorations are bounties: done first, then claimed by hand, once.
 
 ## 1. The HUD
 
-A slim pill at the top right of every tab (beside the user button on Veni, and on `/labours`) with three counters, each an icon and an elastic count:
+A slim pill at the top right of every tab (beside the user button on Veni, and in the Shop's header) with three counters, each an icon and an elastic count:
 
 | Counter     | Role       | Icon   | Tap                     | Source                                 |
 | ----------- | ---------- | ------ | ----------------------- | -------------------------------------- |
-| Denarii     | `currency` | coin   | `/forum`                | ledger sum minus Forum purchases       |
+| Denarii     | `currency` | coin   | `/shop`                 | ledger sum minus Shop purchases        |
 | Gloria      | `accent`   | laurel | Vidi                    | derived (section 4)                    |
 | Truces held | `info`     | shield | a short explainer sheet | the truces table's reserve (read only) |
 
@@ -38,11 +40,11 @@ measureCentre(view, (point) => ...)                 // a view's centre in window
 - **Reset the journey** clears the sky at once (`clearRewardFlight`).
 - `ClaimButton` (`components/hud/ClaimButton.tsx`) does all of this for a claim: write, measure itself, launch.
 
-## 3. Labours ("Labores", tasks to earn)
+## 3. Quests (labours in code)
 
-Pure rules in `features/labours/` (tested). Daily labours are new every day; weekly ones run Monday to Sunday (local day keys, `weekStartOf`).
+Pure rules in `features/labours/` (tested). Daily quests are new every day; weekly ones run Monday to Sunday (local day keys, `weekStartOf`).
 
-| Labour              | Type   | Goal    | Denarii | Gloria | Truces | Needs orders |
+| Quest               | Type   | Goal    | Denarii | Gloria | Truces | Needs orders |
 | ------------------- | ------ | ------- | ------- | ------ | ------ | ------------ |
 | Take today's selfie | daily  | 1       | 3       | 10     |        |              |
 | Log your weight     | daily  | 1       | 3       | 10     |        |              |
@@ -55,10 +57,14 @@ Pure rules in `features/labours/` (tested). Daily labours are new every day; wee
 | Wake on time 5 days | weekly | 5 days  | 15      | 50     |        |              |
 
 - **Facts** come from the journey's days (section 5): selfie and weight today, completed focus minutes, to-dos ticked, today conquered, days held or conquered this week (today counts while it holds), wake-ups at or before the arc's planned wake time.
-- **States:** `working`, `claimable` (progress reached the goal), `claimed` (this period), `unavailable` (needs orders and today has none: a day with no orders never holds). Both a campaign and free training have Labours.
-- **Today's card** (below the orders and the seal card, so the core job stays on top) shows the top three: claimable first, then the highest progress ratio, then daily before weekly; claimed and unavailable ones never. "See all" opens `/labours`, grouped Daily and Weekly with when each resets.
-- **Expiry:** the period is worked out from today at claim time, so an unclaimed labour simply expires with its day or week.
-- The Forum's Earn tab now opens the Labours and keeps the Aerarium as the list of wages.
+- **States:** `working`, `claimable` (progress reached the goal), `claimed` (this period), `unavailable` (needs orders and today has none: a day with no orders never holds). Both a campaign and free training have quests.
+- **Where:** the Shop's **Earn** tab (`/shop?tab=earn`), one board (`QuestBoard`): a "Quests" heading with an "N ready to claim" pill, then Daily quests and Weekly quests, each with when it resets and a claimed tally ("2/5"). Within a group: ready first, then the closest to done, needs-orders, claimed last (`rankLabours`). When every open quest is claimed, the tone's `allDone` line. Below the board, "More ways to earn" (`EarnList`): the wages that land on their own. The Earn tab carries a gold count of ready quests. `/labours` redirects to `/shop?tab=earn` (old links); Today has no quest card since Clean Today (1 Nov).
+- **The quest card** (`QuestCard`): a round emblem (the quest's icon), the title, the reward as pills (silver coin, gold laurel, shield for a Truce), and a bold bar (10 pt, `ProgressBar size="bold"`): in chunks, one per step, for goals of 2 to 7, smooth for minutes, with the count at its end ("2/3", "12/25 min"; no "Done" word). Ready: a gold glow and border, a gold emblem and the Claim button (the reward flight, section 2). Claimed: a check in the emblem, the bar full in a soft gold, the card dimmed (static, never faded out); "claimed" is spoken, not shown. Needs orders: a lock emblem and "Needs an order today" instead of the bar.
+- **Expiry:** the period is worked out from today at claim time, so an unclaimed quest simply expires with its day or week.
+
+### The Shop around it (2 Nov)
+
+`/shop` (`app/shop.tsx`): back, the header (eyebrow "Spend and earn", title "Shop", the HUD counters so claims have somewhere to fly), the purse card (`ShopPurse`: the balance in big silver numerals on a silver light, "+N this week", "Earn more" to the Earn tab), then **Shop | Earn | History**. Shop: Essentials (Truce, alarm pass) as full-width cards with large art, held pips and a price tag; Day cards and App icons as tiles in pairs on a sunk stage (one per row below 340 dp divided by the font scale), "Owned" in gold. Each section settles on return (`TabSettle`); a picked tab rises in (`SegmentRise` on `useEntrance`, never stuck hidden). The purchase sheet: the item on a lit stage, what it does, the rule, a receipt (price, in your purse, left after) and the button that names the reason when it can't buy. `/forum` redirects to `/shop`, and notification links `vinco://forum` open `/shop` (`toNotificationPath`).
 
 ## 4. Decorations as achievements (Vici)
 
@@ -116,4 +122,4 @@ unique (kind, key, period); index (day)
 
 - Gloria judges past days' orders against the arc's current goals (as the calendar does); the "conquered" bonus follows the stored sealed result.
 - The HUD computes the journey's Gloria on each tab; fine for months of data, worth a shared provider if it ever shows up in profiles.
-- The dev day offset moves "today" for labours and claims, like everything else.
+- The dev day offset moves "today" for quests and claims, like everything else.

@@ -118,7 +118,7 @@ export const guardCopy = {
     noDays: 'Pick at least one day.',
     passes: (count: number): string =>
       count === 0
-        ? 'No alarm passes. Buy one in the Forum.'
+        ? 'No alarm passes. Buy one in the Shop.'
         : `${count} alarm ${count === 1 ? 'pass' : 'passes'} held`,
   },
 

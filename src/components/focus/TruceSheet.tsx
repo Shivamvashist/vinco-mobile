@@ -3,10 +3,10 @@ import { View } from 'react-native';
 
 import { BottomSheet } from '@/components/BottomSheet';
 import { Button } from '@/components/Button';
-import { ItemArt } from '@/components/forum/ItemArt';
+import { ItemArt } from '@/components/shop/ItemArt';
 import { notify } from '@/components/notices';
 import { Txt } from '@/components/Txt';
-import { focusCopy, forumCopy } from '@/copy';
+import { focusCopy, shopCopy } from '@/copy';
 import { checkPurchase, denariiShort, getForumItem } from '@/features/forum';
 import { useForum } from '@/hooks/useForum';
 import { createStyles, useFeedback } from '@/theme';
@@ -70,7 +70,7 @@ export function TruceSheet({ visible, mode, onClose, onBought, onBeginAnyway }: 
     }
     play('denied');
     // Any other refusal shows in the line above, read live.
-    setError(problem === 'failed' ? forumCopy.sheet.failed : null);
+    setError(problem === 'failed' ? shopCopy.sheet.failed : null);
   };
 
   return (
@@ -78,9 +78,9 @@ export function TruceSheet({ visible, mode, onClose, onBought, onBeginAnyway }: 
       <View style={styles.head}>
         <ItemArt itemId="truce" />
         <View style={styles.headText}>
-          <Txt variant="label">{forumCopy.items.truce.name}</Txt>
+          <Txt variant="label">{shopCopy.items.truce.name}</Txt>
           <Txt variant="labelSmall" color="currency">
-            {forumCopy.priceLabel(TRUCE.price)}
+            {shopCopy.priceLabel(TRUCE.price)}
           </Txt>
         </View>
       </View>
@@ -98,7 +98,7 @@ export function TruceSheet({ visible, mode, onClose, onBought, onBeginAnyway }: 
         </Txt>
       ) : null}
       <View style={styles.actions}>
-        {check === 'ok' ? <Button label={forumCopy.sheet.buy(TRUCE.price)} cue={null} onPress={buy} /> : null}
+        {check === 'ok' ? <Button label={shopCopy.sheet.buy(TRUCE.price)} cue={null} onPress={buy} /> : null}
         {mode === 'begin' && onBeginAnyway ? (
           <Button
             label={copy.beginAnyway}

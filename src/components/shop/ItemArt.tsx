@@ -2,7 +2,7 @@ import { View } from 'react-native';
 
 import { type DayCardDesignId, DESIGN_FORUM_ITEMS } from '@/features/dayCard';
 import type { ForumItemId } from '@/features/forum';
-import { createStyles, DAY_CARD_STYLES, type DayCardStyle } from '@/theme';
+import { createStyles, DAY_CARD_STYLES, type DayCardStyle, useTheme } from '@/theme';
 
 import { DesignThumb } from '../dayCard/designs/DesignThumb';
 import { Icon, type IconName } from '../Icon';
@@ -10,6 +10,8 @@ import { Txt } from '../Txt';
 
 /** A card sketch about as tall as the tile (the card is 9 by 16). */
 const DESIGN_THUMB_WIDTH = 23;
+/** The large art (shop shelves, the purchase sheet) is this much bigger than the list tile. */
+const LARGE = 1.75;
 const ICONS: Partial<Record<ForumItemId, IconName>> = { truce: 'shield', venia: 'bell' };
 /** Day card items preview the card's own colours. */
 const CARD_STYLE_IDS: Partial<Record<ForumItemId, string>> = { cardAurum: 'aurum', cardNox: 'nox' };
@@ -24,19 +26,26 @@ const DESIGN_IDS = Object.fromEntries(
   Object.entries(DESIGN_FORUM_ITEMS).map(([designId, itemId]) => [itemId, designId]),
 ) as Partial<Record<ForumItemId, DayCardDesignId>>;
 
-export type ItemArtProps = { itemId: ForumItemId };
+export type ItemArtProps = {
+  itemId: ForumItemId;
+  /** regular: a list tile. large: a shelf or the purchase sheet. */
+  size?: 'regular' | 'large';
+};
 
-/** The small picture on a Forum item: an icon, a day card swatch or design, or an app icon tile. Decorative. */
-export function ItemArt({ itemId }: ItemArtProps) {
+/** The picture on a Shop item: an icon, a day card swatch or design, or an app icon tile. Decorative. */
+export function ItemArt({ itemId, size = 'regular' }: ItemArtProps) {
   const styles = useStyles();
+  const theme = useTheme();
+  const isLarge = size === 'large';
+  const tile = [styles.tile, isLarge && styles.tileLarge];
   const designId = DESIGN_IDS[itemId];
   if (designId) {
     return (
-      <View style={styles.tile}>
+      <View style={tile}>
         <DesignThumb
           designId={designId}
           cardStyle={DAY_CARD_STYLES[0] as DayCardStyle}
-          width={DESIGN_THUMB_WIDTH}
+          width={isLarge ? Math.round(DESIGN_THUMB_WIDTH * LARGE) : DESIGN_THUMB_WIDTH}
         />
       </View>
     );
@@ -46,7 +55,7 @@ export function ItemArt({ itemId }: ItemArtProps) {
     return (
       <View
         style={[
-          styles.tile,
+          tile,
           styles.card,
           { backgroundColor: cardStyle.background, borderColor: cardStyle.frame ?? cardStyle.accent },
         ]}
@@ -59,16 +68,20 @@ export function ItemArt({ itemId }: ItemArtProps) {
   const iconTile = ICON_TILES[itemId];
   if (iconTile) {
     return (
-      <View style={[styles.tile, iconTile === 'marble' ? styles.marble : styles.laurel]}>
-        <Txt variant="heading" color={iconTile === 'marble' ? 'onInverse' : 'accent'}>
+      <View style={[tile, iconTile === 'marble' ? styles.marble : styles.laurel]}>
+        <Txt variant={isLarge ? 'title' : 'heading'} color={iconTile === 'marble' ? 'onInverse' : 'accent'}>
           V
         </Txt>
       </View>
     );
   }
   return (
-    <View style={[styles.tile, styles.supply]}>
-      <Icon name={ICONS[itemId] ?? 'coin'} color="accent" />
+    <View style={[tile, styles.supply]}>
+      <Icon
+        name={ICONS[itemId] ?? 'coin'}
+        color="accent"
+        size={isLarge ? Math.round(theme.layout.iconSize * LARGE * 0.8) : undefined}
+      />
     </View>
   );
 }
@@ -80,6 +93,11 @@ const useStyles = createStyles((theme) => ({
     borderRadius: theme.radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  tileLarge: {
+    width: Math.round((theme.layout.iconTileSize + theme.space.sm) * LARGE),
+    height: Math.round((theme.layout.iconTileSize + theme.space.sm) * LARGE),
+    borderRadius: theme.radius.md,
   },
   supply: { backgroundColor: theme.colors.accentSoft },
   card: { borderWidth: theme.layout.borderWidthStrong, gap: theme.space.xs },

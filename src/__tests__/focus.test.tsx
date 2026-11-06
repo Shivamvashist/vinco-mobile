@@ -8,7 +8,7 @@ import * as Brightness from 'expo-brightness';
 import { renderRouter } from 'expo-router/testing-library';
 import { AppState, type AppStateStatus } from 'react-native';
 
-import { focusCopy, forumCopy, rewardsCopy } from '@/copy';
+import { focusCopy, shopCopy, rewardsCopy } from '@/copy';
 import {
   db,
   getDenariiBalance,
@@ -98,7 +98,7 @@ describe('Focus setup', () => {
     earn(60);
     await openSetup();
     slide(focusCopy.setup.begin);
-    fireEvent.press(await screen.findByLabelText(forumCopy.sheet.buy(TRUCE_PRICE)));
+    fireEvent.press(await screen.findByLabelText(shopCopy.sheet.buy(TRUCE_PRICE)));
     expect(await screen.findByLabelText(focusCopy.active.retreat)).toBeTruthy();
     expect(getTruceReserve(db)).toBe(1);
     expect(getDenariiBalance(db)).toBe(60 - TRUCE_PRICE);
@@ -167,7 +167,7 @@ describe('Retreat', () => {
     expect(getDenariiBalance(db)).toBe(60);
     fireEvent.press(screen.getByLabelText(focusCopy.active.buyTruce));
     expect(await screen.findByText(focusCopy.truce.retreatLine)).toBeTruthy();
-    fireEvent.press(screen.getByLabelText(forumCopy.sheet.buy(TRUCE_PRICE)));
+    fireEvent.press(screen.getByLabelText(shopCopy.sheet.buy(TRUCE_PRICE)));
     await waitFor(() => expect(getTruceReserve(db)).toBe(1));
     expect(await screen.findByLabelText(focusCopy.active.trucesLabel(1))).toBeTruthy();
 
@@ -185,7 +185,7 @@ describe('Retreat', () => {
     expect(
       await screen.findByText(`${focusCopy.truce.cannotAfford(TRUCE_PRICE - 20)} ${focusCopy.truce.runsOn}`),
     ).toBeTruthy();
-    expect(screen.queryByLabelText(forumCopy.sheet.buy(TRUCE_PRICE))).toBeNull();
+    expect(screen.queryByLabelText(shopCopy.sheet.buy(TRUCE_PRICE))).toBeNull();
     fireEvent.press(screen.getByLabelText(focusCopy.truce.back));
     expect(getRunningFocus(db)).toBeDefined();
     expect(getDenariiBalance(db)).toBe(20);

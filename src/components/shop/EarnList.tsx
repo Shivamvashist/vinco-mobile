@@ -1,19 +1,22 @@
 import { View } from 'react-native';
 
-import { forumCopy } from '@/copy';
+import { shopCopy } from '@/copy';
 import { EARN_WAYS } from '@/features/forum';
 import { cardSurface, createStyles } from '@/theme';
 
 import { Txt } from '../Txt';
 
-const copy = forumCopy.earn;
+const copy = shopCopy.earn;
 
 export type EarnListProps = {
-  /** In the Ludus, the weekly bonus is marked as belonging to campaigns. */
+  /** In free training, the weekly bonus is marked as belonging to campaigns. */
   isLudus: boolean;
 };
 
-/** The Aerarium: every way to earn denarii, live ones first, later ones marked with when. */
+/**
+ * Below the quests in Earn: the pay that lands on its own (held and conquered days, run pay,
+ * focus), live ones first, later ones marked with when.
+ */
 export function EarnList({ isLudus }: EarnListProps) {
   const styles = useStyles();
   return (

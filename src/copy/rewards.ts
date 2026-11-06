@@ -24,17 +24,17 @@ const rewardParts = (
   truces: reward.truces ? `+${plural(reward.truces, 'Truce', 'Truces')}` : null,
 });
 
-/** The HUD counters, Labours (Labores), claimable Decorations and Gloria (glory points). */
+/** The HUD counters, Quests (the bounties in the Shop's Earn tab), claimable Decorations and Gloria (glory points). */
 export const rewardsCopy = {
   hud: {
     count: compact,
-    denariiLabel: (amount: number): string => `${plural(amount, 'denarius', 'denarii')}. Opens the Forum`,
+    denariiLabel: (amount: number): string => `${plural(amount, 'denarius', 'denarii')}. Opens the Shop`,
     gloriaLabel: (amount: number): string => `${amount} Gloria, glory points. Opens your progress`,
     trucesLabel: (count: number): string => `${plural(count, 'Truce', 'Truces')} held. What a Truce does`,
     truceSheetTitle: (count: number): string => `${plural(count, 'Truce', 'Truces')} held`,
     truceSheetBody: (max: number, price: number): string =>
-      `A Truce is a rest day that keeps your campaign alive when a day falls. Hold up to ${max}. Earn them by holding the line, from Labours and Decorations, or buy one for ${price} denarii in the Forum.`,
-    openForum: 'Open the Forum',
+      `A Truce is a rest day that keeps your campaign alive when a day falls. Hold up to ${max}. Earn them by holding the line, from quests and decorations, or buy one for ${price} denarii in the Shop.`,
+    openShop: 'Open the Shop',
   },
 
   rewards: {
@@ -69,22 +69,21 @@ export const rewardsCopy = {
     } satisfies Record<Exclude<ClaimCheck, 'ok'> | 'failed', string>,
   },
 
-  labours: {
-    title: 'Labours',
-    latin: '"Labores" (tasks to earn)',
-    seeAll: 'See all',
-    seeAllLabel: 'See all labours',
-    eyebrow: 'Labores · Tasks to earn',
-    back: 'Back',
-    groups: { daily: 'Daily', weekly: 'Weekly' },
+  /** Quests ("labours" in code): daily and weekly bounties, claimed by hand in the Shop's Earn tab. */
+  quests: {
+    title: 'Quests',
+    readyCount: (count: number): string => `${count} ready to claim`,
+    groups: { daily: 'Daily quests', weekly: 'Weekly quests' },
     resets: (type: 'daily' | 'weekly', days: number): string =>
       type === 'daily' ? 'Resets at midnight' : days <= 1 ? 'Resets tomorrow' : `Resets in ${days} days`,
+    /** "2 of 5 claimed", beside a group's title. */
+    groupCount: (claimed: number, total: number): string => `${claimed}/${total}`,
+    groupCountLabel: (claimed: number, total: number): string => `${claimed} of ${total} claimed`,
     claim: 'Claim',
     claimLabel: (title: string, reward: string): string => `Claim ${title}: ${reward}`,
-    claimed: 'Claimed',
+    /** Spoken only: a claimed quest is shown checked and dimmed, with no word on screen. */
+    claimedLabel: (title: string): string => `${title}, claimed`,
     needsOrders: 'Needs an order today',
-    forumTitle: 'Labours: tasks to earn',
-    forumAction: 'Open the Labours',
     items: {
       selfie: { title: "Take today's selfie", line: 'Proof of the day, kept on your phone.' },
       weight: { title: 'Log your weight', line: 'One number, for the weekly trend.' },
@@ -96,20 +95,22 @@ export const rewardsCopy = {
       focusWeek: { title: 'Focus 3 hours', line: '180 minutes of focus held to the end.' },
       wakeWeek: { title: 'Wake on time 5 days', line: 'Up by your planned wake time.' },
     } satisfies Record<LabourId, { title: string; line: string }>,
+    /** The count at the end of a quest's bar: "2/3", "12/25 min". */
     progress: (id: LabourId, current: number, goal: number): string =>
-      goal === 1
-        ? current >= 1
-          ? 'Done'
-          : 'Not yet'
-        : id === 'focus' || id === 'focusWeek'
-          ? `${current} of ${goal} min`
-          : `${current} of ${goal}`,
-    /** When nothing is left to do on the board today. */
+      id === 'focus' || id === 'focusWeek'
+        ? `${Math.min(current, goal)}/${goal} min`
+        : `${Math.min(current, goal)}/${goal}`,
+    /** Spoken with the bar: "2 of 3", "12 of 25 minutes". */
+    progressLabel: (id: LabourId, current: number, goal: number): string =>
+      id === 'focus' || id === 'focusWeek'
+        ? `${Math.min(current, goal)} of ${goal} minutes`
+        : `${Math.min(current, goal)} of ${goal}`,
+    /** When every quest open today is claimed. */
     allDone: {
-      philosopher: 'Every labour is done for now. Rest is part of the work.',
-      centurion: 'Board cleared. New orders at midnight.',
+      philosopher: 'Every quest is claimed for now. Rest is part of the work.',
+      centurion: 'Board cleared. New quests at midnight.',
       roast:
-        "Board cleared. Your phone is furious it couldn't distract you. New labours at midnight, go do something offline.",
+        "Board cleared. Your phone is furious it couldn't distract you. New quests at midnight, go do something offline.",
     } satisfies ToneLines,
   },
 
@@ -179,7 +180,7 @@ export const rewardsCopy = {
     claim: (reason: string): string | null => {
       const [kind, ...rest] = reason.split('_');
       const key = rest.join('_');
-      if (kind === 'labour' && key in LABOUR_TITLES) return `Labour: ${LABOUR_TITLES[key as LabourId]}`;
+      if (kind === 'labour' && key in LABOUR_TITLES) return `Quest: ${LABOUR_TITLES[key as LabourId]}`;
       if (kind === 'decoration' && key in arcCopy.decorations.items)
         return `Decoration: ${arcCopy.decorations.items[key as DecorationId].name}`;
       return null;
@@ -194,5 +195,5 @@ const GUARD_NAMES: Record<FocusGuard, string> = {
 };
 
 const LABOUR_TITLES: Record<LabourId, string> = Object.fromEntries(
-  Object.entries(rewardsCopy.labours.items).map(([id, item]) => [id, item.title]),
+  Object.entries(rewardsCopy.quests.items).map(([id, item]) => [id, item.title]),
 ) as Record<LabourId, string>;

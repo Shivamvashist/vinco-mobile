@@ -2,12 +2,15 @@ export {
   ALL_WEEKDAYS,
   AURORA_MISSIONS,
   AURORA_RULES,
+  type AuroraChoice,
   type AuroraMission,
   type AuroraSettings,
   DEFAULT_AURORA_SETTINGS,
   getNextRing,
   isAuroraMission,
   sanitizeAuroraSettings,
+  shouldInviteAurora,
+  toggleWeekday,
   type Weekday,
 } from './aurora';
 export {

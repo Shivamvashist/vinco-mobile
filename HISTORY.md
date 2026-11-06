@@ -143,6 +143,9 @@ Answer when convenient; work continues with the safe default shown.
 
 ### Noticed, not done
 
+- (2 Nov) Night rest needs the accessibility service; a UsageStatsManager fallback (usage-access permission) would work without it. The Play declaration text in GUARDIANS.md does not yet mention screen on and off times.
+- (2 Nov) New Shop and Quest components are not in the theme lab yet; `ItemArt` swatch lines use raw 3 and 2 px heights.
+- (2 Nov) `src/features/guard/bridge.ts` is near 250 lines. Aurora setup's permissions step uses `useAppPermissions`, which also reads camera, microphone and guard; a slimmer hook could come later.
 - (2 Nov) Notification taps call `router.navigate('/veni')`, which in Expo Router 57 can push a second tabs screen over /focus; the "Focus held" notification links to /veni, not /focus; a `getId` on the root focus screen would rule out a duplicate /focus.
 - (2 Nov) Gladius and March cues follow the Sounds setting (off by default); make them essential if the alarm missions should always sound. Full alarm volume is not yet checked under Do Not Disturb or on Samsung and Xiaomi.
 - (2 Nov) `src/theme/__tests__/themes.test.ts` `ALL_CUES` is partial (no whoosh, coin, shing, sheathe). docs/TODAY-AND-FOCUS.md doesn't describe the full-screen rain yet.
@@ -214,6 +217,17 @@ Answer when convenient; work continues with the safe default shown.
 ---
 
 ## Milestone log
+
+### 2 Nov 2026 (later): the real Today crash, blank tabs, Shop and Quests, Aurora setup, bedtime from the phone (still 1.1.0)
+
+- **The crash after "I'm up" or the alarm** (`undefined is not a function` in dotsPath): the worklet plugin turns each `'worklet'` function declaration into a `const` at its line, capturing what it uses there. `dotsPath` was declared above `popScale`, so it captured undefined and crashed once a dot existed. Reordered (callee first) in `lib/dayPathGeometry.ts`; `scripts/check-worklets.mjs` now also flags a top-level worklet that uses a top-level name declared below it.
+- **Blank tab now and then on a tab-bar tap:** `detachInactiveScreens={false}` on the Tabs (`app/(tabs)/_layout.tsx`); the three tabs stay attached off screen.
+- **Onboarding tone step off** behind `FEATURES.onboardingTone` (false); `DEFAULT_TONE` is `'roast'`; `pathSteps()` and `stepAfterOrders()` in `stores/onboardingStore.ts`; a saved `lastStep: 'tone'` resumes at permissions. The tone screen stays for when it comes back. Tests still pin Centurion via `routeKit`.
+- **Today's Orders | Tasks** opens on Tasks once every order row is `full` (`TodaySection`: decided on open and on each `useTabReturn`; a user pick holds until the tab is left).
+- **Shop and Quests:** the Forum became the Shop (`/shop?tab=shop|earn|history`, `/forum` redirects, `RENAMED_PATHS` in notification links), Labours became Quests in the Earn tab (`/labours` redirects), the Aerarium became "More ways to earn". New `components/shop/*` (ShopPurse, ShopShelf, EssentialCard, CosmeticTile, PriceTag, SegmentRise; PurchaseSheet redesigned) and `components/quests/*` (QuestBoard, QuestCard, RewardChips `look="pills"`); `SegmentedControl` badge; `ProgressBar` `bold` (10 pt). Code names stay `forum` and `labours`; copy is `shopCopy` and `rewardsCopy.quests`. See docs/REWARDS.md.
+- **Aurora setup:** `AuroraInvite` under the Dies card (Vinco build only, while Aurora was never set up; closed for good by "Not now" or any Aurora toggle, `useAuroraInviteStore`), and `/aurora-setup` (intro, when, mission with the step-counter ask, permissions with live ticks). Saves through `useAuroraSettings().setUp`, shared with `aurora.tsx` (also `AuroraWhen`, `AuroraMissionPicker`). Docs: GUARDIANS.md "Setting up Aurora".
+- **Bedtime from the phone:** `VigilNight.kt` (registered by VigilService) records screen-off pieces of 30 min or more, chained across screen-on gaps of 15 min or less; the night starts at the first piece begun between 7 pm and 6 am and counts at 3 to 16 hours. `guardBridge.getNightRest()`, checked by `getUsableBedtime` (`features/sleep/nightRest.ts`); used by `useBedtimeDefault` (wake sheet, with a "from your screen" line) and `useAuroraRing` (`sleptAt`). Needs the guard service on; without it, the last logged bedtime or 11 pm as before.
+- Check: 104 suites, 1124 tests green; worklet check clean; `:vigil` compiles. Not yet tried on a phone.
 
 ### 2 Nov 2026: the Today crash found, Aurora missions, reel detection, full-screen rain, tab motion (still 1.1.0)
 

@@ -9,7 +9,7 @@ import { cardSurface, createStyles } from '@/theme';
 import { Glow } from '../Glow';
 import { ClaimButton } from '../hud/ClaimButton';
 import { Icon } from '../Icon';
-import { RewardChips } from '../labours/RewardChips';
+import { RewardChips } from '../quests/RewardChips';
 import { ProgressBar } from '../ProgressBar';
 import { Txt } from '../Txt';
 

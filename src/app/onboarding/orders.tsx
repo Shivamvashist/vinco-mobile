@@ -11,7 +11,7 @@ import { Txt } from '@/components/Txt';
 import { onboardingCopy } from '@/copy';
 import { FULL_GOAL_RANGES, WAKE_TIME_RANGE } from '@/features/orders';
 import { formatClockMinutes } from '@/lib/dates';
-import { getStepPosition, useOnboardingStore } from '@/stores';
+import { getStepPosition, stepAfterOrders, useOnboardingStore } from '@/stores';
 import { createStyles, useTheme } from '@/theme';
 
 const copy = onboardingCopy.orders;
@@ -41,7 +41,7 @@ export default function OrdersScreen() {
       backHref="/onboarding/arc"
       title={copy.title}
       subtitle={copy.subtitle}
-      footer={<Button label={copy.accept} onPress={() => router.push('/onboarding/tone')} />}
+      footer={<Button label={copy.accept} onPress={() => router.push(stepAfterOrders())} />}
     >
       <View style={styles.list}>
         <OrderCard icon="water" name={copy.water.name} minimum={copy.water.min}>

@@ -12,7 +12,7 @@ export const menuCopy = {
     permissions: { label: 'Permissions', detail: 'Camera, microphone, alerts' },
     guard: { label: 'Guard levels', detail: 'Pax to Imperium, in preview' },
     aurora: { label: 'Aurora alarm', detail: 'Missions to wake up, in preview' },
-    forum: { label: 'The Forum', detail: 'Spend your denarii' },
+    forum: { label: 'Shop', detail: 'Spend and earn denarii' },
   },
   oath: {
     label: 'Your oath',

@@ -77,10 +77,10 @@ export const dayCardCopy = {
   /** What a screen reader says for the whole card. */
   cardLabel: (dayRoman: string, lengthRoman: string | null, held: number, total: number): string =>
     `Day card: day ${dayRoman}${lengthRoman ? ` of ${lengthRoman}` : ' of free training'}, ${held} of ${total} orders held`,
-  moreStyles: 'More card styles in the Forum',
+  moreStyles: 'More card styles in the Shop',
   pickDesign: 'Design',
   pickColour: 'Colour',
-  /** Design names on the picker. Latin ones get their plain meaning in the Forum. */
+  /** Design names on the picker. Latin ones get their plain meaning in the Shop. */
   designs: {
     classic: 'Classic',
     numeral: 'Numeral',

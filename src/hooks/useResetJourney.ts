@@ -7,6 +7,7 @@ import { guardBridge } from '@/features/guard';
 import { deleteAllMedia } from '@/media';
 import { cancelFocusHeld } from '@/notifications';
 import {
+  useAuroraInviteStore,
   useDevStore,
   useFocusUiStore,
   useGuardStore,
@@ -17,7 +18,8 @@ import {
 
 /**
  * journey: ends the arc and deletes every record, selfie and the oath. Preferences stay.
- * everything (dev mode): the journey, plus preferences, guard and alarm choices, and the simulated clock.
+ * everything (dev mode): the journey, plus preferences, guard and alarm choices (and the alarm's
+ * invite on Today), and the simulated clock.
  */
 export type ResetScope = 'journey' | 'everything';
 
@@ -48,6 +50,7 @@ export function useResetJourney(): (scope: ResetScope) => void {
     if (scope === 'everything') {
       usePreferencesStore.getState().reset();
       useGuardStore.getState().reset();
+      useAuroraInviteStore.getState().reset();
       useDevStore.getState().resetDayOffset();
     }
     // Close every screen above the tabs (Settings), then replace the tabs with the first

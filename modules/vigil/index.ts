@@ -3,6 +3,7 @@ export {
   type VigilNativeFocusConfig,
   type VigilNativeFocusEvent,
   type VigilNativeModule,
+  type VigilNativeNightRest,
   type VigilNativeReelConfig,
   type VigilNativeReelDay,
   type VigilNativeReelEvent,

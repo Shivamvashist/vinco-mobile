@@ -14,19 +14,19 @@ export type TreasuryCardProps = {
   alarmPasses: number;
   /** Hidden in the Ludus, where Truces have nothing to protect. */
   showTruces: boolean;
-  onOpenForum: () => void;
+  onOpenShop: () => void;
   onOpenTruces: () => void;
 };
 
 const copy = arcCopy.treasury;
 
-/** What the user holds: denarii, Truces and alarm passes, and the way into the Forum. */
+/** What the user holds: denarii, Truces and alarm passes, and the way into the Shop. */
 export function TreasuryCard({
   denarii,
   truces,
   alarmPasses,
   showTruces,
-  onOpenForum,
+  onOpenShop,
   onOpenTruces,
 }: TreasuryCardProps) {
   const styles = useStyles();
@@ -40,7 +40,7 @@ export function TreasuryCard({
         <Holding icon="bell" label={copy.passes(alarmPasses)} />
       </View>
       <View style={styles.action}>
-        <Button label={copy.visit} variant="secondary" size="compact" onPress={onOpenForum} />
+        <Button label={copy.visit} variant="secondary" size="compact" onPress={onOpenShop} />
       </View>
     </Card>
   );

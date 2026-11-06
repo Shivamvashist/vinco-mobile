@@ -10,19 +10,20 @@ Until wake-up is logged, the **dawn card** takes the hero's place on Today (1 No
 - Below it, the orders wait, dimmed and not tappable, so the day has one clear first step.
 - **"I'm up" opens the wake sheet:**
   - **Woke up at:** now, prefilled. Tap to change it (native time picker).
-  - **Went to sleep at:** prefilled with the last bedtime logged, or 11:00 pm the first time. Tap to change it.
+  - **Went to sleep at:** prefilled with the phone's own estimate when there is one (the screen going dark last night, see below), else the last bedtime logged, else 11:00 pm. Tap to change it. When the estimate is used, a small muted line says so ("Bedtime from when your screen went dark") until the time is changed.
   - A live line: "7 h 20 m of sleep".
   - **"Start the day"** saves both. Wake-up is held, sleep is logged, and the orders open (the rise sound plays).
 - **Rules:**
   - Sleep is wake time minus bedtime. A bedtime later than the wake time means the night before.
   - Anything under 1 hour or over 16 hours is refused with "Check the times".
   - A wake time in the future is refused.
+- **Bedtime from the phone** (2 Nov): with the guard service on, the Vigil keeps last night's screen-dark stretch (`VigilNight.kt`, see GUARDIANS.md "Night rest"). `useBedtimeDefault` / `useLatestBedtime` read it through `guardBridge.getNightRest()` (on mount and each return to the front) and use it only when `getUsableBedtime` (`src/features/sleep/nightRest.ts`) accepts it: it began before the wake-up and gives 1 to 16 hours of sleep, and only on the real today (not a dev clock). **The alarm** (Aurora's mission) logs wake-up with that bedtime too, or none when there is no usable estimate (as before). Without the guard service, in Expo Go, or with no estimate, nothing changes.
 - **Feeling sick today** (a quiet button on the dawn card) opens a sheet: a sick-day Truce for today, and exactly what it costs (one from the reserve, or denarii, or not affordable). Calling it shows the Dies card in its "Sick day" state, with "I'm feeling better" at its top right. The orders stay open: log anything you manage. Hold every order and the Truce comes back at midnight. "I'm feeling better" takes it back the same day (the Truce, and any denarii paid, return). Neutral in every tone.
 - **After waking:** the wake-up row shows "Up at 6:34 · 7 h 20 m sleep". Tapping it reopens the sheet to correct the times; a long press undoes wake-up (back to the dawn card).
 
 ## 2. The orders (Today)
 
-Today, top to bottom (1 Nov, night; full layout in [TODAY-AND-FOCUS.md](TODAY-AND-FOCUS.md) section 2): the shared header with the **user button** (opens the menu: Settings, Orders and to-dos, Permissions, Guard, Aurora, the Forum, the oath), the hero, the Reels and Focus tiles, then one **Orders | Tasks** switch. The orders are the Orders side.
+Today, top to bottom (1 Nov, night; full layout in [TODAY-AND-FOCUS.md](TODAY-AND-FOCUS.md) section 2): the shared header with the **user button** (opens the menu: Settings, Orders and to-dos, Permissions, Guard, Aurora, the Shop, the oath), the hero, the Reels and Focus tiles, then one **Orders | Tasks** switch. The orders are the Orders side.
 
 - No heading or hint lines: the rows speak for themselves (tap to log, press and hold to take one back).
 - **Done orders sink.** An order at its full goal slides to the bottom of the list with its mark; taking it back brings it up again.

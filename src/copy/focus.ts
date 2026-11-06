@@ -134,7 +134,7 @@ export const focusCopy = {
       'If Android shows an accessibility shortcut bubble, you can turn it off in Settings > Accessibility > Vinco focus guard > Shortcut.',
   },
 
-  /** Buying a Truce from the focus screens (the Forum's item, price and limits). Neutral in every tone. */
+  /** Buying a Truce from the focus screens (the Shop's item, price and limits). Neutral in every tone. */
   truce: {
     title: 'No Truce held',
     retreatLine: 'Ending early spends a Truce.',
@@ -205,7 +205,7 @@ export const focusCopy = {
     truces: 'Truces',
     trucesLabel: (count: number): string => (count === 1 ? '1 Truce held' : `${count} Truces held`),
     buyTruce: 'No Truce held. Buy one',
-    buyTruceHint: 'Opens the Truce from the Forum.',
+    buyTruceHint: 'Opens the Truce from the Shop.',
     noTruceAlert: 'No Truce held. Buy one to end early.',
     rainSoundOn: 'Rain sound',
     rainSoundHint: 'Plays soft rain while the focus runs.',

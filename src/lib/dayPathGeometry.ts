@@ -78,6 +78,18 @@ export function stretchPath(
     .join(' ');
 }
 
+// Worklets that call each other are declared callee first: the worklet build turns each one into a
+// const that captures its callees at that line, so a callee declared below is captured as undefined.
+
+/** A pop that overshoots a little and settles, 0 at t = 0 and 1 from t = 1. Runs on the UI thread. */
+export function popScale(t: number): number {
+  'worklet';
+  if (!(t > 0)) return 0;
+  if (t >= 1) return 1;
+  const u = t - 1;
+  return 1 + (BACK_OUT + 1) * u * u * u + BACK_OUT * u * u;
+}
+
 /**
  * Many dots as one SVG path (two arcs each), so a day of marks is one element. `elapsed` is the
  * replay's clock: each dot pops in at its delay. Dots not yet in are left out. Runs on the UI thread.
@@ -99,15 +111,6 @@ export function dotsPath(dots: readonly PathDot[], elapsed: number, popMs: numbe
   }
   // An empty path can upset some renderers: a point with no area draws nothing.
   return data === '' ? 'M0,0' : data;
-}
-
-/** A pop that overshoots a little and settles, 0 at t = 0 and 1 from t = 1. Runs on the UI thread. */
-export function popScale(t: number): number {
-  'worklet';
-  if (!(t > 0)) return 0;
-  if (t >= 1) return 1;
-  const u = t - 1;
-  return 1 + (BACK_OUT + 1) * u * u * u + BACK_OUT * u * u;
 }
 
 function round(value: number): number {

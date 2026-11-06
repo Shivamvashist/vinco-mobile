@@ -15,7 +15,7 @@ const spoken = (kind: keyof typeof noticesCopy.kinds, message: string) =>
 describe('Notices', () => {
   it('shows one at a time, keeps an error until it is tapped, then the next', async () => {
     startArc();
-    renderRouter(APP_DIR, { initialUrl: '/forum' });
+    renderRouter(APP_DIR, { initialUrl: '/shop' });
     act(() => {
       notify({ kind: 'info', message: 'Passing note' });
       notify({ kind: 'error', message: 'Something broke' });
@@ -35,7 +35,7 @@ describe('Notices', () => {
 
   it('merges a repeat and runs the action once', async () => {
     startArc();
-    renderRouter(APP_DIR, { initialUrl: '/forum' });
+    renderRouter(APP_DIR, { initialUrl: '/shop' });
     const onPress = jest.fn();
     act(() => {
       notify({ kind: 'reward', message: '+5 denarii', action: { label: 'See', onPress } });

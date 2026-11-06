@@ -10,7 +10,7 @@ export type StatChipProps = {
   icon?: IconName;
   /** `muted` for secondary facts like "Truce ready"; `currency` for denarii (silver). */
   emphasis?: 'default' | 'muted' | 'currency';
-  /** Makes the chip a button (the purse opens the Forum). */
+  /** Makes the chip a button (the purse opens the Shop). */
   onPress?: () => void;
   accessibilityHint?: string;
 };

@@ -18,6 +18,7 @@ import android.view.accessibility.AccessibilityEvent
 class VigilService : AccessibilityService() {
   private var guard: VigilGuard? = null
   private var unlockReceiver: BroadcastReceiver? = null
+  private var nightReceiver: BroadcastReceiver? = null
   private var reels: VigilReels? = null
 
   override fun onServiceConnected() {
@@ -29,6 +30,14 @@ class VigilService : AccessibilityService() {
     reels = VigilReels(this).also { safely { it.reload() } }
     // Unlocks can only be heard by a running component since Android 8: the "Are you up?" prompt.
     if (unlockReceiver == null) unlockReceiver = VigilWake.register(this)
+    // Screen on and off times, for last night's rest (VigilNight). Same rule: only while running.
+    if (nightReceiver == null) {
+      try {
+        nightReceiver = VigilNight.register(this)
+      } catch (_: Exception) {
+        // No estimate then; the guard carries on.
+      }
+    }
   }
 
   override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -65,12 +74,16 @@ class VigilService : AccessibilityService() {
   override fun onUnbind(intent: Intent?): Boolean {
     VigilWake.unregister(this, unlockReceiver)
     unlockReceiver = null
+    VigilNight.unregister(this, nightReceiver)
+    nightReceiver = null
     return super.onUnbind(intent)
   }
 
   override fun onDestroy() {
     VigilWake.unregister(this, unlockReceiver)
     unlockReceiver = null
+    VigilNight.unregister(this, nightReceiver)
+    nightReceiver = null
     guard?.stop()
     guard = null
     reels?.stop()
@@ -111,6 +124,9 @@ class VigilService : AccessibilityService() {
       val service = running ?: return
       service.mainExecutorCompat().execute { service.safely { service.reels?.reload() } }
     }
+
+    /** Whether the service is running in this process now (it hears screen on and off). */
+    fun isRunning(): Boolean = running != null
 
     /** Whether the user has turned the service on in the phone's accessibility settings. */
     fun isEnabled(context: Context): Boolean {

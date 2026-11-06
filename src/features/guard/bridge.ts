@@ -1,4 +1,5 @@
 import type { FocusGuard } from '@/features/focus';
+import { type NightRest, toNightRest } from '@/features/sleep';
 
 import {
   type VigilNativeFocusConfig,
@@ -107,6 +108,11 @@ export type GuardBridge = {
    * while the guard service runs. Logging wake-up today also clears a prompt still on screen.
    */
   setWakeWatch: (config: WakeWatchConfig) => Promise<void>;
+  /**
+   * Last night's rest from the screen's on and off times (modules/vigil VigilNight.kt), or null.
+   * Learned only while the guard service runs. Check it with `getUsableBedtime` before use.
+   */
+  getNightRest: () => Promise<NightRest | null>;
 };
 
 /** Expo Go, iOS and tests: everything reports "not available", nothing throws. */
@@ -126,6 +132,7 @@ export const unsupportedGuardBridge: GuardBridge = {
   endFocus: async () => undefined,
   onFocusEvent: () => () => undefined,
   setWakeWatch: async () => undefined,
+  getNightRest: async () => null,
 };
 
 const FOCUS_EVENT_TYPES: readonly FocusEventType[] = ['nudge', 'appBlocked', 'appClosed'];
@@ -200,6 +207,7 @@ export function createNativeGuardBridge(native: VigilNativeModule): GuardBridge 
       return () => subscription.remove();
     },
     setWakeWatch: (config) => native.setWakeWatch(toNativeWakeWatch(config)),
+    getNightRest: async () => (native.getNightRest ? toNightRest(await native.getNightRest()) : null),
   };
 }
 

@@ -28,7 +28,7 @@ import { useActiveArc } from '@/hooks/useActiveArc';
 import { useCampaign } from '@/hooks/useCampaign';
 import { useDailySelfie } from '@/hooks/useDailySelfie';
 import { useDenariiNotice } from '@/hooks/useDenariiNotice';
-import { useLatestBedtime } from '@/hooks/useLatestBedtime';
+import { useBedtimeDefault } from '@/hooks/useLatestBedtime';
 import { useLiveAwards } from '@/hooks/useLiveAwards';
 import { useOrderTaps } from '@/hooks/useOrderTaps';
 import { useOwnOrderActions } from '@/hooks/useOwnOrderActions';
@@ -58,7 +58,7 @@ export default function VeniScreen() {
   const selfie = useDailySelfie(orders.today);
   const tasks = useTasks(arc ? arcEndDay(arc.startDay, arc.lengthDays) : null);
   const ownOrders = useOwnOrderActions(arcId);
-  const latestBedtime = useLatestBedtime(orders.today);
+  const bedtimeDefault = useBedtimeDefault(orders.today);
   const sickDay = useSickDay(orders.today);
   const [sheet, setSheet] = useState<Sheet>(null);
   const [sickError, setSickError] = useState<string | null>(null);
@@ -199,7 +199,8 @@ export default function VeniScreen() {
         onClose={close}
         isEditing={isAwake}
         initialWakeMinutes={wokeMinutes ?? (isRealToday ? nowMinutes : (plannedWakeMinutes ?? nowMinutes))}
-        initialBedtimeMinutes={sleptMinutes ?? latestBedtime}
+        initialBedtimeMinutes={sleptMinutes ?? bedtimeDefault.minutes}
+        isBedtimeFromPhone={sleptMinutes == null && bedtimeDefault.isFromPhone}
         nowMinutes={isRealToday ? nowMinutes : null}
         onSave={(wakeMinutes, bedtimeMinutes) => {
           close();

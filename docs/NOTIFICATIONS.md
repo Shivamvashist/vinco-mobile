@@ -66,7 +66,7 @@ No reminder from **11 pm until the planned wake time** (never later than noon, s
 
 - Every notification carries `data.url`. Reminders use `/veni`; admin broadcasts may use `vinco://<screen>`.
 - A tap opens that screen with `router.push`, Today with `router.navigate`. Cold starts are covered: `useLastNotificationResponse` returns the tap that launched the app, then the response is cleared so it is followed once.
-- Only known screens open (`toNotificationPath`: Veni, Vidi, Vici, Settings, Permissions, Forum, Plan, Guard, Aurora). Anything else opens Today.
+- Only known screens open (`toNotificationPath`: Veni, Vidi, Vici, Settings, Permissions, Shop, Plan, Guard, Aurora). Anything else opens Today. An old `vinco://forum` link (the Shop's name until 2 Nov) still opens the Shop.
 
 ## 6a. Are you up? (wake prompt)
 

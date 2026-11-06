@@ -156,7 +156,7 @@ export default function ViciScreen() {
             truces={campaign.truceReserve}
             alarmPasses={forum.holdings.venia.held}
             showTruces={!isLudus}
-            onOpenForum={() => router.push('/forum')}
+            onOpenShop={() => router.push('/shop')}
             onOpenTruces={() => setOpenSheet('truces')}
           />
         </TabSettle>

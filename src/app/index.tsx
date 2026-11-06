@@ -1,5 +1,6 @@
 import { type Href, Redirect } from 'expo-router';
 
+import { FEATURES } from '@/config/features';
 import { db, getActiveArc } from '@/db';
 import { type OnboardingStep, useOnboardingStore } from '@/stores';
 
@@ -7,7 +8,8 @@ const STEP_HREFS: Record<OnboardingStep, Href> = {
   plan: '/onboarding/plan',
   arc: '/onboarding/arc',
   orders: '/onboarding/orders',
-  tone: '/onboarding/tone',
+  // The tone step is off for now (FEATURES.onboardingTone): a user who stopped there goes on.
+  tone: FEATURES.onboardingTone ? '/onboarding/tone' : '/onboarding/permissions',
   permissions: '/onboarding/permissions',
   oath: '/onboarding/oath',
   selfie: '/onboarding/selfie',

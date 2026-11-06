@@ -11,8 +11,8 @@ import { clampProgress, normaliseSegments } from '@/lib/progress';
 import { type ColorRole, createStyles, themeTiming, useTheme, useReduceMotion } from '@/theme';
 
 type ProgressBarBaseProps = {
-  /** thin 3 (step indicator), regular 5 (water, rank), thick 6 (timelapse). */
-  size?: 'thin' | 'regular' | 'thick';
+  /** thin 3 (step indicator), regular 5 (water, rank), thick 6 (timelapse), bold 10 (quests). */
+  size?: 'thin' | 'regular' | 'thick' | 'bold';
   color?: ColorRole;
   accessibilityLabel?: string;
 };
@@ -124,4 +124,5 @@ const useStyles = createStyles((theme) => ({
   thin: { height: theme.layout.barHeightThin },
   regular: { height: theme.layout.barHeightRegular },
   thick: { height: theme.layout.barHeightThick },
+  bold: { height: theme.layout.barHeightBold },
 }));

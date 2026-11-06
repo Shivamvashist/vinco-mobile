@@ -2,7 +2,7 @@
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
 
-import { arcCopy, forumCopy, todayCopy } from '@/copy';
+import { arcCopy, shopCopy, todayCopy } from '@/copy';
 import { createArc, db, getActiveArc, selectAllArcs } from '@/db';
 import { DEFAULT_ORDER_TARGETS } from '@/features/orders';
 import { addDays, toDayKey } from '@/lib/dates';
@@ -29,12 +29,12 @@ describe('Vici', () => {
     ).toBeTruthy();
   });
 
-  it('opens the Forum from the treasury', async () => {
+  it('opens the Shop from the treasury', async () => {
     startHeldArc(1);
     const app = renderRouter(APP_DIR, { initialUrl: '/vici' });
     fireEvent.press(await screen.findByLabelText(arcCopy.treasury.visit));
-    expect(await screen.findByText(forumCopy.title)).toBeTruthy();
-    expect(app.getPathname()).toBe('/forum');
+    expect(await screen.findByLabelText(shopCopy.segments.earn)).toBeTruthy();
+    expect(app.getPathname()).toBe('/shop');
   });
 
   it('leaves a campaign for the Ludus, keeping it in past arcs', async () => {

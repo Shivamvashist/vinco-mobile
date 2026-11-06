@@ -37,7 +37,7 @@ export default function TabsLayout() {
   // With the guard service on: "Are you up?" on the first unlock after 3 am until wake-up is logged.
   useWakeWatch();
 
-  // The tab on screen, for the header. A stack screen over the tabs (the Forum, Focus) keeps the
+  // The tab on screen, for the header. A stack screen over the tabs (the Shop, Focus) keeps the
   // last one, so the header doesn't change underneath it.
   const segment = useSegments().find(isTabName);
   const [tab, setTab] = useState<TabName>(segment ?? 'veni');
@@ -45,11 +45,14 @@ export default function TabsLayout() {
 
   // One header above the tabs, outside the slide (TabsHeader). The tabs slide as one strip of
   // pages and follow a sideways swipe (TabSwipe, tabTransition). Tabs out of sight are NOT frozen
-  // (freezeOnBlur): unfreezing under the slide left a tab blank on Android now and then.
+  // (freezeOnBlur): unfreezing under the slide left a tab blank on Android now and then. Nor are
+  // they detached from the native view tree (detachInactiveScreens): re-attaching a tab under the
+  // slide left it blank now and then too. Three tabs stay attached, off screen, which costs little.
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <TabsHeader tab={tab} />
       <Tabs
+        detachInactiveScreens={false}
         tabBar={(props) => <TabBar {...props} />}
         screenLayout={({ children }) => <TabSwipe>{children}</TabSwipe>}
         screenOptions={{

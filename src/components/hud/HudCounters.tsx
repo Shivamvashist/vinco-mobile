@@ -23,7 +23,7 @@ const copy = rewardsCopy.hud;
 
 /**
  * The HUD at the top right of each tab: one slim pill with three counters, denarii (opens the
- * Forum), Gloria (opens Vidi) and Truces held (a short explainer). Each is a landing spot for the
+ * Shop), Gloria (opens Vidi) and Truces held (a short explainer). Each is a landing spot for the
  * reward flight. Reads the records itself, so a tab adds it with one line. The focus result shows
  * it too, so a focus claim has counters to fly to (the tabs' counters are off screen there).
  */
@@ -45,7 +45,7 @@ export function HudCounters({ held }: HudCountersProps = {}) {
           accessibilityLabel={copy.denariiLabel(counts.denarii)}
           onPress={() => {
             play('tap');
-            router.push('/forum');
+            router.push('/shop');
           }}
         />
         <HudCounter
@@ -85,12 +85,12 @@ export function HudCounters({ held }: HudCountersProps = {}) {
         </Txt>
         <View style={styles.sheetAction}>
           <Button
-            label={copy.openForum}
+            label={copy.openShop}
             variant="secondary"
             size="compact"
             onPress={() => {
               setIsTruceSheetOpen(false);
-              router.push('/forum');
+              router.push('/shop');
             }}
           />
         </View>

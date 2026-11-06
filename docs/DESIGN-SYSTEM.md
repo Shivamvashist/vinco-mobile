@@ -198,11 +198,11 @@ The shareable "Day sealed" card has a **design** (the layout) and a **colour sty
 | `laurel` (Laurel)      | A full victor's wreath ringing the day number, campaign below              | Berries          | Free   |
 | `sol` (Sunrise)        | The sun on the horizon, the day number under its reflection                | Rays (long=done) | Free   |
 | `inscription` (Tablet) | A "tabula ansata" plaque cut with "DIES XII", "VENI · VIDI · VICI" above   | Interpuncts      | Free   |
-| `stamp` (Stamp)        | The seal slammed across a ghosted number, "VICI." (I conquered) beneath    | None             | Forum  |
-| `memento` (Memento)    | One line worth keeping, by tone and result, and almost nothing else        | None             | Forum  |
+| `stamp` (Stamp)        | The seal slammed across a ghosted number, "VICI." (I conquered) beneath    | None             | Shop   |
+| `memento` (Memento)    | One line worth keeping, by tone and result, and almost nothing else        | None             | Shop   |
 
 - **Held is quieter:** Stamp slams (angled, double-ruled "VINCO") only on a conquered day; a held day gets a straight single-ruled "HELD" seal and "STETI." (I stood firm). An open day shows as held.
-- **Adding a design:** add the id to `DAY_CARD_DESIGN_IDS` (`features/dayCard`), a file in `components/dayCard/designs/`, its entry in `DayCard`'s map, a sketch in `DesignThumb`, and a name in `dayCardCopy.designs`. A Forum design also needs a Forum item, `DESIGN_FORUM_ITEMS`, and copy in `forumCopy.items`.
+- **Adding a design:** add the id to `DAY_CARD_DESIGN_IDS` (`features/dayCard`), a file in `components/dayCard/designs/`, its entry in `DayCard`'s map, a sketch in `DesignThumb`, and a name in `dayCardCopy.designs`. A Shop design also needs a Shop item (`FORUM_ITEMS`), `DESIGN_FORUM_ITEMS`, and copy in `shopCopy.items`.
 
 ---
 

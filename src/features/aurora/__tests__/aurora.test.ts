@@ -1,4 +1,10 @@
-import { DEFAULT_AURORA_SETTINGS, getNextRing, sanitizeAuroraSettings } from '../aurora';
+import {
+  DEFAULT_AURORA_SETTINGS,
+  getNextRing,
+  sanitizeAuroraSettings,
+  shouldInviteAurora,
+  toggleWeekday,
+} from '../aurora';
 
 // Wednesday 14 October 2026.
 const at = (hours: number, minutes = 0, day = 14) => new Date(2026, 9, day, hours, minutes);
@@ -40,5 +46,24 @@ describe('sanitizeAuroraSettings', () => {
       ...DEFAULT_AURORA_SETTINGS,
       days: [...DEFAULT_AURORA_SETTINGS.days],
     });
+  });
+});
+
+describe('toggleWeekday', () => {
+  it('adds a day in order and takes it out again', () => {
+    expect(toggleWeekday([0, 4], 2)).toEqual([0, 2, 4]);
+    expect(toggleWeekday([0, 2, 4], 2)).toEqual([0, 4]);
+    expect(toggleWeekday([6], 6)).toEqual([]);
+  });
+});
+
+describe('shouldInviteAurora', () => {
+  const base = { isSupported: true, isOn: false, isClosed: false };
+
+  it('invites only in the Vinco build, while off, until closed', () => {
+    expect(shouldInviteAurora(base)).toBe(true);
+    expect(shouldInviteAurora({ ...base, isSupported: false })).toBe(false);
+    expect(shouldInviteAurora({ ...base, isOn: true })).toBe(false);
+    expect(shouldInviteAurora({ ...base, isClosed: true })).toBe(false);
   });
 });

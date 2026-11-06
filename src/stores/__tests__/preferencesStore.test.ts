@@ -25,7 +25,7 @@ beforeEach(() => {
 describe('usePreferencesStore', () => {
   it('starts with the defaults when nothing is saved', () => {
     const state = loadStore().getState();
-    expect(state.tone).toBe('centurion');
+    expect(state.tone).toBe('roast');
     expect(state.colorMode).toBe('dark');
     // Sounds are off by default since 13 Oct; the signature moments still play.
     expect(state.soundEnabled).toBe(false);
@@ -49,7 +49,7 @@ describe('usePreferencesStore', () => {
     const state = loadStore().getState();
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('Could not restore'), expect.any(Error));
     warn.mockRestore();
-    expect(state.tone).toBe('centurion');
+    expect(state.tone).toBe('roast');
     expect(state.colorMode).toBe('dark');
   });
 

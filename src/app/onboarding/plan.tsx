@@ -11,7 +11,13 @@ import { SectionHeader } from '@/components/SectionHeader';
 import { Txt } from '@/components/Txt';
 import { onboardingCopy } from '@/copy';
 import { CUSTOM_ORDER_LIMITS } from '@/features/orders';
-import { getStepPosition, SUGGESTED_ORDERS, type SuggestedOrder, useOnboardingStore } from '@/stores';
+import {
+  getStepPosition,
+  stepAfterOrders,
+  SUGGESTED_ORDERS,
+  type SuggestedOrder,
+  useOnboardingStore,
+} from '@/stores';
 import { createStyles } from '@/theme';
 
 const copy = onboardingCopy.plan;
@@ -43,7 +49,7 @@ export default function PlanScreen() {
 
   const continueOwnPlan = () => {
     chooseLudus();
-    router.push('/onboarding/tone');
+    router.push(stepAfterOrders());
   };
 
   const chooseCampaign = () => {

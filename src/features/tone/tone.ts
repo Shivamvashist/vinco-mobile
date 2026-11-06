@@ -6,8 +6,8 @@ export const TONES = ['philosopher', 'centurion', 'roast'] as const;
 
 export type Tone = (typeof TONES)[number];
 
-/** Used until the user picks a tone in onboarding. */
-export const DEFAULT_TONE: Tone = 'centurion';
+/** A new user's tone (Roast me since 2 Nov), until they pick another in Settings. */
+export const DEFAULT_TONE: Tone = 'roast';
 
 export function isTone(value: unknown): value is Tone {
   return typeof value === 'string' && (TONES as readonly string[]).includes(value);

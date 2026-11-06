@@ -14,7 +14,7 @@ Read this before every task. Then read [HISTORY.md](../HISTORY.md) for the curre
 | [docs/TASKS-2026-10-13.md](../docs/TASKS-2026-10-13.md)             | Wave 3: orders-first onboarding, clean Today, user menu, calories, day summary (13 Oct)       |
 | [docs/TASKS-2026-10-31.md](../docs/TASKS-2026-10-31.md)             | Wave 4: dev build, Aurora native, reminders, palettes, live denarii and run pay (31 Oct)      |
 | [docs/TASKS-2026-10-31-wave5.md](../docs/TASKS-2026-10-31-wave5.md) | Wave 5: HUD counters, Labours, Gloria, Focus with native guards, tab motion, notices (31 Oct) |
-| [docs/REWARDS.md](../docs/REWARDS.md)                               | Labours, claimable Decorations, Gloria (XP), claims data, the reward flight                   |
+| [docs/REWARDS.md](../docs/REWARDS.md)                               | Quests (labours in code), claimable Decorations, Gloria (XP), claims, the reward flight       |
 | [docs/TODAY-AND-FOCUS.md](../docs/TODAY-AND-FOCUS.md)               | Today's hero (Dies), tiles, spring motion, Focus (Acies): UX, rules, data                     |
 | [docs/NOTIFICATIONS.md](../docs/NOTIFICATIONS.md)                   | Reminders (local), the Aurora channel, admin push later: rules, cap, channels, links          |
 | [docs/GUARDIANS.md](../docs/GUARDIANS.md)                           | Pax, Vigil, Guard, Imperium and Aurora: built base, native plan, permissions                  |
@@ -56,7 +56,7 @@ Tagline: **Veni, vidi, vici.** The three words are the app's three tabs: Veni (T
 **Early Access build (tracker only).** First build to Play closed testing by **12 October 2026**; public Early Access on **2 November 2026**.
 
 - Everything runs **on the phone**. **No backend yet.** No API calls, auth or server.
-- The Vigil counting, Aurora ringing, squads and AI come in Vinco 1.0 (1 January 2027). Their settings, rules and bridges exist now in preview (docs/GUARDIANS.md); the native parts wait for a development build. The Forum (denarii shop) is built on the local ledger.
+- The Vigil counting, Aurora ringing, squads and AI come in Vinco 1.0 (1 January 2027). Their settings, rules and bridges exist now in preview (docs/GUARDIANS.md); the native parts wait for a development build. The Shop (denarii only) is built on the local ledger.
 - See BUILD-STEPS.md for what's done and next.
 
 ## Stack
@@ -112,7 +112,7 @@ Dark (Basalt) by default, light (Marble) available, both from the one Vinco core
 
 ### Vocabulary (Roman name and plain label)
 
-Cross the Rubicon (Begin your arc), Campaign (days in a row), Free training (the open plan: no streak, no fall; arc kind `ludus` in code), Hold the line (minimum), Conquer (full goal), Truce (rest day), Resurgo (comeback), Aurora (alarm), Venia (alarm pass), the Vigil (reel counter), Pax, Custos and Imperium (guard levels), Contubernium (squad), the Armory (task ideas), the Senate report (weekly review), Acies (Focus), Silentium (block everything), Dies (Today's hero card), Stipendium (run pay), Denarii (coins), the Forum (shop), the Aerarium (ways to earn), Tributum (over-budget fee), Decorations (achievements), Castra (Settings, in the user menu). Ranks: Tiro, Miles, Optio, Centurion, Tribune, Legate, Consul, Caesar.
+Cross the Rubicon (Begin your arc), Campaign (days in a row), Free training (the open plan: no streak, no fall; arc kind `ludus` in code), Hold the line (minimum), Conquer (full goal), Truce (rest day), Resurgo (comeback), Aurora (alarm), Venia (alarm pass), the Vigil (reel counter), Pax, Custos and Imperium (guard levels), Contubernium (squad), the Armory (task ideas), the Senate report (weekly review), Acies (Focus), Silentium (block everything), Dies (Today's hero card), Stipendium (run pay), Denarii (coins), the Shop (spend denarii; "the Forum" in code), Earn (the Shop's tab: quests and the pay that lands on its own), Quests (daily and weekly tasks that pay; "labours" in code), Tributum (over-budget fee), Decorations (achievements), Castra (Settings, in the user menu). Ranks: Tiro, Miles, Optio, Centurion, Tribune, Legate, Consul, Caesar.
 
 ## Product rules (don't break these)
 
@@ -123,13 +123,13 @@ Cross the Rubicon (Begin your arc), Campaign (days in a row), Free training (the
 - **Free training** is the open plan (arc kind `ludus` in code): only the orders the user picked (any, or none; removable), stamp and proof, but no campaign, no loss screen, no Truces: a gentle "keep your run" nudge instead (the run still earns run pay in denarii). A day with no orders never holds. Moving between a campaign and free training is never a wipe; the record stays in Past arcs.
 - **Own orders** count up: a tap adds one unit (up to 20 a day), bigger goals are typed in. Saved with minimum = goal. Unit and number are optional: without them an order is done or not. Every order can be edited; a lower goal counts from tomorrow, never today.
 - **To-dos:** a day task left undone moves to the next day by itself.
-- **Truces are called by the user**, never applied automatically. A missed day breaks the campaign unless the user calls a Truce before the next day ends. Truces are earned (one when an arc begins, one every 7 days of campaign, at most 3 held) or bought with denarii: at the moment of need, or ahead in the Forum (one a day).
+- **Truces are called by the user**, never applied automatically. A missed day breaks the campaign unless the user calls a Truce before the next day ends. Truces are earned (one when an arc begins, one every 7 days of campaign, at most 3 held) or bought with denarii: at the moment of need, or ahead in the Shop (one a day).
 - **Three tones:** Philosopher (calm Stoic), Centurion (firm coach), Roast me (unhinged friend: properly savage about the phone, the scroll and the excuse, never vulgar). Every notification and empty state is written all three ways.
 - **Humour rule:** roast the habit, the phone and the excuse, never the person. Selfie, weight and slip screens stay neutral in every tone. Every sarcastic line ends with a way forward.
 - **Denarii are paid the moment today holds** (5 held, 10 conquered) and taken back if it stops holding; the midnight seal makes them final. **Run pay (Stipendium):** days 3, 5 and 7 of every week of a run pay 10, 15 and 25; runs of 14, 30, 60 and 100 days pay a bonus; in a campaign every 7th day also grants a Truce (at the seal).
 - **At most three nudges a day**, plus the alarm.
 - **Selfies never leave the phone.**
-- **Denarii, ranks and decorations are earned, never sold for real money.** The Forum sells for denarii only: a Truce (max 3 held, one a day), the alarm pass (max 2), day card styles and app icons (cosmetic).
+- **Denarii, ranks and decorations are earned, never sold for real money.** The Shop sells for denarii only: a Truce (max 3 held, one a day), the alarm pass (max 2), day card styles and app icons (cosmetic).
 - **Sounds are off by default** (13 Oct). **Signature sounds always play:** the DAY I seal, the oath locking in and the VINCO stamp sound even with Sounds off (`feedback.essential`); the phone's silent mode still wins. The tab whoosh is the quietest cue.
 - **The oath** can be heard twice a day from the user menu, from Day I.
 - **Sizes follow the phone's width** (`theme/tokens/scale.ts`): narrow phones get the same layout a little smaller; touch targets never shrink.

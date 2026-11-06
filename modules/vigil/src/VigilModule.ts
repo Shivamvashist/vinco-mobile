@@ -57,6 +57,9 @@ export type VigilNativeReelConfig = {
 /** One reel counted: the day's new count and its local day (yyyy-MM-dd). */
 export type VigilNativeReelEvent = { count: number; day: string };
 
+/** Last night's rest from screen on and off times: epoch milliseconds. */
+export type VigilNativeNightRest = { sleptAt: number; wokeAt: number };
+
 /** A kept day of reel counts. */
 export type VigilNativeReelDay = { day: string; count: number };
 
@@ -75,6 +78,8 @@ export type VigilNativeModule = {
   configure?(config: VigilNativeReelConfig): Promise<void>;
   getTodayCount?(): Promise<number>;
   getReelDays?(): Promise<VigilNativeReelDay[]>;
+  /** Last night's rest, or null. Optional: development builds from before 2 Nov lack it. */
+  getNightRest?(): Promise<VigilNativeNightRest | null>;
 };
 
 /**

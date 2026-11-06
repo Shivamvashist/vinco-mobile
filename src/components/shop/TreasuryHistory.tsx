@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 
-import { commonCopy, forumCopy, rewardsCopy } from '@/copy';
+import { commonCopy, shopCopy, rewardsCopy } from '@/copy';
 import { isFocusRetreatReason } from '@/features/focus';
 import type { TreasuryEntry } from '@/hooks/useForum';
 import type { DayKey } from '@/lib/dates';
@@ -8,7 +8,7 @@ import { cardSurface, createStyles } from '@/theme';
 
 import { Txt } from '../Txt';
 
-const copy = forumCopy.history;
+const copy = shopCopy.history;
 /** The list stays short; older lines are still counted in the balance. */
 const MAX_ROWS = 40;
 
@@ -32,7 +32,7 @@ export function TreasuryHistory({ entries, today }: TreasuryHistoryProps) {
       {entries.slice(0, MAX_ROWS).map((entry, index) => {
         const label =
           entry.source.type === 'purchase'
-            ? copy.purchase(forumCopy.items[entry.source.itemId].name)
+            ? copy.purchase(shopCopy.items[entry.source.itemId].name)
             : describeReason(entry.source.reason);
         const amount = copy.amount(entry.amount);
         const date = commonCopy.dayLabel(entry.day, today);
